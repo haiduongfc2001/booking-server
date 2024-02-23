@@ -46,6 +46,20 @@ class CustomerController {
     async delete(req: Request, res: Response) {
         try {
             let id = parseInt(req.params["id"]);
+
+            const existingCustomer = await Customer.findOne({
+                where: {
+                    id: id,
+                }
+            });
+
+            if (!existingCustomer) {
+                return res.status(400).json({
+                    status: "Bad Request",
+                    message: "Customer not found!",
+                });
+            }
+
             await new CustomerRepo().delete(id);
 
             res.status(200).json({

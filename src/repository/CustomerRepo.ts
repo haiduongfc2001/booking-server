@@ -44,11 +44,11 @@ export class CustomerRepo implements ICustomerRepo {
             new_customer.password = customer.password;
             new_customer.email = customer.email;
             new_customer.full_name = customer.full_name;
-            // new_customer.gender = customer.gender;
-            // new_customer.phone = customer.phone;
-            // new_customer.avatar_url = customer.avatar_url;
-            // new_customer.address = customer.address;
-            // new_customer.location = customer.location;
+            new_customer.gender = customer.gender;
+            new_customer.phone = customer.phone;
+            new_customer.avatar_url = customer.avatar_url;
+            new_customer.address = customer.address;
+            new_customer.location = customer.location;
 
             await new_customer.save();
         } catch (error) {
