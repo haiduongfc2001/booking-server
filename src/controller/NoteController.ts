@@ -12,7 +12,7 @@ class NoteController {
             await new NoteRepo().save(new_note);
 
             res.status(201).json({
-                status: "Created!",
+                status: 201,
                 message: "Successfully created note!",
             });
         } catch (err) {
@@ -29,7 +29,7 @@ class NoteController {
             await new NoteRepo().delete(id);
 
             res.status(200).json({
-                status: "Ok!",
+                status: 200,
                 message: "Successfully deleted note!",
             });
         } catch (err) {
@@ -46,7 +46,7 @@ class NoteController {
             const new_note = await new NoteRepo().retrieveById(id);
 
             res.status(200).json({
-                status: "Ok!",
+                status: 200,
                 message: `Successfully fetched note by id ${id}!`,
                 data: new_note,
             });
@@ -63,7 +63,7 @@ class NoteController {
             const new_note = await new NoteRepo().retrieveAll();
 
             res.status(200).json({
-                status: "Ok!",
+                status: 200,
                 message: "Successfully fetched all note data!",
                 data: new_note,
             });
@@ -87,7 +87,7 @@ class NoteController {
             await new NoteRepo().update(new_note);
 
             res.status(200).json({
-                status: "Ok!",
+                status: 200,
                 message: "Successfully updated note data!",
             });
         } catch (err) {

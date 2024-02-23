@@ -1,10 +1,5 @@
 import { Model, Table, Column, DataType, NotNull, IsEmail, Default } from "sequelize-typescript";
 
-enum BooleanEnum {
-    TRUE = 'true',
-    FALSE = 'false'
-}
-
 @Table({
     tableName: Customer.CUSTOMER_TABLE_NAME,
 })
@@ -111,10 +106,9 @@ export class Customer extends Model {
     })
     token!: string;
 
-    @Default(BooleanEnum.FALSE)
+    @Default(false)
     @Column({
-        type: DataType.ENUM,
-        values: Object.values(BooleanEnum),
+        type: DataType.BOOLEAN,
         allowNull: false,
         field: Customer.CUSTOMER_IS_VERIFIED,
     })

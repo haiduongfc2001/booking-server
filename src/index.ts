@@ -1,4 +1,5 @@
 import express, { Application, Request, Response } from "express";
+import cors from 'cors';
 import Database from "./config/database";
 import NoteRouter from "./router/NoteRouter";
 import ServiceRouter from "./router/ServiceRouter";
@@ -17,6 +18,9 @@ class App {
   protected plugins(): void {
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
+    this.app.use(cors({
+      origin: (process.env.ALLOWED_ORIGINS || "").split(","),
+    }));
   }
 
   protected databaseSync(): void {

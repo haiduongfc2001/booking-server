@@ -12,7 +12,7 @@ class ServiceController {
             await new ServiceRepo().save(new_service);
 
             res.status(201).json({
-                status: "Created!",
+                status: 201,
                 message: "Successfully created service!",
             });
         } catch (err) {
@@ -29,7 +29,7 @@ class ServiceController {
             await new ServiceRepo().delete(id);
 
             res.status(200).json({
-                status: "Ok!",
+                status: 200,
                 message: "Successfully deleted service!",
             });
         } catch (err) {
@@ -46,7 +46,7 @@ class ServiceController {
             const new_service = await new ServiceRepo().retrieveById(id);
 
             res.status(200).json({
-                status: "Ok!",
+                status: 200,
                 message: `Successfully fetched service by id ${id}!`,
                 data: new_service,
             });
@@ -63,7 +63,7 @@ class ServiceController {
             const new_service = await new ServiceRepo().retrieveAll();
 
             res.status(200).json({
-                status: "Ok!",
+                status: 200,
                 message: "Successfully fetched all service data!",
                 data: new_service,
             });
@@ -87,7 +87,7 @@ class ServiceController {
             await new ServiceRepo().update(new_service);
 
             res.status(200).json({
-                status: "Ok!",
+                status: 200,
                 message: "Successfully updated service data!",
             });
         } catch (err) {

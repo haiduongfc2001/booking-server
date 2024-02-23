@@ -32,7 +32,7 @@ class CustomerController {
             await new CustomerRepo().save(new_customer);
 
             res.status(201).json({
-                status: "Created!",
+                status: 201,
                 message: "Successfully created customer!",
             });
         } catch (err) {
@@ -63,7 +63,7 @@ class CustomerController {
             await new CustomerRepo().delete(id);
 
             res.status(200).json({
-                status: "Ok!",
+                status: 200,
                 message: "Successfully deleted customer!",
             });
         } catch (err) {
@@ -94,7 +94,7 @@ class CustomerController {
             const new_customer = await new CustomerRepo().retrieveById(id);
 
             res.status(200).json({
-                status: "Ok!",
+                status: 200,
                 message: `Successfully fetched customer by id ${id}!`,
                 data: new_customer,
             });
@@ -111,7 +111,7 @@ class CustomerController {
             const new_customer = await new CustomerRepo().retrieveAll();
 
             res.status(200).json({
-                status: "Ok!",
+                status: 200,
                 message: "Successfully fetched all customer data!",
                 data: new_customer,
             });
@@ -150,7 +150,7 @@ class CustomerController {
             await customerToUpdate.save();
 
             res.status(200).json({
-                status: "Ok!",
+                status: 200,
                 message: "Successfully updated customer data!",
             });
         } catch (err) {
