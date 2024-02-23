@@ -77,6 +77,20 @@ class CustomerController {
     async findById(req: Request, res: Response) {
         try {
             let id = parseInt(req.params["id"]);
+
+            const existingCustomer = await Customer.findOne({
+                where: {
+                    id: id,
+                }
+            });
+
+            if (!existingCustomer) {
+                return res.status(400).json({
+                    status: "Bad Request",
+                    message: "Customer not found!",
+                });
+            }
+
             const new_customer = await new CustomerRepo().retrieveById(id);
 
             res.status(200).json({
