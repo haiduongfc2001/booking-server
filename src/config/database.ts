@@ -2,6 +2,7 @@ import { Sequelize } from "sequelize-typescript";
 import * as dotenv from "dotenv";
 import { Note } from "../model/Note";
 import { Service } from "../model/Service";
+import { Customer } from "../model/Customer";
 dotenv.config();
 
 
@@ -35,7 +36,7 @@ class Database {
       host: this.POSTGRES_HOST,
       port: this.POSTGRES_PORT,
       dialect: "postgres",
-      models: [Note, Service],
+      models: [Note, Service, Customer],
       define: config.define
     });
 

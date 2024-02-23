@@ -2,6 +2,7 @@ import express, { Application, Request, Response } from "express";
 import Database from "./config/database";
 import NoteRouter from "./router/NoteRouter";
 import ServiceRouter from "./router/ServiceRouter";
+import CustomerRouter from "./router/CustomerRouter";
 
 class App {
   public app: Application;
@@ -29,6 +30,7 @@ class App {
     });
     this.app.use("/api/v1/note", NoteRouter);
     this.app.use("/api/v1/service", ServiceRouter);
+    this.app.use("/api/v1/customer", CustomerRouter);
   }
 }
 
