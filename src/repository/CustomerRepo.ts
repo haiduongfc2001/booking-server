@@ -35,9 +35,11 @@ export class CustomerRepo implements ICustomerRepo {
                     id: customer.id,
                 },
             });
+
             if (!new_customer) {
                 throw new Error("Customer not found!");
             }
+
             new_customer.username = customer.username;
             new_customer.password = customer.password;
             new_customer.email = customer.email;

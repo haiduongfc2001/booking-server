@@ -97,21 +97,29 @@ class CustomerController {
 
     async update(req: Request, res: Response) {
         try {
-            let id = parseInt(req.params["id"]);
-            const new_customer = new Customer();
+            const id = parseInt(req.params["id"]);
+            const customerToUpdate = await Customer.findByPk(id);
 
-            new_customer.id = id;
-            new_customer.username = req.body.username;
-            new_customer.password = req.body.password;
-            new_customer.email = req.body.email;
-            new_customer.full_name = req.body.full_name;
-            // new_customer.gender = req.body.gender;
-            // new_customer.phone = req.body.phone;
-            // new_customer.avatar_url = req.body.avatar_url;
-            // new_customer.address = req.body.address;
-            // new_customer.location = req.body.location;
+            if (!customerToUpdate) {
+                return res.status(404).json({
+                    status: "Not Found",
+                    message: "Customer not found"
+                });
+            }
 
-            await new CustomerRepo().update(new_customer);
+            const fieldsToUpdate = [
+                'username', 'password', 'email', 'full_name',
+                'gender', 'phone', 'avatar_url', 'address',
+                'location'
+            ];
+
+            fieldsToUpdate.forEach(field => {
+                if (req.body[field]) {
+                    (customerToUpdate as any)[field] = req.body[field];
+                }
+            });
+
+            await customerToUpdate.save();
 
             res.status(200).json({
                 status: "Ok!",
@@ -124,6 +132,7 @@ class CustomerController {
             });
         }
     }
+
 }
 
 export default new CustomerController()
