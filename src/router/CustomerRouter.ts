@@ -5,15 +5,15 @@ import { createCustomerSchema, updateCustomerSchema } from "../schema/CustomerSc
 
 class CustomerRoutes extends BaseRoutes {
     public routes(): void {
-        this.router.post("", validate(createCustomerSchema), CustomerController.create);
+        this.router.post("/create", validate(createCustomerSchema), CustomerController.create);
         this.router.patch(
-            "/:id",
+            "/update/:id",
             validate(updateCustomerSchema),
             CustomerController.update
         );
-        this.router.delete("/:id", CustomerController.delete);
-        this.router.get("", CustomerController.findAll);
-        this.router.get("/:id", CustomerController.findById);
+        this.router.delete("/delete/:id", CustomerController.delete);
+        this.router.get("/getAll", CustomerController.findAll);
+        this.router.get("/detail/:id", CustomerController.findById);
     }
 }
 

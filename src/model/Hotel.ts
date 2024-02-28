@@ -1,29 +1,29 @@
 import { Model, Table, Column, DataType, IsEmail, Default } from "sequelize-typescript";
 
 @Table({
-    tableName: Customer.CUSTOMER_TABLE_NAME,
+    tableName: Hotel.HOTEL_TABLE_NAME,
 })
-export class Customer extends Model {
-    public static CUSTOMER_TABLE_NAME = "customer" as string;
-    public static CUSTOMER_ID = "id" as string;
-    public static CUSTOMER_USERNAME = "username" as string;
-    public static CUSTOMER_PASSWORD = "password" as string;
-    public static CUSTOMER_EMAIL = "email" as string;
-    public static CUSTOMER_FULL_NAME = "full_name" as string;
-    public static CUSTOMER_GENDER = "gender" as const;
-    public static CUSTOMER_PHONE = "phone" as string;
-    public static CUSTOMER_AVATAR_URL = "avatar_url" as string;
-    public static CUSTOMER_ADDRESS = "address" as string;
-    public static CUSTOMER_LOCATION = "location" as string;
-    public static CUSTOMER_ROLE = "role" as string;
-    public static CUSTOMER_IS_VERIFIED = "is_verified" as string;
-    public static CUSTOMER_TOKEN = "token" as string;
+export class Hotel extends Model {
+    public static HOTEL_TABLE_NAME = "hotel" as string;
+    public static HOTEL_ID = "id" as string;
+    public static HOTEL_USERNAME = "username" as string;
+    public static HOTEL_PASSWORD = "password" as string;
+    public static HOTEL_EMAIL = "email" as string;
+    public static HOTEL_FULL_NAME = "full_name" as string;
+    public static HOTEL_GENDER = "gender" as const;
+    public static HOTEL_PHONE = "phone" as string;
+    public static HOTEL_AVATAR_URL = "avatar_url" as string;
+    public static HOTEL_ADDRESS = "address" as string;
+    public static HOTEL_LOCATION = "location" as string;
+    public static HOTEL_ROLE = "role" as string;
+    public static HOTEL_IS_VERIFIED = "is_verified" as string;
+    public static HOTEL_TOKEN = "token" as string;
 
     @Column({
         type: DataType.INTEGER,
         primaryKey: true,
         autoIncrement: true,
-        field: Customer.CUSTOMER_ID,
+        field: Hotel.HOTEL_ID,
     })
     id!: number;
 
@@ -31,14 +31,14 @@ export class Customer extends Model {
         type: DataType.STRING(100),
         allowNull: false,
         // unique: true,
-        field: Customer.CUSTOMER_USERNAME,
+        field: Hotel.HOTEL_USERNAME,
     })
     username!: string;
 
     @Column({
         type: DataType.STRING(255),
         allowNull: false,
-        field: Customer.CUSTOMER_PASSWORD,
+        field: Hotel.HOTEL_PASSWORD,
     })
     password!: string;
 
@@ -47,21 +47,21 @@ export class Customer extends Model {
         type: DataType.STRING(255),
         allowNull: false,
         // unique: true,
-        field: Customer.CUSTOMER_EMAIL,
+        field: Hotel.HOTEL_EMAIL,
     })
     email!: string;
 
     @Column({
         type: DataType.STRING(255),
         allowNull: false,
-        field: Customer.CUSTOMER_FULL_NAME,
+        field: Hotel.HOTEL_FULL_NAME,
     })
     full_name!: string;
 
     @Column({
         type: DataType.ENUM('male', 'female', 'other'),
         allowNull: false,
-        field: Customer.CUSTOMER_GENDER,
+        field: Hotel.HOTEL_GENDER,
     })
     gender!: any;
 
@@ -70,39 +70,39 @@ export class Customer extends Model {
         type: DataType.STRING(255),
         allowNull: false,
         // unique: true,
-        field: Customer.CUSTOMER_PHONE,
+        field: Hotel.HOTEL_PHONE,
     })
     phone!: string;
 
     @Column({
         type: DataType.STRING(255),
-        field: Customer.CUSTOMER_AVATAR_URL,
+        field: Hotel.HOTEL_AVATAR_URL,
     })
     avatar_url!: string;
 
     @Column({
         type: DataType.STRING(255),
-        field: Customer.CUSTOMER_ADDRESS,
+        field: Hotel.HOTEL_ADDRESS,
     })
     address!: string;
 
     @Column({
         type: DataType.STRING(255),
-        field: Customer.CUSTOMER_LOCATION,
+        field: Hotel.HOTEL_LOCATION,
     })
     location!: string;
 
-    @Default('customer')
+    @Default('hotel')
     @Column({
         type: DataType.STRING,
         allowNull: false,
-        field: Customer.CUSTOMER_ROLE,
+        field: Hotel.HOTEL_ROLE,
     })
     role!: string;
 
     @Column({
         type: DataType.STRING(255),
-        field: Customer.CUSTOMER_TOKEN,
+        field: Hotel.HOTEL_TOKEN,
     })
     token!: string;
 
@@ -110,7 +110,7 @@ export class Customer extends Model {
     @Column({
         type: DataType.BOOLEAN,
         allowNull: false,
-        field: Customer.CUSTOMER_IS_VERIFIED,
+        field: Hotel.HOTEL_IS_VERIFIED,
     })
     is_verified!: boolean;
 }
