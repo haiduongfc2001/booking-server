@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { Customer } from "../model/Customer";
 import { CustomerRepo } from "../repository/CustomerRepo";
+import { minioClient } from "../config/minio";
+import generateRandomString from "../utils/RandomString";
 
 class CustomerController {
     async create(req: Request, res: Response) {
@@ -161,6 +163,30 @@ class CustomerController {
         }
     }
 
+
+    // API endpoint for uploading hotel photos
+    async uploadHotelPhoto(req: Request, res: Response) {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ error: 'No file uploaded' });
+            }
+
+            const file = req.file;
+
+            // Upload file to MinIO server
+            const metaData = { 'Content-Type': file.mimetype };
+            const objectName = `${Date.now()}_${generateRandomString(10)}_${file.originalname}`;
+            await minioClient.putObject('europetrip', objectName, file.buffer, metaData);
+
+            // Generate URL for uploaded file
+            const fileUrl = await minioClient.presignedGetObject('europetrip', objectName);
+
+            return res.status(200).json({ url: fileUrl });
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+    }
 }
 
 export default new CustomerController()
