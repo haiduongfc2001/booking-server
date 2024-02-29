@@ -11,9 +11,9 @@ class HotelRoutes extends BaseRoutes {
         //     validate(updateHotelSchema),
         //     HotelController.update
         // );
-        // this.router.delete("/delete/:id", HotelController.delete);
+        this.router.delete("/delete/:id", HotelController.delete);
         this.router.get("/getAll", HotelController.findAll);
-        // this.router.get("/detail/:id", HotelController.findById);
+        this.router.get("/detail/:id", HotelController.findById);
     }
 }
 
