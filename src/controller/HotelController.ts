@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { Hotel } from "../model/Hotel";
 import { HotelRepo } from "../repository/HotelRepo";
+import { minioClient } from "../config/minio";
+import generateRandomString from "../utils/RandomString";
 
 class HotelController {
     async create(req: Request, res: Response) {
@@ -19,7 +21,7 @@ class HotelController {
             });
         } catch (err) {
             res.status(500).json({
-                status: "Internal Server Error!",
+                status: 500,
                 message: "Internal Server Error!",
             });
         }
@@ -36,8 +38,8 @@ class HotelController {
             });
 
             if (!existingHotel) {
-                return res.status(400).json({
-                    status: "Bad Request",
+                return res.status(404).json({
+                    status: 404,
                     message: "Hotel not found!",
                 });
             }
@@ -50,7 +52,7 @@ class HotelController {
             });
         } catch (err) {
             res.status(500).json({
-                status: "Internal Server Error!",
+                status: 500,
                 message: "Internal Server Error!",
             });
         }
@@ -67,8 +69,8 @@ class HotelController {
             });
 
             if (!existingHotel) {
-                return res.status(400).json({
-                    status: "Bad Request",
+                return res.status(404).json({
+                    status: 404,
                     message: "Hotel not found!",
                 });
             }
@@ -82,7 +84,7 @@ class HotelController {
             });
         } catch (err) {
             res.status(500).json({
-                status: "Internal Server Error!",
+                status: 500,
                 message: "Internal Server Error!",
             });
         }
@@ -99,7 +101,7 @@ class HotelController {
             });
         } catch (err) {
             res.status(500).json({
-                status: "Internal Server Error!",
+                status: 500,
                 message: "Internal Server Error!",
             });
         }
@@ -112,15 +114,13 @@ class HotelController {
 
             if (!hotelToUpdate) {
                 return res.status(404).json({
-                    status: "Not Found",
-                    message: "Hotel not found"
+                    status: 404,
+                    message: "Hotel not found!"
                 });
             }
 
             const fieldsToUpdate = [
-                'username', 'password', 'email', 'full_name',
-                'gender', 'phone', 'avatar_url', 'address',
-                'location'
+                'name', 'address', 'location', 'description'
             ];
 
             fieldsToUpdate.forEach(field => {
@@ -137,9 +137,34 @@ class HotelController {
             });
         } catch (err) {
             res.status(500).json({
-                status: "Internal Server Error!",
+                status: 500,
                 message: "Internal Server Error!",
             });
+        }
+    }
+
+
+    // API endpoint for uploading hotel photos
+    async uploadHotelPhoto(req: Request, res: Response) {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ error: 'No file uploaded' });
+            }
+
+            const file = req.file;
+
+            // Upload file to MinIO server
+            const metaData = { 'Content-Type': file.mimetype };
+            const objectName = `${Date.now()}_${generateRandomString(10)}_${file.originalname}`;
+            await minioClient.putObject('europetrip', objectName, file.buffer, metaData);
+
+            // Generate URL for uploaded file
+            const fileUrl = await minioClient.presignedGetObject('europetrip', objectName);
+
+            return res.status(200).json({ url: fileUrl });
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            return res.status(500).json({ error: 'Internal server error' });
         }
     }
 

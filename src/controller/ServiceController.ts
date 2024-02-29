@@ -17,7 +17,7 @@ class ServiceController {
             });
         } catch (err) {
             res.status(500).json({
-                status: "Internal Server Error!",
+                status: 500,
                 message: "Internal Server Error!",
             });
         }
@@ -34,7 +34,7 @@ class ServiceController {
             });
         } catch (err) {
             res.status(500).json({
-                status: "Internal Server Error!",
+                status: 500,
                 message: "Internal Server Error!",
             });
         }
@@ -52,7 +52,7 @@ class ServiceController {
             });
         } catch (err) {
             res.status(500).json({
-                status: "Internal Server Error!",
+                status: 500,
                 message: "Internal Server Error!",
             });
         }
@@ -69,7 +69,7 @@ class ServiceController {
             });
         } catch (err) {
             res.status(500).json({
-                status: "Internal Server Error!",
+                status: 500,
                 message: "Internal Server Error!",
             });
         }
@@ -92,7 +92,7 @@ class ServiceController {
             });
         } catch (err) {
             res.status(500).json({
-                status: "Internal Server Error!",
+                status: 500,
                 message: "Internal Server Error!",
             });
         }
