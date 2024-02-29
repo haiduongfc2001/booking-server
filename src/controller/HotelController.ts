@@ -11,19 +11,6 @@ class HotelController {
             new_hotel.location = req.body.location;
             new_hotel.description = req.body.description;
 
-            // const existingHotel = await Hotel.findOne({
-            //     where: {
-            //         username: req.body.name,
-            //     }
-            // })
-
-            // if (existingHotel) {
-            //     return res.status(400).json({
-            //         status: "Bad Request",
-            //         message: "Hotel already exists!"
-            //     });
-            // }
-
             await new HotelRepo().save(new_hotel);
 
             res.status(201).json({

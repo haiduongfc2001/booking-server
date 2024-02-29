@@ -21,7 +21,7 @@ export class Hotel extends Model {
 
     @Column({
         type: DataType.STRING(100),
-        // allowNull: false,
+        allowNull: false,
         // unique: true,
         field: Hotel.HOTEL_NAME,
     })
@@ -29,21 +29,21 @@ export class Hotel extends Model {
 
     @Column({
         type: DataType.STRING(255),
-        // allowNull: false,
+        allowNull: false,
         field: Hotel.HOTEL_ADDRESS,
     })
     address!: string;
 
     @Column({
         type: DataType.STRING(255),
-        // allowNull: false,
+        allowNull: false,
         field: Hotel.HOTEL_LOCATION,
     })
     location!: string;
 
     @Column({
         type: DataType.STRING(255),
-        // allowNull: false,
+        allowNull: false,
         field: Hotel.HOTEL_DESCRIPTION,
     })
     description!: string;

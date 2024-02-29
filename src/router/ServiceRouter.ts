@@ -5,15 +5,15 @@ import { createServiceSchema, updateServiceSchema } from "../schema/ServiceSchem
 
 class ServiceRoutes extends BaseRoutes {
     public routes(): void {
-        this.router.post("", validate(createServiceSchema), ServiceController.create);
+        this.router.post("/create", validate(createServiceSchema), ServiceController.create);
         this.router.patch(
-            "/:id",
+            "/update/:id",
             validate(updateServiceSchema),
             ServiceController.update
         );
-        this.router.delete("/:id", ServiceController.delete);
-        this.router.get("", ServiceController.findAll);
-        this.router.get("/:id", ServiceController.findById);
+        this.router.delete("/delete/:id", ServiceController.delete);
+        this.router.get("/getAll", ServiceController.findAll);
+        this.router.get("/detail/:id", ServiceController.findById);
     }
 }
 

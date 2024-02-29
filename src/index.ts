@@ -1,7 +1,6 @@
 import express, { Application, Request, Response } from "express";
 import cors from 'cors';
 import Database from "./config/database";
-import NoteRouter from "./router/NoteRouter";
 import ServiceRouter from "./router/ServiceRouter";
 import CustomerRouter from "./router/CustomerRouter";
 import HotelRouter from "./router/HotelRouter";
@@ -33,7 +32,6 @@ class App {
     this.app.route("/").get((req: Request, res: Response) => {
       res.send("welcome home");
     });
-    this.app.use("/api/v1/note", NoteRouter);
     this.app.use("/api/v1/service", ServiceRouter);
     this.app.use("/api/v1/customer", CustomerRouter);
     this.app.use("/api/v1/hotel", HotelRouter);
