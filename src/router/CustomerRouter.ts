@@ -17,9 +17,9 @@ class CustomerRoutes extends BaseRoutes {
             validate(updateCustomerSchema),
             CustomerController.update
         );
-        this.router.delete("/:id", CustomerController.delete);
-        this.router.get("", CustomerController.findAll);
-        this.router.get("/:id", CustomerController.findById);
+        this.router.delete("/delete/:id", CustomerController.delete);
+        this.router.get("/getAll", CustomerController.findAll);
+        this.router.get("/detail/:id", CustomerController.findById);
         this.router.post("/upload/hotel-photo", upload.single('image'), CustomerController.uploadHotelPhoto);
     }
 }

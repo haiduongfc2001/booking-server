@@ -3,6 +3,7 @@ import * as dotenv from "dotenv";
 import { Note } from "../model/Note";
 import { Service } from "../model/Service";
 import { Customer } from "../model/Customer";
+import { Hotel } from "../model/Hotel";
 dotenv.config();
 
 
@@ -36,7 +37,7 @@ class Database {
       host: this.POSTGRES_HOST,
       port: this.POSTGRES_PORT,
       dialect: "postgres",
-      models: [Note, Service, Customer],
+      models: [Note, Service, Customer, Hotel],
       define: config.define
     });
 

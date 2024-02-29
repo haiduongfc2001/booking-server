@@ -13,15 +13,10 @@ export class HotelRepo implements IHotelRepo {
     async save(hotel: Hotel): Promise<void> {
         try {
             await Hotel.create({
-                username: hotel.username,
-                email: hotel.email,
-                password: hotel.password,
-                full_name: hotel.full_name,
-                gender: hotel.gender,
-                phone: hotel.phone,
-                avatar_url: hotel.avatar_url,
+                name: hotel.name,
                 address: hotel.address,
                 location: hotel.location,
+                description: hotel.description,
             });
         } catch (error) {
             throw new Error("Failed to create hotel!");
@@ -40,15 +35,10 @@ export class HotelRepo implements IHotelRepo {
                 throw new Error("Hotel not found!");
             }
 
-            new_hotel.username = hotel.username;
-            new_hotel.password = hotel.password;
-            new_hotel.email = hotel.email;
-            new_hotel.full_name = hotel.full_name;
-            new_hotel.gender = hotel.gender;
-            new_hotel.phone = hotel.phone;
-            new_hotel.avatar_url = hotel.avatar_url;
+            new_hotel.name = hotel.name;
             new_hotel.address = hotel.address;
             new_hotel.location = hotel.location;
+            new_hotel.description = hotel.description;
 
             await new_hotel.save();
         } catch (error) {

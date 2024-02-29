@@ -6,26 +6,21 @@ class HotelController {
     async create(req: Request, res: Response) {
         try {
             const new_hotel = new Hotel();
-            new_hotel.username = req.body.username;
-            new_hotel.password = req.body.password;
-            new_hotel.email = req.body.email;
-            new_hotel.full_name = req.body.full_name;
-            new_hotel.gender = req.body.gender;
-            new_hotel.phone = req.body.phone;
-            new_hotel.avatar_url = req.body.avatar_url;
+            new_hotel.name = req.body.name;
             new_hotel.address = req.body.address;
             new_hotel.location = req.body.location;
+            new_hotel.description = req.body.description;
 
             // const existingHotel = await Hotel.findOne({
             //     where: {
-            //         username: req.body.username,
+            //         username: req.body.name,
             //     }
             // })
 
             // if (existingHotel) {
             //     return res.status(400).json({
             //         status: "Bad Request",
-            //         message: "Username already exists!"
+            //         message: "Hotel already exists!"
             //     });
             // }
 
