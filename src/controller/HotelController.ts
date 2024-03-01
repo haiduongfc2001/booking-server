@@ -148,7 +148,9 @@ class HotelController {
     async uploadHotelPhoto(req: Request, res: Response) {
         try {
             if (!req.file) {
-                return res.status(400).json({ error: 'No file uploaded' });
+                return res.status(400).json({
+                    status: 400, error: 'No file uploaded'
+                });
             }
 
             const file = req.file;

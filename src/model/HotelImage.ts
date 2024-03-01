@@ -30,7 +30,7 @@ export class HotelImage extends Model {
     hotel!: Hotel;
 
     @Column({
-        type: DataType.STRING(255),
+        type: DataType.TEXT,
         allowNull: false,
         field: HotelImage.HOTEL_IMAGE_URL,
     })
