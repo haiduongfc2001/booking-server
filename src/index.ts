@@ -4,6 +4,7 @@ import Database from "./config/database";
 import ServiceRouter from "./router/ServiceRouter";
 import CustomerRouter from "./router/CustomerRouter";
 import HotelRouter from "./router/HotelRouter";
+import HotelImageRouter from "./router/HotelImageRouter";
 
 class App {
   public app: Application;
@@ -35,6 +36,7 @@ class App {
     this.app.use("/api/v1/service", ServiceRouter);
     this.app.use("/api/v1/customer", CustomerRouter);
     this.app.use("/api/v1/hotel", HotelRouter);
+    this.app.use("/api/v1/hotel-image", HotelImageRouter);
   }
 }
 
