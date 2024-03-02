@@ -5,6 +5,7 @@ interface IHotelImageRepo {
     save(hotelImage: HotelImage): Promise<void>;
     retrieveAll(): Promise<HotelImage[]>;
     getUrlsByHotelId(hotel_id: string): Promise<{ id: number, url: string }[]>;
+    deleteImagesByHotelId(hotel_id: string): Promise<void>;
 }
 
 export class HotelImageRepo implements IHotelImageRepo {
@@ -48,5 +49,13 @@ export class HotelImageRepo implements IHotelImageRepo {
         } catch (error: any) {
             throw new Error("Failed to get URLs by hotel_id: " + error.message);
         }
+    }
+
+    async deleteImagesByHotelId(hotel_id: string): Promise<void> {
+        await HotelImage.destroy({
+            where: {
+                hotel_id: hotel_id
+            }
+        })
     }
 }
