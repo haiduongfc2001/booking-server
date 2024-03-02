@@ -4,6 +4,7 @@ import { HotelImage } from "../model/HotelImage";
 import generateRandomString from "../utils/RandomString";
 import { minioClient } from "../config/minio";
 import { Hotel } from "../model/Hotel";
+import { DEFAULT_MINIO } from "../config/constant";
 
 class HotelImageController {
     // Function to handle creation of a new hotel image
@@ -36,10 +37,10 @@ class HotelImageController {
                 // Upload the file to MinIO server with specified object name
                 const metaData = { 'Content-Type': file.mimetype };
                 const objectName = `${folder}/${Date.now()}_${generateRandomString(10)}_${file.originalname}`;
-                await minioClient.putObject('europetrip', objectName, file.buffer, metaData);
+                await minioClient.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
 
                 // Generate URL for the uploaded file
-                const fileUrl = await minioClient.presignedGetObject('europetrip', objectName);
+                const fileUrl = await minioClient.presignedGetObject(DEFAULT_MINIO.BUCKET, objectName);
 
                 // Create a new HotelImage object with hotel_id and fileUrl
                 const new_hotel_image = new HotelImage({
@@ -87,6 +88,35 @@ class HotelImageController {
             });
         }
     }
+
+    async getUrlsByHotelId(req: Request, res: Response) {
+        try {
+            const hotel_id = req.params.hotel_id;
+            const hotelExists = await Hotel.findByPk(hotel_id);
+            if (!hotelExists) {
+                return res.status(404).json({
+                    status: 404,
+                    message: 'Hotel not found!'
+                });
+            }
+
+            const hotelImageRepo = new HotelImageRepo();
+            const urls = await hotelImageRepo.getUrlsByHotelId(hotel_id);
+
+            res.status(200).json({
+                status: 200,
+                message: "Successfully fetched URLs by hotel_id",
+                data: urls,
+            });
+        } catch (error) {
+            console.error("Error fetching URLs by hotel_id:", error);
+            res.status(500).json({
+                status: 500,
+                message: "Internal Server Error!",
+            });
+        }
+    }
+
 }
 
 export default new HotelImageController()

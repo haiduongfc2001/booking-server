@@ -3,6 +3,7 @@ import { Hotel } from "../model/Hotel";
 import { HotelRepo } from "../repository/HotelRepo";
 import { minioClient } from "../config/minio";
 import generateRandomString from "../utils/RandomString";
+import { DEFAULT_MINIO } from "../config/constant";
 
 class HotelController {
     async create(req: Request, res: Response) {
@@ -158,10 +159,10 @@ class HotelController {
             // Upload file to MinIO server
             const metaData = { 'Content-Type': file.mimetype };
             const objectName = `${Date.now()}_${generateRandomString(10)}_${file.originalname}`;
-            await minioClient.putObject('europetrip', objectName, file.buffer, metaData);
+            await minioClient.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
 
             // Generate URL for uploaded file
-            const fileUrl = await minioClient.presignedGetObject('europetrip', objectName);
+            const fileUrl = await minioClient.presignedGetObject(DEFAULT_MINIO.BUCKET, objectName);
 
             return res.status(200).json({ url: fileUrl });
         } catch (error) {

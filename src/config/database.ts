@@ -38,7 +38,8 @@ class Database {
       port: this.POSTGRES_PORT,
       dialect: "postgres",
       models: [Service, Customer, Hotel, HotelImage],
-      define: config.define
+      define: config.define,
+      logging: false,
     });
 
     await this.sequelize
