@@ -36,7 +36,7 @@ class HotelImageController {
 
                 // Upload the file to MinIO server with specified object name
                 const metaData = { 'Content-Type': file.mimetype };
-                const objectName = `${folder}/${Date.now()}_${generateRandomString(10)}_${file.originalname}`;
+                const objectName = `${folder}/${Date.now()}_${generateRandomString(10)}_${file.originalname.replace(/\s/g, '')}`;
                 await minioClient.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
 
                 // Generate URL for the uploaded file
@@ -132,7 +132,7 @@ class HotelImageController {
             const hotelImageRepo = new HotelImageRepo();
 
             // Delete hotel images from the database
-            await hotelImageRepo.deleteImagesByHotelId(hotel_id);
+            await hotelImageRepo.deleteAll(hotel_id);
 
             // List objects (images) from MinIO server corresponding to the hotel_id
             const objectsList: any[] = [];
@@ -149,6 +149,7 @@ class HotelImageController {
                     message: "Internal Server Error!"
                 });
             });
+
 
             // After collecting objects, remove them from MinIO server
             objectsStream.on('end', () => {
@@ -177,6 +178,87 @@ class HotelImageController {
             });
         }
     }
+
+    async updateImagesByHotelId(req: Request, res: Response) {
+        try {
+            // Extract hotel_id from request parameters
+            const hotel_id = req.params.hotel_id;
+            const hotelExists = await Hotel.findByPk(hotel_id);
+            if (!hotelExists) {
+                return res.status(404).json({
+                    status: 404,
+                    message: 'Hotel not found!'
+                });
+            }
+
+            // Check if deleteImages is provided in the request and it's an array
+            if (Array.isArray(req.body.deleteImages) && req.body.deleteImages.length > 0) {
+                const deleteImages = req.body.deleteImages;
+
+                // List objects (images) from MinIO server corresponding to the hotel_id
+                const objectsList: string[] = []; // Specify the type as string[]
+                // const objectsStream = minioClient.listObjectsV2(DEFAULT_MINIO.BUCKET, `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}`, true);
+
+                // Collect objects to be deleted
+                for await (const id of deleteImages) {
+                    const hotelImage = await HotelImage.findByPk(id)
+                    if (hotelImage) {
+                        const modifiedUrl = hotelImage.url.replace(DEFAULT_MINIO.END_POINT, "").split('?')[0];
+                        objectsList.push(modifiedUrl);
+                    }
+                }
+
+                // Remove objects from MinIO server
+                await minioClient.removeObjects(DEFAULT_MINIO.BUCKET, objectsList);
+
+                // Delete images from the database
+                const hotelImageRepo = new HotelImageRepo();
+                await hotelImageRepo.deleteImages(deleteImages);
+            }
+
+
+            // Check if files are provided in the request
+            if (Array.isArray(req.files) && req.files.length > 0) {
+                const files = req.files as Express.Multer.File[];
+
+                for (const file of files) {
+                    // Define the folder or path within the bucket
+                    const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}`;
+
+                    // Upload the file to MinIO server with specified object name
+                    const metaData = { 'Content-Type': file.mimetype };
+                    const objectName = `${folder}/${Date.now()}_${generateRandomString(10)}_${file.originalname.replace(/\s/g, '')}}`;
+                    await minioClient.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
+
+                    // Generate URL for the uploaded file
+                    const fileUrl = await minioClient.presignedGetObject(DEFAULT_MINIO.BUCKET, objectName);
+
+                    // Create a new HotelImage object with hotel_id and fileUrl
+                    const new_hotel_image = new HotelImage({
+                        hotel_id: hotel_id,
+                        url: fileUrl
+                    });
+
+                    // Save the new HotelImage object to the database
+                    await new_hotel_image.save();
+                }
+            }
+
+            // Respond with success message
+            res.status(200).json({
+                status: 200,
+                message: "Successfully updated images by hotel_id"
+            });
+        } catch (error) {
+            // Handle error if any
+            console.error("Error updating images by hotel_id:", error);
+            res.status(500).json({
+                status: 500,
+                message: "Internal Server Error!"
+            });
+        }
+    }
+
 }
 
 export default new HotelImageController()

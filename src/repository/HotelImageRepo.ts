@@ -5,7 +5,8 @@ interface IHotelImageRepo {
     save(hotelImage: HotelImage): Promise<void>;
     retrieveAll(): Promise<HotelImage[]>;
     getUrlsByHotelId(hotel_id: string): Promise<{ id: number, url: string }[]>;
-    deleteImagesByHotelId(hotel_id: string): Promise<void>;
+    deleteAll(hotel_id: string): Promise<void>;
+    deleteImages(deleteImages: Array<string>): Promise<void>;
 }
 
 export class HotelImageRepo implements IHotelImageRepo {
@@ -51,11 +52,31 @@ export class HotelImageRepo implements IHotelImageRepo {
         }
     }
 
-    async deleteImagesByHotelId(hotel_id: string): Promise<void> {
-        await HotelImage.destroy({
-            where: {
-                hotel_id: hotel_id
+    async deleteAll(hotel_id: string): Promise<void> {
+        try {
+            await HotelImage.destroy({
+                where: {
+                    hotel_id: hotel_id
+                }
+            });
+            console.log("All images deleted successfully.");
+        } catch (error) {
+            console.error("Error deleting images:", error);
+        }
+    }
+
+    async deleteImages(deleteImages: Array<string>): Promise<void> {
+        try {
+            for (const id of deleteImages) {
+                await HotelImage.destroy({
+                    where: {
+                        id: id
+                    }
+                });
             }
-        })
+            console.log("Images deleted successfully.");
+        } catch (error) {
+
+        }
     }
 }

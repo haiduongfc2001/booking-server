@@ -19,6 +19,11 @@ class HotelImageRoutes extends BaseRoutes {
         this.router.get("/getAll", HotelImageController.findAll);
         this.router.get("/detail/:hotel_id", HotelImageController.getUrlsByHotelId);
         this.router.delete("/delete/:hotel_id", HotelImageController.deleteImagesByHotelId);
+        this.router.patch(
+            "/update/:hotel_id",
+            upload.array('image'),
+            HotelImageController.updateImagesByHotelId
+        );
     }
 }
 
