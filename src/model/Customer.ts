@@ -12,12 +12,12 @@ export class Customer extends Model {
     public static CUSTOMER_FULL_NAME = "full_name" as string;
     public static CUSTOMER_GENDER = "gender" as const;
     public static CUSTOMER_PHONE = "phone" as string;
-    public static CUSTOMER_AVATAR_URL = "avatar_url" as string;
+    public static CUSTOMER_DOB = "dob" as string;
+    public static CUSTOMER_AVATAR = "avatar" as string;
     public static CUSTOMER_ADDRESS = "address" as string;
     public static CUSTOMER_LOCATION = "location" as string;
-    public static CUSTOMER_ROLE = "role" as string;
-    public static CUSTOMER_IS_VERIFIED = "is_verified" as string;
     public static CUSTOMER_TOKEN = "token" as string;
+    public static CUSTOMER_IS_VERIFIED = "is_verified" as string;
 
     @Column({
         type: DataType.INTEGER,
@@ -63,8 +63,7 @@ export class Customer extends Model {
         allowNull: false,
         field: Customer.CUSTOMER_GENDER,
     })
-    gender!: any;
-
+    gender!: string;
 
     @Column({
         type: DataType.STRING(255),
@@ -76,9 +75,15 @@ export class Customer extends Model {
 
     @Column({
         type: DataType.STRING(255),
-        field: Customer.CUSTOMER_AVATAR_URL,
+        field: Customer.CUSTOMER_DOB,
     })
-    avatar_url!: string;
+    dob!: string;
+
+    @Column({
+        type: DataType.STRING(255),
+        field: Customer.CUSTOMER_AVATAR,
+    })
+    avatar!: string;
 
     @Column({
         type: DataType.STRING(255),
@@ -91,14 +96,6 @@ export class Customer extends Model {
         field: Customer.CUSTOMER_LOCATION,
     })
     location!: string;
-
-    @Default('customer')
-    @Column({
-        type: DataType.STRING,
-        allowNull: false,
-        field: Customer.CUSTOMER_ROLE,
-    })
-    role!: string;
 
     @Column({
         type: DataType.STRING(255),

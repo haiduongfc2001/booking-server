@@ -14,12 +14,13 @@ export class CustomerRepo implements ICustomerRepo {
         try {
             await Customer.create({
                 username: customer.username,
-                email: customer.email,
                 password: customer.password,
+                email: customer.email,
                 full_name: customer.full_name,
                 gender: customer.gender,
                 phone: customer.phone,
-                avatar_url: customer.avatar_url,
+                dob: customer.dob,
+                avatar: customer.avatar,
                 address: customer.address,
                 location: customer.location,
             });
@@ -46,7 +47,8 @@ export class CustomerRepo implements ICustomerRepo {
             new_customer.full_name = customer.full_name;
             new_customer.gender = customer.gender;
             new_customer.phone = customer.phone;
-            new_customer.avatar_url = customer.avatar_url;
+            new_customer.dob = customer.dob;
+            new_customer.avatar = customer.avatar;
             new_customer.address = customer.address;
             new_customer.location = customer.location;
 
@@ -91,9 +93,11 @@ export class CustomerRepo implements ICustomerRepo {
 
     async retrieveAll(): Promise<Customer[]> {
         try {
-            return await Customer.findAll();
+            return await Customer.findAll({
+                order: [['id', 'asc']]
+            });
         } catch (error) {
-            throw new Error("Failed to create customer!");
+            throw new Error("Failed to get all customer!");
         }
     }
 

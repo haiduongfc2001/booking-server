@@ -6,17 +6,6 @@ import ErrorHandler from "../utils/ErrorHandler";
 class CustomerController {
     async createCustomer(req: Request, res: Response) {
         try {
-            const new_customer = new Customer();
-            new_customer.username = req.body.username;
-            new_customer.password = req.body.password;
-            new_customer.email = req.body.email;
-            new_customer.full_name = req.body.full_name;
-            new_customer.gender = req.body.gender;
-            new_customer.phone = req.body.phone;
-            new_customer.avatar_url = req.body.avatar_url;
-            new_customer.address = req.body.address;
-            new_customer.location = req.body.location;
-
             // const existingCustomer = await Customer.findOne({
             //     where: {
             //         username: req.body.username,
@@ -29,6 +18,18 @@ class CustomerController {
             //         message: "Username already exists!"
             //     });
             // }
+
+            const new_customer = new Customer();
+            new_customer.username = req.body.username;
+            new_customer.password = req.body.password;
+            new_customer.email = req.body.email;
+            new_customer.full_name = req.body.full_name;
+            new_customer.gender = req.body.gender;
+            new_customer.phone = req.body.phone;
+            new_customer.dob = req.body.dob;
+            new_customer.avatar = req.body.avatar;
+            new_customer.address = req.body.address;
+            new_customer.location = req.body.location;
 
             await new CustomerRepo().save(new_customer);
 
@@ -126,7 +127,7 @@ class CustomerController {
 
             const fieldsToUpdate = [
                 'username', 'password', 'email', 'full_name',
-                'gender', 'phone', 'avatar_url', 'address',
+                'gender', 'phone', 'dob', 'avatar', 'address',
                 'location'
             ];
 

@@ -23,7 +23,8 @@ export const createCustomerSchema = z.object({
         phone: z
             .string()
             .length(10, { message: "Phone must be 10 characters" }),
-        // avatar_url: z.string(),
+        // dob: z.string(),
+        // avatar: z.string(),
         // address: z.string(),
         // location: z.string(),
     }),
@@ -54,7 +55,8 @@ export const updateCustomerSchema = z.object({
             phone: z
                 .string()
                 .length(10, { message: "Phone must be 10 characters" }),
-            // avatar_url: z.string(),
+            // dob: z.string(),
+            // avatar: z.string(),
             // address: z.string(),
             // location: z.string(),
         })
