@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 import { Customer } from "../model/Customer";
 import { CustomerRepo } from "../repository/CustomerRepo";
+import ErrorHandler from "../utils/ErrorHandler";
 
 class CustomerController {
-    async create(req: Request, res: Response) {
+    async createCustomer(req: Request, res: Response) {
         try {
             const new_customer = new Customer();
             new_customer.username = req.body.username;
@@ -35,15 +36,12 @@ class CustomerController {
                 status: 201,
                 message: "Successfully created customer!",
             });
-        } catch (err) {
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 
-    async delete(req: Request, res: Response) {
+    async deleteCustomer(req: Request, res: Response) {
         try {
             let id = parseInt(req.params["id"]);
 
@@ -66,15 +64,12 @@ class CustomerController {
                 status: 200,
                 message: "Successfully deleted customer!",
             });
-        } catch (err) {
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 
-    async findById(req: Request, res: Response) {
+    async getCustomerById(req: Request, res: Response) {
         try {
             let id = parseInt(req.params["id"]);
 
@@ -98,15 +93,12 @@ class CustomerController {
                 message: `Successfully fetched customer by id ${id}!`,
                 data: new_customer,
             });
-        } catch (err) {
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 
-    async findAll(req: Request, res: Response) {
+    async getAllCustomers(req: Request, res: Response) {
         try {
             const new_customer = await new CustomerRepo().retrieveAll();
 
@@ -115,15 +107,12 @@ class CustomerController {
                 message: "Successfully fetched all customer data!",
                 data: new_customer,
             });
-        } catch (err) {
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 
-    async update(req: Request, res: Response) {
+    async updateCustomer(req: Request, res: Response) {
         try {
             const id = parseInt(req.params["id"]);
             const customerToUpdate = await Customer.findByPk(id);
@@ -153,11 +142,8 @@ class CustomerController {
                 status: 200,
                 message: "Successfully updated customer data!",
             });
-        } catch (err) {
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 }

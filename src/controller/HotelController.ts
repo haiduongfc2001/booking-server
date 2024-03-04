@@ -4,9 +4,10 @@ import { HotelRepo } from "../repository/HotelRepo";
 import { minioClient } from "../config/minio";
 import generateRandomString from "../utils/RandomString";
 import { DEFAULT_MINIO } from "../config/constant";
+import ErrorHandler from "../utils/ErrorHandler";
 
 class HotelController {
-    async create(req: Request, res: Response) {
+    async createHotel(req: Request, res: Response) {
         try {
             const new_hotel = new Hotel();
             new_hotel.name = req.body.name;
@@ -20,15 +21,12 @@ class HotelController {
                 status: 201,
                 message: "Successfully created hotel!",
             });
-        } catch (err) {
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 
-    async delete(req: Request, res: Response) {
+    async deleteHotel(req: Request, res: Response) {
         try {
             let id = parseInt(req.params["id"]);
 
@@ -51,15 +49,12 @@ class HotelController {
                 status: 200,
                 message: "Successfully deleted hotel!",
             });
-        } catch (err) {
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 
-    async findById(req: Request, res: Response) {
+    async getHotelById(req: Request, res: Response) {
         try {
             let id = parseInt(req.params["id"]);
 
@@ -83,15 +78,12 @@ class HotelController {
                 message: `Successfully fetched hotel by id ${id}!`,
                 data: new_hotel,
             });
-        } catch (err) {
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 
-    async findAll(req: Request, res: Response) {
+    async getAllHotels(req: Request, res: Response) {
         try {
             const new_hotel = await new HotelRepo().retrieveAll();
 
@@ -100,15 +92,12 @@ class HotelController {
                 message: "Successfully fetched all hotel data!",
                 data: new_hotel,
             });
-        } catch (err) {
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 
-    async update(req: Request, res: Response) {
+    async updateHotel(req: Request, res: Response) {
         try {
             const id = parseInt(req.params["id"]);
             const hotelToUpdate = await Hotel.findByPk(id);
@@ -136,11 +125,8 @@ class HotelController {
                 status: 200,
                 message: "Successfully updated hotel data!",
             });
-        } catch (err) {
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 

@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 import { Service } from "../model/Service";
 import { ServiceRepo } from "../repository/ServiceRepo";
+import ErrorHandler from "../utils/ErrorHandler";
 
 class ServiceController {
-    async create(req: Request, res: Response) {
+    async createService(req: Request, res: Response) {
         try {
             const new_service = new Service();
             new_service.name = req.body.name;
@@ -15,15 +16,12 @@ class ServiceController {
                 status: 201,
                 message: "Successfully created service!",
             });
-        } catch (err) {
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 
-    async delete(req: Request, res: Response) {
+    async deleteService(req: Request, res: Response) {
         try {
             let id = parseInt(req.params["id"]);
             await new ServiceRepo().delete(id);
@@ -32,15 +30,12 @@ class ServiceController {
                 status: 200,
                 message: "Successfully deleted service!",
             });
-        } catch (err) {
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 
-    async findById(req: Request, res: Response) {
+    async getServiceById(req: Request, res: Response) {
         try {
             let id = parseInt(req.params["id"]);
             const new_service = await new ServiceRepo().retrieveById(id);
@@ -50,15 +45,12 @@ class ServiceController {
                 message: `Successfully fetched service by id ${id}!`,
                 data: new_service,
             });
-        } catch (err) {
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 
-    async findAll(req: Request, res: Response) {
+    async getAllServices(req: Request, res: Response) {
         try {
             const new_service = await new ServiceRepo().retrieveAll();
 
@@ -67,15 +59,12 @@ class ServiceController {
                 message: "Successfully fetched all service data!",
                 data: new_service,
             });
-        } catch (err) {
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 
-    async update(req: Request, res: Response) {
+    async updateService(req: Request, res: Response) {
         try {
             let id = parseInt(req.params["id"]);
             const new_service = new Service();
@@ -90,11 +79,8 @@ class ServiceController {
                 status: 200,
                 message: "Successfully updated service data!",
             });
-        } catch (err) {
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 }

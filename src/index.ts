@@ -5,6 +5,8 @@ import ServiceRouter from "./router/ServiceRouter";
 import CustomerRouter from "./router/CustomerRouter";
 import HotelRouter from "./router/HotelRouter";
 import HotelImageRouter from "./router/HotelImageRouter";
+import * as dotenv from "dotenv";
+dotenv.config();
 
 class App {
   public app: Application;

@@ -5,10 +5,11 @@ import generateRandomString from "../utils/RandomString";
 import { minioClient } from "../config/minio";
 import { Hotel } from "../model/Hotel";
 import { DEFAULT_MINIO } from "../config/constant";
+import ErrorHandler from "../utils/ErrorHandler";
 
 class HotelImageController {
     // Function to handle creation of a new hotel image
-    async create(req: Request, res: Response) {
+    async createImages(req: Request, res: Response) {
         try {
             // Check if files are uploaded
             if (!req.files || req.files.length === 0) {
@@ -58,17 +59,12 @@ class HotelImageController {
                 message: "Successfully created new hotel images!",
             });
         } catch (error) {
-            // Handle error if any
-            console.error("Error creating hotel images:", error);
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 
     // Function to fetch all hotel image data
-    async findAll(req: Request, res: Response) {
+    async getAllHotelImages(req: Request, res: Response) {
         try {
             // Retrieve all hotel image data from the repository
             const new_hotel_image = await new HotelImageRepo().retrieveAll();
@@ -79,16 +75,12 @@ class HotelImageController {
                 message: "Successfully fetched all hotel image data!",
                 data: new_hotel_image,
             });
-        } catch (err) {
-            // Handle error if any
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 
-    async getUrlsByHotelId(req: Request, res: Response) {
+    async getImagesByHotelId(req: Request, res: Response) {
         try {
             const hotel_id = req.params.hotel_id;
             const hotelExists = await Hotel.findByPk(hotel_id);
@@ -108,11 +100,7 @@ class HotelImageController {
                 data: urls,
             });
         } catch (error) {
-            console.error("Error fetching URLs by hotel_id:", error);
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 
@@ -170,12 +158,7 @@ class HotelImageController {
                 });
             });
         } catch (error) {
-            // Handle error if any
-            console.error("Error deleting images by hotel_id:", error);
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!",
-            });
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 
