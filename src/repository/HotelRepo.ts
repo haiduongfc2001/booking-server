@@ -9,17 +9,19 @@ interface IHotelRepo {
 }
 
 export class HotelRepo implements IHotelRepo {
-
     async save(hotel: Hotel): Promise<void> {
         try {
+            console.log(hotel);
+
             await Hotel.create({
                 name: hotel.name,
                 address: hotel.address,
                 location: hotel.location,
                 description: hotel.description,
+                contact: hotel.contact,
             });
         } catch (error) {
-            throw new Error("Failed to create hotel!");
+            throw new Error("Failed to save hotel!");
         }
     }
 
@@ -39,10 +41,11 @@ export class HotelRepo implements IHotelRepo {
             new_hotel.address = hotel.address;
             new_hotel.location = hotel.location;
             new_hotel.description = hotel.description;
+            new_hotel.contact = hotel.contact;
 
             await new_hotel.save();
         } catch (error) {
-            throw new Error("Failed to create hotel!");
+            throw new Error("Failed to update hotel!");
         }
     }
 
@@ -59,7 +62,7 @@ export class HotelRepo implements IHotelRepo {
 
             await new_hotel.destroy();
         } catch (error) {
-            throw new Error("Failed to create hotel!");
+            throw new Error("Failed to delete hotel!");
         }
     }
 
@@ -75,7 +78,7 @@ export class HotelRepo implements IHotelRepo {
             }
             return new_hotel;
         } catch (error) {
-            throw new Error("Failed to create hotel!");
+            throw new Error("Failed to retrieve hotel by ID!");
         }
     }
 
@@ -83,8 +86,7 @@ export class HotelRepo implements IHotelRepo {
         try {
             return await Hotel.findAll();
         } catch (error) {
-            throw new Error("Failed to create hotel!");
+            throw new Error("Failed to retrieve all hotels!");
         }
     }
-
 }

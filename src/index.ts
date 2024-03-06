@@ -6,6 +6,7 @@ import CustomerRouter from "./router/CustomerRouter";
 import HotelRouter from "./router/HotelRouter";
 import HotelImageRouter from "./router/HotelImageRouter";
 import * as dotenv from "dotenv";
+import StaffRouter from "./router/StaffRouter";
 dotenv.config();
 
 class App {
@@ -39,6 +40,7 @@ class App {
     this.app.use("/api/v1/customer", CustomerRouter);
     this.app.use("/api/v1/hotel", HotelRouter);
     this.app.use("/api/v1/hotel-image", HotelImageRouter);
+    this.app.use("/api/v1/staff", StaffRouter);
   }
 }
 

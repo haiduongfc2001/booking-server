@@ -14,6 +14,9 @@ export const createHotelSchema = z.object({
         description: z
             .string()
             .min(1, { message: "Hotel name must be greater than 1 characters!" }),
+        contact: z
+            .string()
+            .length(10, { message: "Phone must be 10 characters" }),
     }),
 });
 
@@ -33,6 +36,9 @@ export const updateHotelSchema = z.object({
             description: z
                 .string()
                 .min(1, { message: "Hotel name must be greater than 1 characters!" }),
+            contact: z
+                .string()
+                .length(10, { message: "Phone must be 10 characters" }),
         })
         .partial(),
 });

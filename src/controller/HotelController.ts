@@ -14,6 +14,7 @@ class HotelController {
             new_hotel.address = req.body.address;
             new_hotel.location = req.body.location;
             new_hotel.description = req.body.description;
+            new_hotel.contact = req.body.contact;
 
             await new HotelRepo().save(new_hotel);
 
@@ -110,7 +111,7 @@ class HotelController {
             }
 
             const fieldsToUpdate = [
-                'name', 'address', 'location', 'description'
+                'name', 'address', 'location', 'description', 'contact'
             ];
 
             fieldsToUpdate.forEach(field => {

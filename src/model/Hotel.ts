@@ -10,6 +10,7 @@ export class Hotel extends Model {
     public static HOTEL_ADDRESS = "address" as string;
     public static HOTEL_LOCATION = "location" as string;
     public static HOTEL_DESCRIPTION = "description" as string;
+    public static HOTEL_CONTACT = "contact" as string;
 
     @Column({
         type: DataType.INTEGER,
@@ -47,4 +48,11 @@ export class Hotel extends Model {
         field: Hotel.HOTEL_DESCRIPTION,
     })
     description!: string;
+
+    @Column({
+        type: DataType.STRING(255),
+        allowNull: false,
+        field: Hotel.HOTEL_CONTACT,
+    })
+    contact!: string;
 }
