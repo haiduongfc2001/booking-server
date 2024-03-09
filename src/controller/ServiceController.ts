@@ -6,11 +6,11 @@ import ErrorHandler from "../utils/ErrorHandler";
 class ServiceController {
     async createService(req: Request, res: Response) {
         try {
-            const new_service = new Service();
-            new_service.name = req.body.name;
-            new_service.description = req.body.description;
+            const newService = new Service();
+            newService.name = req.body.name;
+            newService.description = req.body.description;
 
-            await new ServiceRepo().save(new_service);
+            await new ServiceRepo().save(newService);
 
             res.status(201).json({
                 status: 201,
@@ -23,8 +23,8 @@ class ServiceController {
 
     async deleteService(req: Request, res: Response) {
         try {
-            let id = parseInt(req.params["id"]);
-            await new ServiceRepo().delete(id);
+            let serviceId = parseInt(req.params["id"]);
+            await new ServiceRepo().delete(serviceId);
 
             res.status(200).json({
                 status: 200,
@@ -37,13 +37,13 @@ class ServiceController {
 
     async getServiceById(req: Request, res: Response) {
         try {
-            let id = parseInt(req.params["id"]);
-            const new_service = await new ServiceRepo().retrieveById(id);
+            let serviceId = parseInt(req.params["id"]);
+            const service = await new ServiceRepo().retrieveById(serviceId);
 
             res.status(200).json({
                 status: 200,
-                message: `Successfully fetched service by id ${id}!`,
-                data: new_service,
+                message: `Successfully fetched service by id ${serviceId}!`,
+                data: service,
             });
         } catch (error) {
             return ErrorHandler.handleServerError(res, error);
@@ -52,12 +52,12 @@ class ServiceController {
 
     async getAllServices(req: Request, res: Response) {
         try {
-            const new_service = await new ServiceRepo().retrieveAll();
+            const services = await new ServiceRepo().retrieveAll();
 
             res.status(200).json({
                 status: 200,
                 message: "Successfully fetched all service data!",
-                data: new_service,
+                data: services,
             });
         } catch (error) {
             return ErrorHandler.handleServerError(res, error);
@@ -66,14 +66,14 @@ class ServiceController {
 
     async updateService(req: Request, res: Response) {
         try {
-            let id = parseInt(req.params["id"]);
-            const new_service = new Service();
+            let serviceId = parseInt(req.params["id"]);
+            const updatedService = new Service();
 
-            new_service.id = id;
-            new_service.name = req.body.name;
-            new_service.description = req.body.description;
+            updatedService.id = serviceId;
+            updatedService.name = req.body.name;
+            updatedService.description = req.body.description;
 
-            await new ServiceRepo().update(new_service);
+            await new ServiceRepo().update(updatedService);
 
             res.status(200).json({
                 status: 200,

@@ -44,13 +44,13 @@ class HotelImageController {
                 const fileUrl = await minioClient.presignedGetObject(DEFAULT_MINIO.BUCKET, objectName);
 
                 // Create a new HotelImage object with hotel_id and fileUrl
-                const new_hotel_image = new HotelImage({
+                const newHotelImage = new HotelImage({
                     hotel_id: hotel_id,
                     url: fileUrl
                 });
 
                 // Save the new HotelImage object to the database
-                await new_hotel_image.save();
+                await newHotelImage.save();
             }
 
             // Respond with success message
@@ -67,13 +67,13 @@ class HotelImageController {
     async getAllHotelImages(req: Request, res: Response) {
         try {
             // Retrieve all hotel image data from the repository
-            const new_hotel_image = await new HotelImageRepo().retrieveAll();
+            const hotelImages = await new HotelImageRepo().retrieveAll();
 
             // Respond with success message and data
             res.status(200).json({
                 status: 200,
                 message: "Successfully fetched all hotel image data!",
-                data: new_hotel_image,
+                data: hotelImages,
             });
         } catch (error) {
             return ErrorHandler.handleServerError(res, error);
@@ -217,13 +217,13 @@ class HotelImageController {
                     const fileUrl = await minioClient.presignedGetObject(DEFAULT_MINIO.BUCKET, objectName);
 
                     // Create a new HotelImage object with hotel_id and fileUrl
-                    const new_hotel_image = new HotelImage({
+                    const newHotelImage = new HotelImage({
                         hotel_id: hotel_id,
                         url: fileUrl
                     });
 
                     // Save the new HotelImage object to the database
-                    await new_hotel_image.save();
+                    await newHotelImage.save();
                 }
             }
 

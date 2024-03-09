@@ -9,14 +9,14 @@ import ErrorHandler from "../utils/ErrorHandler";
 class HotelController {
     async createHotel(req: Request, res: Response) {
         try {
-            const new_hotel = new Hotel();
-            new_hotel.name = req.body.name;
-            new_hotel.address = req.body.address;
-            new_hotel.location = req.body.location;
-            new_hotel.description = req.body.description;
-            new_hotel.contact = req.body.contact;
+            const newHotel = new Hotel();
+            newHotel.name = req.body.name;
+            newHotel.address = req.body.address;
+            newHotel.location = req.body.location;
+            newHotel.description = req.body.description;
+            newHotel.contact = req.body.contact;
 
-            await new HotelRepo().save(new_hotel);
+            await new HotelRepo().save(newHotel);
 
             res.status(201).json({
                 status: 201,
@@ -72,12 +72,12 @@ class HotelController {
                 });
             }
 
-            const new_hotel = await new HotelRepo().retrieveById(id);
+            const newHotel = await new HotelRepo().retrieveById(id);
 
             res.status(200).json({
                 status: 200,
                 message: `Successfully fetched hotel by id ${id}!`,
-                data: new_hotel,
+                data: newHotel,
             });
         } catch (error) {
             return ErrorHandler.handleServerError(res, error);
@@ -86,12 +86,12 @@ class HotelController {
 
     async getAllHotels(req: Request, res: Response) {
         try {
-            const new_hotel = await new HotelRepo().retrieveAll();
+            const hotelsData = await new HotelRepo().retrieveAll();
 
             res.status(200).json({
                 status: 200,
                 message: "Successfully fetched all hotel data!",
-                data: new_hotel,
+                data: hotelsData,
             });
         } catch (error) {
             return ErrorHandler.handleServerError(res, error);

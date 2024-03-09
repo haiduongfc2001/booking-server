@@ -1,8 +1,8 @@
 import { Customer } from "../model/Customer";
 
 interface ICustomerRepo {
-    save(customer: Customer): Promise<void>;
-    update(customer: Customer): Promise<void>;
+    save(newCustomer: Customer): Promise<void>;
+    update(updatedCustomer: Customer): Promise<void>;
     delete(customerId: number): Promise<void>;
     retrieveById(customerId: number): Promise<Customer>;
     retrieveAll(): Promise<Customer[]>;
@@ -10,84 +10,84 @@ interface ICustomerRepo {
 
 export class CustomerRepo implements ICustomerRepo {
 
-    async save(customer: Customer): Promise<void> {
+    async save(newCustomer: Customer): Promise<void> {
         try {
             await Customer.create({
-                username: customer.username,
-                password: customer.password,
-                email: customer.email,
-                full_name: customer.full_name,
-                gender: customer.gender,
-                phone: customer.phone,
-                dob: customer.dob,
-                avatar: customer.avatar,
-                address: customer.address,
-                location: customer.location,
+                username: newCustomer.username,
+                password: newCustomer.password,
+                email: newCustomer.email,
+                full_name: newCustomer.full_name,
+                gender: newCustomer.gender,
+                phone: newCustomer.phone,
+                dob: newCustomer.dob,
+                avatar: newCustomer.avatar,
+                address: newCustomer.address,
+                location: newCustomer.location,
             });
         } catch (error) {
-            throw new Error("Failed to create customer!");
+            throw new Error("Failed to save customer!");
         }
     }
 
-    async update(customer: Customer): Promise<void> {
+    async update(updatedCustomer: Customer): Promise<void> {
         try {
-            const new_customer = await Customer.findOne({
+            const existingCustomer = await Customer.findOne({
                 where: {
-                    id: customer.id,
+                    id: updatedCustomer.id,
                 },
             });
 
-            if (!new_customer) {
+            if (!existingCustomer) {
                 throw new Error("Customer not found!");
             }
 
-            new_customer.username = customer.username;
-            new_customer.password = customer.password;
-            new_customer.email = customer.email;
-            new_customer.full_name = customer.full_name;
-            new_customer.gender = customer.gender;
-            new_customer.phone = customer.phone;
-            new_customer.dob = customer.dob;
-            new_customer.avatar = customer.avatar;
-            new_customer.address = customer.address;
-            new_customer.location = customer.location;
+            existingCustomer.username = updatedCustomer.username;
+            existingCustomer.password = updatedCustomer.password;
+            existingCustomer.email = updatedCustomer.email;
+            existingCustomer.full_name = updatedCustomer.full_name;
+            existingCustomer.gender = updatedCustomer.gender;
+            existingCustomer.phone = updatedCustomer.phone;
+            existingCustomer.dob = updatedCustomer.dob;
+            existingCustomer.avatar = updatedCustomer.avatar;
+            existingCustomer.address = updatedCustomer.address;
+            existingCustomer.location = updatedCustomer.location;
 
-            await new_customer.save();
+            await existingCustomer.save();
         } catch (error) {
-            throw new Error("Failed to create customer!");
+            throw new Error("Failed to update customer!");
         }
     }
 
     async delete(customerId: number): Promise<void> {
         try {
-            const new_customer = await Customer.findOne({
+            const existingCustomer = await Customer.findOne({
                 where: {
                     id: customerId,
                 },
             });
-            if (!new_customer) {
+            if (!existingCustomer) {
                 throw new Error("Customer not found!");
             }
 
-            await new_customer.destroy();
+            await existingCustomer.destroy();
         } catch (error) {
-            throw new Error("Failed to create customer!");
+            throw new Error("Failed to delete customer!");
         }
     }
 
     async retrieveById(customerId: number): Promise<Customer> {
         try {
-            const new_customer = await Customer.findOne({
+            const existingCustomer = await Customer.findOne({
                 where: {
                     id: customerId,
                 },
             });
-            if (!new_customer) {
+            if (!existingCustomer) {
                 throw new Error("Customer not found!");
             }
-            return new_customer;
+            return existingCustomer;
         } catch (error) {
-            throw new Error("Failed to create customer!");
+            throw new Error("Failed to retrieve customer!");
         }
     }
 
@@ -97,8 +97,7 @@ export class CustomerRepo implements ICustomerRepo {
                 order: [['id', 'asc']]
             });
         } catch (error) {
-            throw new Error("Failed to get all customer!");
+            throw new Error("Failed to retrieve all customers!");
         }
     }
-
 }

@@ -2,22 +2,23 @@ import { Request, Response } from "express";
 import { Staff } from "../model/Staff";
 import { StaffRepo } from "../repository/StaffRepo";
 import ErrorHandler from "../utils/ErrorHandler";
+import { Hotel } from "../model/Hotel";
 
 class StaffController {
     async createStaff(req: Request, res: Response) {
         try {
-            // const existingStaff = await Staff.findOne({
-            //     where: {
-            //         username: req.body.username,
-            //     }
-            // })
+            const existingHotel = await Hotel.findOne({
+                where: {
+                    id: req.body.hotel_id,
+                }
+            })
 
-            // if (existingStaff) {
-            //     return res.status(400).json({
-            //         status: 400,
-            //         message: "Username already exists!"
-            //     });
-            // }
+            if (!existingHotel) {
+                return res.status(400).json({
+                    status: 400,
+                    message: "The hotel does not exist!"
+                });
+            }
 
             const new_staff = new Staff();
             new_staff.email = req.body.email;

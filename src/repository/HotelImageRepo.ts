@@ -2,19 +2,19 @@ import { HotelImage } from "../model/HotelImage";
 import { ValidationError } from "sequelize";
 
 interface IHotelImageRepo {
-    save(hotelImage: HotelImage): Promise<void>;
+    save(newHotelImage: HotelImage): Promise<void>;
     retrieveAll(): Promise<HotelImage[]>;
-    getUrlsByHotelId(hotel_id: string): Promise<{ id: number, url: string }[]>;
-    deleteAll(hotel_id: string): Promise<void>;
-    deleteImages(deleteImages: Array<string>): Promise<void>;
+    getUrlsByHotelId(hotelId: string): Promise<{ id: number, url: string }[]>;
+    deleteAll(hotelId: string): Promise<void>;
+    deleteImages(imagesToDelete: Array<string>): Promise<void>;
 }
 
 export class HotelImageRepo implements IHotelImageRepo {
-    async save(hotelImage: HotelImage): Promise<void> {
+    async save(newHotelImage: HotelImage): Promise<void> {
         try {
             await HotelImage.create({
-                hotel_id: hotelImage.hotel_id,
-                url: hotelImage.url
+                hotel_id: newHotelImage.hotel_id,
+                url: newHotelImage.url
             });
         } catch (error: any) {
             if (error instanceof ValidationError) {
@@ -35,11 +35,11 @@ export class HotelImageRepo implements IHotelImageRepo {
         }
     }
 
-    async getUrlsByHotelId(hotel_id: string): Promise<{ id: number, url: string }[]> {
+    async getUrlsByHotelId(hotelId: string): Promise<{ id: number, url: string }[]> {
         try {
             const hotelImages = await HotelImage.findAll({
                 where: {
-                    hotel_id: hotel_id
+                    hotel_id: hotelId
                 },
                 attributes: ['id', 'url']
             });
@@ -48,15 +48,15 @@ export class HotelImageRepo implements IHotelImageRepo {
                 url: image.url
             }));
         } catch (error: any) {
-            throw new Error("Failed to get URLs by hotel_id: " + error.message);
+            throw new Error("Failed to get URLs by hotelId: " + error.message);
         }
     }
 
-    async deleteAll(hotel_id: string): Promise<void> {
+    async deleteAll(hotelId: string): Promise<void> {
         try {
             await HotelImage.destroy({
                 where: {
-                    hotel_id: hotel_id
+                    hotel_id: hotelId
                 }
             });
             console.log("All images deleted successfully.");
@@ -65,9 +65,9 @@ export class HotelImageRepo implements IHotelImageRepo {
         }
     }
 
-    async deleteImages(deleteImages: Array<string>): Promise<void> {
+    async deleteImages(imagesToDelete: Array<string>): Promise<void> {
         try {
-            for (const id of deleteImages) {
+            for (const id of imagesToDelete) {
                 await HotelImage.destroy({
                     where: {
                         id: id
@@ -76,7 +76,7 @@ export class HotelImageRepo implements IHotelImageRepo {
             }
             console.log("Images deleted successfully.");
         } catch (error) {
-
+            console.error("Error deleting images:", error);
         }
     }
 }

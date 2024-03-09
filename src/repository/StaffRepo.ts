@@ -1,8 +1,8 @@
 import { Staff } from "../model/Staff";
 
 interface IStaffRepo {
-    save(staff: Staff): Promise<void>;
-    update(staff: Staff): Promise<void>;
+    save(newStaff: Staff): Promise<void>;
+    update(updatedStaff: Staff): Promise<void>;
     delete(staffId: number): Promise<void>;
     retrieveById(staffId: number): Promise<Staff>;
     retrieveAll(): Promise<Staff[]>;
@@ -12,82 +12,82 @@ interface IStaffRepo {
 
 export class StaffRepo implements IStaffRepo {
 
-    async save(staff: Staff): Promise<void> {
+    async save(newStaff: Staff): Promise<void> {
         try {
             await Staff.create({
-                email: staff.email,
-                password: staff.password,
-                full_name: staff.full_name,
-                gender: staff.gender,
-                phone: staff.phone,
-                dob: staff.dob,
-                avatar: staff.avatar,
-                hotel_id: staff.hotel_id,
-                role: staff.role,
+                email: newStaff.email,
+                password: newStaff.password,
+                full_name: newStaff.full_name,
+                gender: newStaff.gender,
+                phone: newStaff.phone,
+                dob: newStaff.dob,
+                avatar: newStaff.avatar,
+                hotel_id: newStaff.hotel_id,
+                role: newStaff.role,
             });
         } catch (error) {
             throw new Error("Failed to create staff!");
         }
     }
 
-    async update(staff: Staff): Promise<void> {
+    async update(updatedStaff: Staff): Promise<void> {
         try {
-            const new_staff = await Staff.findOne({
+            const existingStaff = await Staff.findOne({
                 where: {
-                    id: staff.id,
+                    id: updatedStaff.id,
                 },
             });
 
-            if (!new_staff) {
+            if (!existingStaff) {
                 throw new Error("Staff not found!");
             }
 
-            new_staff.email = staff.email;
-            new_staff.password = staff.password;
-            new_staff.full_name = staff.full_name;
-            new_staff.gender = staff.gender;
-            new_staff.phone = staff.phone;
-            new_staff.dob = staff.dob;
-            new_staff.avatar = staff.avatar;
-            new_staff.hotel_id = staff.hotel_id;
-            new_staff.role = staff.role;
+            existingStaff.email = updatedStaff.email;
+            existingStaff.password = updatedStaff.password;
+            existingStaff.full_name = updatedStaff.full_name;
+            existingStaff.gender = updatedStaff.gender;
+            existingStaff.phone = updatedStaff.phone;
+            existingStaff.dob = updatedStaff.dob;
+            existingStaff.avatar = updatedStaff.avatar;
+            existingStaff.hotel_id = updatedStaff.hotel_id;
+            existingStaff.role = updatedStaff.role;
 
-            await new_staff.save();
+            await existingStaff.save();
         } catch (error) {
-            throw new Error("Failed to create staff!");
+            throw new Error("Failed to update staff!");
         }
     }
 
     async delete(staffId: number): Promise<void> {
         try {
-            const new_staff = await Staff.findOne({
+            const existingStaff = await Staff.findOne({
                 where: {
                     id: staffId,
                 },
             });
-            if (!new_staff) {
+            if (!existingStaff) {
                 throw new Error("Staff not found!");
             }
 
-            await new_staff.destroy();
+            await existingStaff.destroy();
         } catch (error) {
-            throw new Error("Failed to create staff!");
+            throw new Error("Failed to delete staff!");
         }
     }
 
     async retrieveById(staffId: number): Promise<Staff> {
         try {
-            const new_staff = await Staff.findOne({
+            const existingStaff = await Staff.findOne({
                 where: {
                     id: staffId,
                 },
             });
-            if (!new_staff) {
+            if (!existingStaff) {
                 throw new Error("Staff not found!");
             }
-            return new_staff;
+            return existingStaff;
         } catch (error) {
-            throw new Error("Failed to create staff!");
+            throw new Error("Failed to retrieve staff by ID!");
         }
     }
 
@@ -97,7 +97,7 @@ export class StaffRepo implements IStaffRepo {
                 order: [['id', 'asc']]
             });
         } catch (error) {
-            throw new Error("Failed to get all staff!");
+            throw new Error("Failed to retrieve all staff!");
         }
     }
 
@@ -109,7 +109,7 @@ export class StaffRepo implements IStaffRepo {
                 }
             })
         } catch (error) {
-            throw new Error("Failed to get all manager!");
+            throw new Error("Failed to retrieve all managers!");
         }
     }
 
@@ -121,8 +121,7 @@ export class StaffRepo implements IStaffRepo {
                 }
             })
         } catch (error) {
-            throw new Error("Failed to get all receptionist!");
+            throw new Error("Failed to retrieve all receptionists!");
         }
     }
-
 }

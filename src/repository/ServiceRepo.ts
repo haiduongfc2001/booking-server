@@ -1,8 +1,8 @@
 import { Service } from "../model/Service";
 
 interface IServiceRepo {
-    save(service: Service): Promise<void>;
-    update(service: Service): Promise<void>;
+    save(newService: Service): Promise<void>;
+    update(updatedService: Service): Promise<void>;
     delete(serviceId: number): Promise<void>;
     retrieveById(serviceId: number): Promise<Service>;
     retrieveAll(): Promise<Service[]>;
@@ -10,71 +10,74 @@ interface IServiceRepo {
 
 export class ServiceRepo implements IServiceRepo {
 
-    async save(service: Service): Promise<void> {
+    async save(newService: Service): Promise<void> {
         try {
             await Service.create({
-                name: service.name,
-                description: service.description,
+                name: newService.name,
+                description: newService.description,
             });
         } catch (error) {
             throw new Error("Failed to create service!");
         }
     }
-    async update(service: Service): Promise<void> {
+
+    async update(updatedService: Service): Promise<void> {
         try {
-            const new_service = await Service.findOne({
+            const existingService = await Service.findOne({
                 where: {
-                    id: service.id,
+                    id: updatedService.id,
                 },
             });
-            if (!new_service) {
+            if (!existingService) {
                 throw new Error("Service not found!");
             }
-            new_service.name = service.name;
-            new_service.description = service.description;
+            existingService.name = updatedService.name;
+            existingService.description = updatedService.description;
 
-            await new_service.save();
+            await existingService.save();
         } catch (error) {
-            throw new Error("Failed to create service!");
+            throw new Error("Failed to update service!");
         }
     }
+
     async delete(serviceId: number): Promise<void> {
         try {
-            const new_service = await Service.findOne({
+            const existingService = await Service.findOne({
                 where: {
                     id: serviceId,
                 },
             });
-            if (!new_service) {
+            if (!existingService) {
                 throw new Error("Service not found!");
             }
 
-            await new_service.destroy();
+            await existingService.destroy();
         } catch (error) {
-            throw new Error("Failed to create service!");
+            throw new Error("Failed to delete service!");
         }
     }
+
     async retrieveById(serviceId: number): Promise<Service> {
         try {
-            const new_service = await Service.findOne({
+            const existingService = await Service.findOne({
                 where: {
                     id: serviceId,
                 },
             });
-            if (!new_service) {
+            if (!existingService) {
                 throw new Error("Service not found!");
             }
-            return new_service;
+            return existingService;
         } catch (error) {
-            throw new Error("Failed to create service!");
+            throw new Error("Failed to retrieve service by ID!");
         }
     }
+
     async retrieveAll(): Promise<Service[]> {
         try {
             return await Service.findAll();
         } catch (error) {
-            throw new Error("Failed to create service!");
+            throw new Error("Failed to retrieve all services!");
         }
     }
-
 }
