@@ -100,7 +100,9 @@ export class HotelRepo implements IHotelRepo {
 
     async retrieveAll(): Promise<any[]> {
         try {
-            const hotels = await Hotel.findAll();
+            const hotels = await Hotel.findAll({
+                order: [['id', 'asc']]
+            });
 
             const hotelsWithImages = await Promise.all(
                 hotels.map(async (hotel) => {

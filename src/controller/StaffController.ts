@@ -20,6 +20,19 @@ class StaffController {
                 });
             }
 
+            const existingEmail = await Staff.findOne({
+                where: {
+                    email: req.body.email
+                }
+            })
+
+            if (existingEmail) {
+                return res.status(400).json({
+                    status: 400,
+                    message: "Email already exists!"
+                })
+            }
+
             const new_staff = new Staff();
             new_staff.email = req.body.email;
             new_staff.password = req.body.password;

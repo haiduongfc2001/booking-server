@@ -1,27 +1,19 @@
-version: '3'
+version: '3.8'
+
 services:
   minio:
     image: minio/minio
     ports:
       - "9000:9000"
+      - "9001:9001"
     environment:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio123
+    command: server /data --console-address ":9001"
     volumes:
-      - minio_data:/data
-    command: server /data
-  minio-bucket:
-    image: minio/mc
-    depends_on:
-      - minio
-    entrypoint: >
-      /bin/sh -c "
-      /usr/bin/mc config host add myminio http://minio:9000 minio 123@123;
-      /usr/bin/mc mb myminio/file-storage;
-      /usr/bin/mc policy download myminio/file-storage;
-      exit 0;
-      "
-  app:
+      - data:/data
+
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
@@ -29,5 +21,21 @@ services:
       - "5000:5000"
     depends_on:
       - minio
+    environment:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+  postgres:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
 volumes:
-  minio_data:
+  data:

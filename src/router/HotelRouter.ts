@@ -12,6 +12,7 @@ class HotelRoutes extends BaseRoutes {
     public routes(): void {
         this.router.get("/", HotelController.getAllHotels);
         this.router.get("/:id", HotelController.getHotelById);
+        this.router.get("/:id/staff", HotelController.getStaffByHotelId);
         this.router.post(
             "/",
             validate(createHotelSchema),

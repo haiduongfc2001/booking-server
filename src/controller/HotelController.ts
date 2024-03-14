@@ -5,6 +5,8 @@ import { minioClient } from "../config/minio";
 import generateRandomString from "../utils/RandomString";
 import { DEFAULT_MINIO } from "../config/constant";
 import ErrorHandler from "../utils/ErrorHandler";
+import { Staff } from "../model/Staff";
+import { StaffRepo } from "../repository/StaffRepo";
 
 class HotelController {
     async createHotel(req: Request, res: Response) {
@@ -83,6 +85,36 @@ class HotelController {
             return ErrorHandler.handleServerError(res, error);
         }
     }
+
+    async getStaffByHotelId(req: Request, res: Response) {
+        try {
+            let id = parseInt(req.params["id"]);
+
+            const existingHotel = await Hotel.findOne({
+                where: {
+                    id: id,
+                }
+            });
+
+            if (!existingHotel) {
+                return res.status(404).json({
+                    status: 404,
+                    message: "Hotel not found!",
+                });
+            }
+
+            const staffs = await new StaffRepo().retrieveAllStaffByHotelId(id);
+
+            res.status(200).json({
+                status: 200,
+                message: `Successfully fetched staff by hotel id ${id}!`,
+                data: staffs,
+            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
+        }
+    }
+
 
     async getAllHotels(req: Request, res: Response) {
         try {
