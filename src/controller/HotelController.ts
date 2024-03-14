@@ -130,6 +130,25 @@ class HotelController {
         }
     }
 
+    async getHotelList(req: Request, res: Response) {
+        try {
+            const hotels = await new HotelRepo().retrieveAll();
+
+            const hotelList = hotels.map(hotel => ({
+                id: hotel.id,
+                name: hotel.name,
+            }))
+
+            res.status(200).json({
+                status: 200,
+                message: "Hotel list successfully retrieved!",
+                data: hotelList,
+            });
+        } catch (error) {
+
+        }
+    }
+
     async updateHotel(req: Request, res: Response) {
         try {
             const id = parseInt(req.params["id"]);
