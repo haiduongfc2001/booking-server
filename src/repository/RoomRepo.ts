@@ -1,9 +1,10 @@
 import { Room } from "../model/Room";
 
 interface IRoomRepo {
-    retrieveAll(): Promise<any[]>;
     save(room: Room): Promise<void>;
+    update(room: Room): Promise<void>;
     delete(roomId: number): Promise<void>;
+    retrieveAll(): Promise<any[]>;
     retrieveById(roomId: number): Promise<Room>;
     retrieveRoomByHotelId(hotelId: number): Promise<Room[]>;
 }
@@ -86,6 +87,33 @@ export class RoomRepo implements IRoomRepo {
             return rooms;
         } catch (error) {
             throw new Error("Failed to retrieve room by ID!");
+        }
+    }
+
+    async update(updatedRoom: Room): Promise<void> {
+        try {
+            const existingRoom = await Room.findOne({
+                where: {
+                    id: updatedRoom.id,
+                },
+            });
+
+            if (!existingRoom) {
+                throw new Error("Room not found!");
+            }
+
+            existingRoom.hotel_id = updatedRoom.hotel_id;
+            existingRoom.number = updatedRoom.number;
+            existingRoom.type = updatedRoom.type;
+            existingRoom.price = updatedRoom.price;
+            existingRoom.discount = updatedRoom.discount;
+            existingRoom.capacity = updatedRoom.capacity;
+            existingRoom.description = updatedRoom.description;
+            existingRoom.status = updatedRoom.status;
+
+            await existingRoom.save();
+        } catch (error) {
+            throw new Error("Failed to update room!");
         }
     }
 }

@@ -104,6 +104,51 @@ class RoomController {
             data: room,
         });
     }
+
+    async updateRoom(req: Request, res: Response) {
+        try {
+            const id = parseInt(req.params["id"]);
+            const roomToUpdate = await Room.findByPk(id);
+
+            if (!roomToUpdate) {
+                return res.status(404).json({
+                    status: 404,
+                    message: "Room not found!"
+                });
+            }
+
+            const fieldsToUpdate = [
+                'hotel_id', 'number', 'type', 'price',
+                'discount', 'capacity', 'description', 'status'
+            ];
+
+            fieldsToUpdate.forEach(field => {
+                if (req.body[field]) {
+                    (roomToUpdate as any)[field] = req.body[field];
+                }
+            });
+
+            if (req.body?.hotel_id) {
+                const hotel = await Hotel.findByPk(req.body?.hotel_id);
+
+                if (!hotel) {
+                    return res.status(404).json({
+                        status: 404,
+                        message: "Hotel not found!"
+                    });
+                }
+            }
+
+            await roomToUpdate.save();
+
+            res.status(200).json({
+                status: 200,
+                message: "Successfully updated room data!",
+            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
+        }
+    }
 }
 
 export default new RoomController()
