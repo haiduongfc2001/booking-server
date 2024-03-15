@@ -33,4 +33,22 @@ export class RoomRepo implements IRoomRepo {
             throw new Error("Failed to save room!");
         }
     }
+
+    async delete(roomId: number): Promise<void> {
+        try {
+            const existingRoom = await Room.findOne({
+                where: {
+                    id: roomId,
+                }
+            })
+
+            if (!existingRoom) {
+                throw new Error("Room not found!");
+            }
+
+            await existingRoom.destroy();
+        } catch (error) {
+
+        }
+    }
 }

@@ -55,6 +55,30 @@ class RoomController {
             return ErrorHandler.handleServerError(res, error);
         }
     }
+
+    async deleteRoom(req: Request, res: Response) {
+        let id = parseInt(req.params["id"]);
+
+        const existingRoom = await Room.findOne({
+            where: {
+                id: id,
+            }
+        })
+
+        if (!existingRoom) {
+            return res.status(404).json({
+                status: 404,
+                message: "Room not found!",
+            });
+        }
+
+        await new RoomRepo().delete(id);
+
+        res.status(200).json({
+            status: 200,
+            message: "Successfully deleted hotel!",
+        });
+    }
 }
 
 export default new RoomController()

@@ -9,6 +9,7 @@ class RoomRoutes extends BaseRoutes {
     public routes(): void {
         this.router.get("/", RoomController.getAllRooms);
         this.router.post("/", RoomController.createRoom);
+        this.router.delete("/:id", RoomController.deleteRoom);
     }
 }
 
