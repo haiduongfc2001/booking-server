@@ -12,8 +12,6 @@ interface IHotelRepo {
 export class HotelRepo implements IHotelRepo {
     async save(newHotel: Hotel): Promise<void> {
         try {
-            console.log(newHotel);
-
             await Hotel.create({
                 name: newHotel.name,
                 address: newHotel.address,

@@ -1,4 +1,4 @@
-import { Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
+import { Column, DataType, Default, ForeignKey, Model, Table } from "sequelize-typescript";
 import { Hotel } from "./Hotel";
 
 @Table({
@@ -37,7 +37,6 @@ export class Room extends Model {
     @Column({
         type: DataType.STRING(100),
         allowNull: false,
-        unique: true,
         field: Room.ROOM_NUMBER,
     })
     number!: string;
@@ -71,12 +70,14 @@ export class Room extends Model {
     capacity!: number;
 
     @Column({
-        type: DataType.STRING(255),
+        type: DataType.TEXT,
         allowNull: false,
         field: Room.ROOM_DESCRIPTION,
     })
     description!: string;
 
+
+    @Default(0.0)
     @Column({
         type: DataType.DECIMAL(2, 1),
         allowNull: false,
@@ -88,6 +89,7 @@ export class Room extends Model {
     })
     rating_average!: number;
 
+    @Default("available")
     @Column({
         type: DataType.ENUM('available', 'unavailable'),
         allowNull: false,

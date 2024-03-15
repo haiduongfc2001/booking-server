@@ -59,7 +59,6 @@ export class HotelImageRepo implements IHotelImageRepo {
                     hotel_id: hotelId
                 }
             });
-            console.log("All images deleted successfully.");
         } catch (error) {
             console.error("Error deleting images:", error);
         }
@@ -74,7 +73,6 @@ export class HotelImageRepo implements IHotelImageRepo {
                     }
                 });
             }
-            console.log("Images deleted successfully.");
         } catch (error) {
             console.error("Error deleting images:", error);
         }

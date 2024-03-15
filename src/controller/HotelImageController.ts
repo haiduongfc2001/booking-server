@@ -149,7 +149,7 @@ class HotelImageController {
                             message: "Internal Server Error!"
                         });
                     }
-                    console.log('Removed the objects successfully');
+
                     // Respond with success message
                     res.status(200).json({
                         status: 200,
