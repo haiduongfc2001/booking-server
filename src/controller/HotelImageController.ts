@@ -63,23 +63,6 @@ class HotelImageController {
         }
     }
 
-    // Function to fetch all hotel image data
-    async getAllHotelImages(req: Request, res: Response) {
-        try {
-            // Retrieve all hotel image data from the repository
-            const hotelImages = await new HotelImageRepo().retrieveAll();
-
-            // Respond with success message and data
-            res.status(200).json({
-                status: 200,
-                message: "Successfully fetched all hotel image data!",
-                data: hotelImages,
-            });
-        } catch (error) {
-            return ErrorHandler.handleServerError(res, error);
-        }
-    }
-
     async getImagesByHotelId(req: Request, res: Response) {
         try {
             const hotel_id = req.params.hotel_id;

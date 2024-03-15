@@ -10,7 +10,6 @@ const upload = multer({ storage: storage });
 
 class HotelImageRoutes extends BaseRoutes {
     public routes(): void {
-        this.router.get("/", HotelImageController.getAllHotelImages);
         this.router.get("/:hotel_id", HotelImageController.getImagesByHotelId);
         this.router.post(
             "/",

@@ -1,5 +1,6 @@
 import BaseRoutes from "./base/BaseRouter";
 import HotelController from "../controller/HotelController";
+import RoomImageController from "../controller/RoomImageController";
 import validate from "../helper/validate";
 import { createHotelSchema, updateHotelSchema } from "../schema/HotelSchema";
 import multer from 'multer';
@@ -15,6 +16,7 @@ class HotelRoutes extends BaseRoutes {
         this.router.get("/:id", HotelController.getHotelById);
         this.router.get("/:id/staff", HotelController.getStaffByHotelId);
         this.router.get("/:id/room", HotelController.getRoomByHotelId);
+        this.router.get("/:id/room/:roomId", RoomImageController.getImagesByRoomId);
         this.router.post(
             "/",
             validate(createHotelSchema),

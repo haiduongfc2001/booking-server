@@ -3,7 +3,6 @@ import { ValidationError } from "sequelize";
 
 interface IHotelImageRepo {
     save(newHotelImage: HotelImage): Promise<void>;
-    retrieveAll(): Promise<HotelImage[]>;
     getUrlsByHotelId(hotelId: string): Promise<{ id: number, url: string }[]>;
     deleteAll(hotelId: string): Promise<void>;
     deleteImages(imagesToDelete: Array<string>): Promise<void>;
@@ -24,14 +23,6 @@ export class HotelImageRepo implements IHotelImageRepo {
                 // Xử lý lỗi khác (ví dụ: lỗi kết nối với cơ sở dữ liệu)
                 throw new Error("Failed to save hotel image: " + error.message);
             }
-        }
-    }
-
-    async retrieveAll(): Promise<HotelImage[]> {
-        try {
-            return await HotelImage.findAll();
-        } catch (error: any) {
-            throw new Error("Failed to retrieve hotel images: " + error.message);
         }
     }
 
