@@ -5,6 +5,7 @@ interface IRoomRepo {
     save(room: Room): Promise<void>;
     delete(roomId: number): Promise<void>;
     retrieveById(roomId: number): Promise<Room>;
+    retrieveRoomByHotelId(hotelId: number): Promise<Room[]>;
 }
 
 export class RoomRepo implements IRoomRepo {
@@ -68,6 +69,21 @@ export class RoomRepo implements IRoomRepo {
             }
 
             return existingRoom;
+        } catch (error) {
+            throw new Error("Failed to retrieve room by ID!");
+        }
+    }
+
+    async retrieveRoomByHotelId(hotelId: number): Promise<Room[]> {
+        try {
+            const rooms = await Room.findAll({
+                where: {
+                    hotel_id: hotelId
+                },
+                order: [['id', 'asc']]
+            })
+
+            return rooms;
         } catch (error) {
             throw new Error("Failed to retrieve room by ID!");
         }

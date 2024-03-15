@@ -6,6 +6,7 @@ import generateRandomString from "../utils/RandomString";
 import { DEFAULT_MINIO } from "../config/constant";
 import ErrorHandler from "../utils/ErrorHandler";
 import { StaffRepo } from "../repository/StaffRepo";
+import { RoomRepo } from "../repository/RoomRepo";
 
 class HotelController {
     async createHotel(req: Request, res: Response) {
@@ -112,6 +113,31 @@ class HotelController {
         } catch (error) {
             return ErrorHandler.handleServerError(res, error);
         }
+    }
+
+    async getRoomByHotelId(req: Request, res: Response) {
+        let id = parseInt(req.params["id"]);
+
+        const existingHotel = await Hotel.findOne({
+            where: {
+                id: id,
+            }
+        })
+
+        if (!existingHotel) {
+            return res.status(404).json({
+                status: 404,
+                message: "Hotel not found!",
+            });
+        }
+
+        const rooms = await new RoomRepo().retrieveRoomByHotelId(id);
+
+        res.status(200).json({
+            status: 200,
+            message: `Successfully fetched room by hotel id ${id}!`,
+            data: rooms,
+        });
     }
 
 
