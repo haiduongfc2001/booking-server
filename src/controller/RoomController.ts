@@ -79,6 +79,31 @@ class RoomController {
             message: "Successfully deleted hotel!",
         });
     }
+
+    async getRoomById(req: Request, res: Response) {
+        let id = parseInt(req.params["id"]);
+
+        const existingRoom = await Room.findOne({
+            where: {
+                id: id,
+            }
+        })
+
+        if (!existingRoom) {
+            return res.status(404).json({
+                status: 404,
+                message: "Room not found!",
+            });
+        }
+
+        const room = await new RoomRepo().retrieveById(id);
+
+        res.status(200).json({
+            status: 200,
+            message: `Successfully fetched room by id ${id}!`,
+            data: room,
+        });
+    }
 }
 
 export default new RoomController()

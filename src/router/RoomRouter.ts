@@ -8,6 +8,7 @@ const storage = multer.memoryStorage();
 class RoomRoutes extends BaseRoutes {
     public routes(): void {
         this.router.get("/", RoomController.getAllRooms);
+        this.router.get("/:id", RoomController.getRoomById);
         this.router.post("/", RoomController.createRoom);
         this.router.delete("/:id", RoomController.deleteRoom);
     }

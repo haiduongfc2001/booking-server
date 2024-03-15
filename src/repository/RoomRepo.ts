@@ -2,6 +2,9 @@ import { Room } from "../model/Room";
 
 interface IRoomRepo {
     retrieveAll(): Promise<any[]>;
+    save(room: Room): Promise<void>;
+    delete(roomId: number): Promise<void>;
+    retrieveById(roomId: number): Promise<Room>;
 }
 
 export class RoomRepo implements IRoomRepo {
@@ -49,6 +52,24 @@ export class RoomRepo implements IRoomRepo {
             await existingRoom.destroy();
         } catch (error) {
 
+        }
+    }
+
+    async retrieveById(roomId: number): Promise<Room> {
+        try {
+            const existingRoom = await Room.findOne({
+                where: {
+                    id: roomId,
+                }
+            })
+
+            if (!existingRoom) {
+                throw new Error("Room not found!");
+            }
+
+            return existingRoom;
+        } catch (error) {
+            throw new Error("Failed to retrieve room by ID!");
         }
     }
 }
