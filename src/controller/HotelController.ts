@@ -5,7 +5,6 @@ import { minioClient } from "../config/minio";
 import generateRandomString from "../utils/RandomString";
 import { DEFAULT_MINIO } from "../config/constant";
 import ErrorHandler from "../utils/ErrorHandler";
-import { Staff } from "../model/Staff";
 import { StaffRepo } from "../repository/StaffRepo";
 
 class HotelController {
