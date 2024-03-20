@@ -1,13 +1,14 @@
 import express, { Application, Request, Response } from "express";
 import cors from 'cors';
-import Database from "./config/database";
+import { db } from "./config/database";
 import ServiceRouter from "./router/ServiceRouter";
 import CustomerRouter from "./router/CustomerRouter";
 import HotelRouter from "./router/HotelRouter";
 import HotelImageRouter from "./router/HotelImageRouter";
-import * as dotenv from "dotenv";
 import StaffRouter from "./router/StaffRouter";
 import RoomRouter from "./router/RoomRouter";
+import * as dotenv from "dotenv";
+import RoomImageRouter from "./router/RoomImageRouter";
 dotenv.config();
 
 class App {
@@ -15,12 +16,16 @@ class App {
 
   constructor() {
     this.app = express();
-    this.databaseSync();
-    this.plugins();
-    this.routes();
+    this.configureApp();
+    this.startServer();
   }
 
-  protected plugins(): void {
+  private configureApp(): void {
+    this.setupMiddleware();
+    this.setupRoutes();
+  }
+
+  private setupMiddleware(): void {
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use(cors({
@@ -28,28 +33,31 @@ class App {
     }));
   }
 
-  protected databaseSync(): void {
-    const db = new Database();
-    db.sequelize?.sync();
+  private setupRoutes(): void {
+    const apiRouter = express.Router();
+
+    apiRouter.get("/", (req: Request, res: Response) => {
+      res.send("Welcome home");
+    });
+
+    apiRouter.use("/service", ServiceRouter);
+    apiRouter.use("/customer", CustomerRouter);
+    apiRouter.use("/hotel", HotelRouter);
+    apiRouter.use("/hotel", HotelImageRouter);
+    apiRouter.use("/hotel", RoomRouter);
+    apiRouter.use("/hotel", StaffRouter);
+    apiRouter.use("/hotel", RoomImageRouter);
+
+    this.app.use("/api/v1", apiRouter);
   }
 
-  protected routes(): void {
-    this.app.route("/").get((req: Request, res: Response) => {
-      res.send("welcome home");
+  private async startServer(): Promise<void> {
+    const port = Number(process.env.PORT) || 5000;
+    await db.sequelize?.sync();
+    this.app.listen(port, () => {
+      console.log(`✅ Server started successfully on port ${port}!`);
     });
-    this.app.use("/api/v1/service", ServiceRouter);
-    this.app.use("/api/v1/customer", CustomerRouter);
-    this.app.use("/api/v1/hotel", HotelRouter, HotelImageRouter);
-    this.app.use("/api/v1/staff", StaffRouter);
-    this.app.use("/api/v1/room", RoomRouter);
   }
 }
 
-const port: number = 5000;
-const app = new App().app;
-
-app.listen(port, () => {
-  console.log(`✅ Server started successfully on port ${port}!`);
-});
-
-
+new App();

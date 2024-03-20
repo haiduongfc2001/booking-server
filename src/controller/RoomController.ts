@@ -21,12 +21,9 @@ class RoomController {
 
     async createRoom(req: Request, res: Response) {
         try {
+            const hotel_id = parseInt(req.params?.hotel_id);
 
-            const existingHotel = await Hotel.findOne({
-                where: {
-                    id: req.body.hotel_id,
-                }
-            })
+            const existingHotel = await Hotel.findByPk(hotel_id);
 
             if (!existingHotel) {
                 return res.status(404).json({
@@ -36,7 +33,7 @@ class RoomController {
             }
 
             const newRoom = new Room();
-            newRoom.hotel_id = req.body.hotel_id;
+            newRoom.hotel_id = hotel_id;
             newRoom.number = req.body.number;
             newRoom.type = req.body.type;
             newRoom.price = req.body.price;
@@ -57,22 +54,24 @@ class RoomController {
     }
 
     async deleteRoom(req: Request, res: Response) {
-        let id = parseInt(req.params["id"]);
+        const hotel_id = parseInt(req.params.hotel_id);
+        const room_id = parseInt(req.params.room_id);
 
-        const existingRoom = await Room.findOne({
+        const room = await Room.findOne({
             where: {
-                id: id,
+                id: room_id,
+                hotel_id: hotel_id
             }
-        })
+        });
 
-        if (!existingRoom) {
+        if (!room) {
             return res.status(404).json({
                 status: 404,
-                message: "Room not found!",
+                message: 'Room not found!'
             });
         }
 
-        await new RoomRepo().delete(id);
+        await new RoomRepo().delete(room_id);
 
         res.status(200).json({
             status: 200,
@@ -81,55 +80,66 @@ class RoomController {
     }
 
     async getRoomById(req: Request, res: Response) {
-        let id = parseInt(req.params["id"]);
+        try {
+            const hotel_id = parseInt(req.params.hotel_id);
+            const room_id = parseInt(req.params.room_id);
 
-        const existingRoom = await Room.findOne({
-            where: {
-                id: id,
-            }
-        })
-
-        if (!existingRoom) {
-            return res.status(404).json({
-                status: 404,
-                message: "Room not found!",
+            const room = await Room.findOne({
+                where: {
+                    id: room_id,
+                    hotel_id: hotel_id
+                }
             });
+
+            if (!room) {
+                return res.status(404).json({
+                    status: 404,
+                    message: 'Room not found!'
+                });
+            }
+
+            res.status(200).json({
+                status: 200,
+                message: `Successfully fetched room by id ${room_id}!`,
+                data: room,
+            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
         }
-
-        const room = await new RoomRepo().retrieveById(id);
-
-        res.status(200).json({
-            status: 200,
-            message: `Successfully fetched room by id ${id}!`,
-            data: room,
-        });
     }
 
     async updateRoom(req: Request, res: Response) {
         try {
-            const id = parseInt(req.params["id"]);
-            const roomToUpdate = await Room.findByPk(id);
+            const hotel_id = parseInt(req.params.hotel_id);
+            const room_id = parseInt(req.params.room_id);
 
-            if (!roomToUpdate) {
+            const room = await Room.findOne({
+                where: {
+                    id: room_id,
+                    hotel_id: hotel_id
+                }
+            });
+
+            if (!room) {
                 return res.status(404).json({
                     status: 404,
-                    message: "Room not found!"
+                    message: 'Room not found!'
                 });
             }
 
             const fieldsToUpdate = [
-                'hotel_id', 'number', 'type', 'price',
+                'number', 'type', 'price',
                 'discount', 'capacity', 'description', 'status'
             ];
 
             fieldsToUpdate.forEach(field => {
                 if (req.body[field]) {
-                    (roomToUpdate as any)[field] = req.body[field];
+                    (room as any)[field] = req.body[field];
                 }
             });
 
             if (req.body?.hotel_id) {
-                const hotel = await Hotel.findByPk(req.body?.hotel_id);
+                const hotel = await Hotel.findByPk(parseInt(req.body?.hotel_id));
 
                 if (!hotel) {
                     return res.status(404).json({
@@ -137,9 +147,10 @@ class RoomController {
                         message: "Hotel not found!"
                     });
                 }
+                room.hotel_id = req.body.hotel_id;
             }
 
-            await roomToUpdate.save();
+            await new RoomRepo().update(room);
 
             res.status(200).json({
                 status: 200,

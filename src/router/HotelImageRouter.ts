@@ -26,4 +26,4 @@ class HotelImageRoutes extends BaseRoutes {
     }
 }
 
-export default new HotelImageRoutes().router
+export default new HotelImageRoutes().router;

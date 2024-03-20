@@ -6,19 +6,19 @@ import { createCustomerSchema, updateCustomerSchema } from "../schema/CustomerSc
 
 class CustomerRoutes extends BaseRoutes {
     public routes(): void {
-        this.router.get("/", CustomerController.getAllCustomers);
-        this.router.get("/:id", CustomerController.getCustomerById);
+        this.router.get("/getAllCustomers", CustomerController.getAllCustomers);
+        this.router.get("/:customer_id/getCustomerById", CustomerController.getCustomerById);
         this.router.post(
-            "/",
+            "/createCustomer",
             validate(createCustomerSchema),
             CustomerController.createCustomer
         );
         this.router.patch(
-            "/:id",
+            "/:customer_id/updateCustomer",
             validate(updateCustomerSchema),
             CustomerController.updateCustomer
         );
-        this.router.delete("/:id", CustomerController.deleteCustomer);
+        this.router.delete("/:customer_id/deleteCustomer", CustomerController.deleteCustomer);
     }
 }
 

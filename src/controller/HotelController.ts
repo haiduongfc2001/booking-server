@@ -31,13 +31,9 @@ class HotelController {
 
     async deleteHotel(req: Request, res: Response) {
         try {
-            let id = parseInt(req.params["id"]);
+            const hotel_id = parseInt(req.params["hotel_id"]);
 
-            const existingHotel = await Hotel.findOne({
-                where: {
-                    id: id,
-                }
-            });
+            const existingHotel = await Hotel.findByPk(hotel_id);
 
             if (!existingHotel) {
                 return res.status(404).json({
@@ -46,7 +42,7 @@ class HotelController {
                 });
             }
 
-            await new HotelRepo().delete(id);
+            await new HotelRepo().delete(hotel_id);
 
             res.status(200).json({
                 status: 200,
@@ -59,13 +55,9 @@ class HotelController {
 
     async getHotelById(req: Request, res: Response) {
         try {
-            let id = parseInt(req.params["id"]);
+            const hotel_id = parseInt(req.params?.hotel_id);
 
-            const existingHotel = await Hotel.findOne({
-                where: {
-                    id: id,
-                }
-            });
+            const existingHotel = await Hotel.findByPk(hotel_id);
 
             if (!existingHotel) {
                 return res.status(404).json({
@@ -74,13 +66,12 @@ class HotelController {
                 });
             }
 
-            const newHotel = await new HotelRepo().retrieveById(id);
-
             res.status(200).json({
                 status: 200,
-                message: `Successfully fetched hotel by id ${id}!`,
-                data: newHotel,
+                message: `Successfully fetched hotel by id ${hotel_id}!`,
+                data: existingHotel,
             });
+
         } catch (error) {
             return ErrorHandler.handleServerError(res, error);
         }
@@ -88,13 +79,9 @@ class HotelController {
 
     async getStaffByHotelId(req: Request, res: Response) {
         try {
-            let id = parseInt(req.params["id"]);
+            const hotel_id = parseInt(req.params["hotel_id"]);
 
-            const existingHotel = await Hotel.findOne({
-                where: {
-                    id: id,
-                }
-            });
+            const existingHotel = await Hotel.findByPk(hotel_id);
 
             if (!existingHotel) {
                 return res.status(404).json({
@@ -103,11 +90,11 @@ class HotelController {
                 });
             }
 
-            const staffs = await new StaffRepo().retrieveAllStaffByHotelId(id);
+            const staffs = await new StaffRepo().retrieveAllStaffByHotelId(hotel_id);
 
             res.status(200).json({
                 status: 200,
-                message: `Successfully fetched staff by hotel id ${id}!`,
+                message: `Successfully fetched staff by hotel id ${hotel_id}!`,
                 data: staffs,
             });
         } catch (error) {
@@ -116,13 +103,9 @@ class HotelController {
     }
 
     async getRoomByHotelId(req: Request, res: Response) {
-        let id = parseInt(req.params["id"]);
+        const hotel_id = parseInt(req.params["hotel_id"]);
 
-        const existingHotel = await Hotel.findOne({
-            where: {
-                id: id,
-            }
-        })
+        const existingHotel = await Hotel.findByPk(hotel_id);
 
         if (!existingHotel) {
             return res.status(404).json({
@@ -131,11 +114,11 @@ class HotelController {
             });
         }
 
-        const rooms = await new RoomRepo().retrieveRoomByHotelId(id);
+        const rooms = await new RoomRepo().retrieveRoomByHotelId(hotel_id);
 
         res.status(200).json({
             status: 200,
-            message: `Successfully fetched room by hotel id ${id}!`,
+            message: `Successfully fetched room by hotel id ${hotel_id}!`,
             data: rooms,
         });
     }
@@ -176,8 +159,8 @@ class HotelController {
 
     async updateHotel(req: Request, res: Response) {
         try {
-            const id = parseInt(req.params["id"]);
-            const hotelToUpdate = await Hotel.findByPk(id);
+            const hotel_id = parseInt(req.params["hotel_id"]);
+            const hotelToUpdate = await Hotel.findByPk(hotel_id);
 
             if (!hotelToUpdate) {
                 return res.status(404).json({
@@ -196,7 +179,7 @@ class HotelController {
                 }
             });
 
-            await hotelToUpdate.save();
+            await new HotelRepo().update(hotelToUpdate);
 
             res.status(200).json({
                 status: 200,
@@ -206,34 +189,6 @@ class HotelController {
             return ErrorHandler.handleServerError(res, error);
         }
     }
-
-
-    // API endpoint for uploading hotel photos
-    async uploadHotelPhoto(req: Request, res: Response) {
-        try {
-            if (!req.file) {
-                return res.status(400).json({
-                    status: 400, error: 'No file uploaded'
-                });
-            }
-
-            const file = req.file;
-
-            // Upload file to MinIO server
-            const metaData = { 'Content-Type': file.mimetype };
-            const objectName = `${Date.now()}_${generateRandomString(10)}_${file.originalname}`;
-            await minioClient.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
-
-            // Generate URL for uploaded file
-            const fileUrl = await minioClient.presignedGetObject(DEFAULT_MINIO.BUCKET, objectName);
-
-            return res.status(200).json({ url: fileUrl });
-        } catch (error) {
-            console.error('Error uploading file:', error);
-            return res.status(500).json({ error: 'Internal server error' });
-        }
-    }
-
 }
 
 export default new HotelController()

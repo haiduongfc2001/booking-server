@@ -1,6 +1,5 @@
 import BaseRoutes from "./base/BaseRouter";
 import HotelController from "../controller/HotelController";
-import RoomImageController from "../controller/RoomImageController";
 import validate from "../helper/validate";
 import { createHotelSchema, updateHotelSchema } from "../schema/HotelSchema";
 import multer from 'multer';
@@ -11,30 +10,23 @@ const upload = multer({ storage: storage });
 
 class HotelRoutes extends BaseRoutes {
     public routes(): void {
-        this.router.get("/", HotelController.getAllHotels);
-        this.router.get("/list", HotelController.getHotelList);
-        this.router.get("/:id", HotelController.getHotelById);
-        this.router.get("/:id/staff", HotelController.getStaffByHotelId);
-        this.router.get("/:id/room", HotelController.getRoomByHotelId);
-        this.router.get("/:id/room/:roomId", RoomImageController.getImagesByRoomId);
+        this.router.get("/getAllHotels", HotelController.getAllHotels);
+        this.router.get("/getHotelList", HotelController.getHotelList);
+        this.router.get("/:hotel_id/getHotelById", HotelController.getHotelById);
+        this.router.get("/:hotel_id/getStaffByHotelId", HotelController.getStaffByHotelId);
+        this.router.get("/:hotel_id/getRoomByHotelId", HotelController.getRoomByHotelId);
         this.router.post(
-            "/",
+            "/createHotel",
             validate(createHotelSchema),
             HotelController.createHotel
         );
-        this.router.post(
-            "/upload/hotel-photo",
-            upload.single('image'),
-            HotelController.uploadHotelPhoto
-        );
         this.router.patch(
-            "/:id",
+            "/:hotel_id/updateHotel",
             validate(updateHotelSchema),
             HotelController.updateHotel
         );
-        this.router.delete("/:id", HotelController.deleteHotel);
-
+        this.router.delete("/:hotel_id/deleteHotel", HotelController.deleteHotel);
     }
 }
 
-export default new HotelRoutes().router
+export default new HotelRoutes().router;

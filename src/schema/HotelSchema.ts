@@ -21,7 +21,7 @@ export const createHotelSchema = z.object({
 });
 
 export const updateHotelSchema = z.object({
-    params: z.object({ id: z.string() }),
+    params: z.object({ hotel_id: z.string() }),
     body: z
         .object({
             name: z

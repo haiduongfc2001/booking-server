@@ -3,8 +3,8 @@ import { Customer } from "../model/Customer";
 interface ICustomerRepo {
     save(newCustomer: Customer): Promise<void>;
     update(updatedCustomer: Customer): Promise<void>;
-    delete(customerId: number): Promise<void>;
-    retrieveById(customerId: number): Promise<Customer>;
+    delete(customer_id: number): Promise<void>;
+    retrieveById(customer_id: number): Promise<Customer>;
     retrieveAll(): Promise<Customer[]>;
 }
 
@@ -31,11 +31,7 @@ export class CustomerRepo implements ICustomerRepo {
 
     async update(updatedCustomer: Customer): Promise<void> {
         try {
-            const existingCustomer = await Customer.findOne({
-                where: {
-                    id: updatedCustomer.id,
-                },
-            });
+            const existingCustomer = await Customer.findByPk(updatedCustomer.id);
 
             if (!existingCustomer) {
                 throw new Error("Customer not found!");
@@ -58,13 +54,9 @@ export class CustomerRepo implements ICustomerRepo {
         }
     }
 
-    async delete(customerId: number): Promise<void> {
+    async delete(customer_id: number): Promise<void> {
         try {
-            const existingCustomer = await Customer.findOne({
-                where: {
-                    id: customerId,
-                },
-            });
+            const existingCustomer = await Customer.findByPk(customer_id);
             if (!existingCustomer) {
                 throw new Error("Customer not found!");
             }
@@ -75,16 +67,13 @@ export class CustomerRepo implements ICustomerRepo {
         }
     }
 
-    async retrieveById(customerId: number): Promise<Customer> {
+    async retrieveById(customer_id: number): Promise<Customer> {
         try {
-            const existingCustomer = await Customer.findOne({
-                where: {
-                    id: customerId,
-                },
-            });
+            const existingCustomer = await Customer.findByPk(customer_id);
             if (!existingCustomer) {
                 throw new Error("Customer not found!");
             }
+
             return existingCustomer;
         } catch (error) {
             throw new Error("Failed to retrieve customer!");

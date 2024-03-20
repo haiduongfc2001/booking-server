@@ -3,10 +3,10 @@ import { Room } from "../model/Room";
 interface IRoomRepo {
     save(room: Room): Promise<void>;
     update(room: Room): Promise<void>;
-    delete(roomId: number): Promise<void>;
+    delete(room_id: number): Promise<void>;
     retrieveAll(): Promise<any[]>;
-    retrieveById(roomId: number): Promise<Room>;
-    retrieveRoomByHotelId(hotelId: number): Promise<Room[]>;
+    retrieveById(room_id: number): Promise<Room>;
+    retrieveRoomByHotelId(hotel_id: number): Promise<Room[]>;
 }
 
 export class RoomRepo implements IRoomRepo {
@@ -39,13 +39,9 @@ export class RoomRepo implements IRoomRepo {
         }
     }
 
-    async delete(roomId: number): Promise<void> {
+    async delete(room_id: number): Promise<void> {
         try {
-            const existingRoom = await Room.findOne({
-                where: {
-                    id: roomId,
-                }
-            })
+            const existingRoom = await Room.findByPk(room_id)
 
             if (!existingRoom) {
                 throw new Error("Room not found!");
@@ -57,13 +53,9 @@ export class RoomRepo implements IRoomRepo {
         }
     }
 
-    async retrieveById(roomId: number): Promise<Room> {
+    async retrieveById(room_id: number): Promise<Room> {
         try {
-            const existingRoom = await Room.findOne({
-                where: {
-                    id: roomId,
-                }
-            })
+            const existingRoom = await Room.findByPk(room_id)
 
             if (!existingRoom) {
                 throw new Error("Room not found!");
@@ -75,11 +67,11 @@ export class RoomRepo implements IRoomRepo {
         }
     }
 
-    async retrieveRoomByHotelId(hotelId: number): Promise<Room[]> {
+    async retrieveRoomByHotelId(hotel_id: number): Promise<Room[]> {
         try {
             const rooms = await Room.findAll({
                 where: {
-                    hotel_id: hotelId
+                    hotel_id: hotel_id
                 },
                 order: [['id', 'asc']]
             })
@@ -92,11 +84,7 @@ export class RoomRepo implements IRoomRepo {
 
     async update(updatedRoom: Room): Promise<void> {
         try {
-            const existingRoom = await Room.findOne({
-                where: {
-                    id: updatedRoom.id,
-                },
-            });
+            const existingRoom = await Room.findByPk(updatedRoom.id);
 
             if (!existingRoom) {
                 throw new Error("Room not found!");

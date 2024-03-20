@@ -3,8 +3,8 @@ import { Service } from "../model/Service";
 interface IServiceRepo {
     save(newService: Service): Promise<void>;
     update(updatedService: Service): Promise<void>;
-    delete(serviceId: number): Promise<void>;
-    retrieveById(serviceId: number): Promise<Service>;
+    delete(service_id: number): Promise<void>;
+    retrieveById(service_id: number): Promise<Service>;
     retrieveAll(): Promise<Service[]>;
 }
 
@@ -23,14 +23,11 @@ export class ServiceRepo implements IServiceRepo {
 
     async update(updatedService: Service): Promise<void> {
         try {
-            const existingService = await Service.findOne({
-                where: {
-                    id: updatedService.id,
-                },
-            });
+            const existingService = await Service.findByPk(updatedService.id);
             if (!existingService) {
                 throw new Error("Service not found!");
             }
+
             existingService.name = updatedService.name;
             existingService.description = updatedService.description;
 
@@ -40,13 +37,9 @@ export class ServiceRepo implements IServiceRepo {
         }
     }
 
-    async delete(serviceId: number): Promise<void> {
+    async delete(service_id: number): Promise<void> {
         try {
-            const existingService = await Service.findOne({
-                where: {
-                    id: serviceId,
-                },
-            });
+            const existingService = await Service.findByPk(service_id);
             if (!existingService) {
                 throw new Error("Service not found!");
             }
@@ -57,13 +50,9 @@ export class ServiceRepo implements IServiceRepo {
         }
     }
 
-    async retrieveById(serviceId: number): Promise<Service> {
+    async retrieveById(service_id: number): Promise<Service> {
         try {
-            const existingService = await Service.findOne({
-                where: {
-                    id: serviceId,
-                },
-            });
+            const existingService = await Service.findByPk(service_id);
             if (!existingService) {
                 throw new Error("Service not found!");
             }

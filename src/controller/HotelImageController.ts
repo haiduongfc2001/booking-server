@@ -121,11 +121,7 @@ class HotelImageController {
 
             // Handle stream errors
             objectsStream.on('error', e => {
-                console.error(e);
-                res.status(500).json({
-                    status: 500,
-                    message: "Internal Server Error!"
-                });
+                ErrorHandler.handleServerError(res, e);
             });
 
 
@@ -136,7 +132,7 @@ class HotelImageController {
                         console.error('Unable to remove Objects ', e);
                         return res.status(500).json({
                             status: 500,
-                            message: "Internal Server Error!"
+                            message: "Unable to remove Objects!"
                         });
                     }
 
@@ -252,10 +248,7 @@ class HotelImageController {
                 message: "Successfully updated images by hotel_id"
             });
         } catch (error) {
-            res.status(500).json({
-                status: 500,
-                message: "Internal Server Error!"
-            });
+            return ErrorHandler.handleServerError(res, error);
         }
     }
 }

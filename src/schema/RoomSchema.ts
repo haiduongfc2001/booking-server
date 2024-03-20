@@ -28,7 +28,7 @@ export const createRoomSchema = z.object({
 
 
 export const updateRoomSchema = z.object({
-    params: z.object({ id: z.string() }),
+    params: z.object({ room_id: z.string() }),
     body: z
         .object({
             number: z

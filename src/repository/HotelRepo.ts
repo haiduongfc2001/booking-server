@@ -4,8 +4,8 @@ import { HotelImage } from "../model/HotelImage";
 interface IHotelRepo {
     save(hotel: Hotel): Promise<void>;
     update(hotel: Hotel): Promise<void>;
-    delete(hotelId: number): Promise<void>;
-    retrieveById(hotelId: number): Promise<any[]>;
+    delete(hotel_id: number): Promise<void>;
+    retrieveById(hotel_id: number): Promise<any[]>;
     retrieveAll(): Promise<any[]>;
 }
 
@@ -26,11 +26,7 @@ export class HotelRepo implements IHotelRepo {
 
     async update(updatedHotel: Hotel): Promise<void> {
         try {
-            const existingHotel = await Hotel.findOne({
-                where: {
-                    id: updatedHotel.id,
-                },
-            });
+            const existingHotel = await Hotel.findByPk(updatedHotel.id);
 
             if (!existingHotel) {
                 throw new Error("Hotel not found!");
@@ -48,13 +44,9 @@ export class HotelRepo implements IHotelRepo {
         }
     }
 
-    async delete(hotelId: number): Promise<void> {
+    async delete(hotel_id: number): Promise<void> {
         try {
-            const existingHotel = await Hotel.findOne({
-                where: {
-                    id: hotelId,
-                },
-            });
+            const existingHotel = await Hotel.findByPk(hotel_id);
             if (!existingHotel) {
                 throw new Error("Hotel not found!");
             }
@@ -65,20 +57,16 @@ export class HotelRepo implements IHotelRepo {
         }
     }
 
-    async retrieveById(hotelId: number): Promise<any[]> {
+    async retrieveById(hotel_id: number): Promise<any[]> {
         try {
-            const hotel = await Hotel.findOne({
-                where: {
-                    id: hotelId,
-                },
-            });
+            const hotel = await Hotel.findByPk(hotel_id);
             if (!hotel) {
                 throw new Error("Hotel not found!");
             }
 
             const hotelImages = await HotelImage.findAll({
                 where: {
-                    hotel_id: hotelId,
+                    hotel_id: hotel_id,
                 }
             });
 

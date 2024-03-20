@@ -31,7 +31,7 @@ export const createCustomerSchema = z.object({
 });
 
 export const updateCustomerSchema = z.object({
-    params: z.object({ id: z.string() }),
+    params: z.object({ customer_id: z.string() }),
     body: z
         .object({
             username: z

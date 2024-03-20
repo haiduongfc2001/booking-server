@@ -9,17 +9,17 @@ const storage = multer.memoryStorage();
 
 class RoomRoutes extends BaseRoutes {
     public routes(): void {
-        this.router.get("/", RoomController.getAllRooms);
-        this.router.get("/:id", RoomController.getRoomById);
-        this.router.post("/",
+        this.router.get("/room/getAllRooms", RoomController.getAllRooms);
+        this.router.get("/:hotel_id/room/:room_id/getRoomById", RoomController.getRoomById);
+        this.router.post("/:hotel_id/createRoom",
             validate(createRoomSchema), RoomController.createRoom);
         this.router.patch(
-            "/:id",
+            "/:hotel_id/room/:room_id/updateRoom",
             validate(updateRoomSchema),
             RoomController.updateRoom
         );
-        this.router.delete("/:id", RoomController.deleteRoom);
+        this.router.delete("/:hotel_id/room/:room_id/deleteRoom", RoomController.deleteRoom);
     }
 }
 
-export default new RoomRoutes().router
+export default new RoomRoutes().router;

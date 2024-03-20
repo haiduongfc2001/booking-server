@@ -3,8 +3,8 @@ import { ValidationError } from "sequelize";
 
 interface IHotelImageRepo {
     save(newHotelImage: HotelImage): Promise<void>;
-    getUrlsByHotelId(hotelId: string): Promise<{ id: number, url: string }[]>;
-    deleteAll(hotelId: string): Promise<void>;
+    getUrlsByHotelId(hotel_id: string): Promise<{ id: number, url: string }[]>;
+    deleteAll(hotel_id: string): Promise<void>;
     deleteImages(imagesToDelete: Array<string>): Promise<void>;
 }
 
@@ -28,11 +28,11 @@ export class HotelImageRepo implements IHotelImageRepo {
         }
     }
 
-    async getUrlsByHotelId(hotelId: string): Promise<{ id: number, url: string }[]> {
+    async getUrlsByHotelId(hotel_id: string): Promise<{ id: number, url: string }[]> {
         try {
             const hotelImages = await HotelImage.findAll({
                 where: {
-                    hotel_id: hotelId
+                    hotel_id: hotel_id
                 },
                 attributes: ['id', 'url', 'caption', 'is_primary']
             });
@@ -43,15 +43,15 @@ export class HotelImageRepo implements IHotelImageRepo {
                 is_primary: image.is_primary,
             }));
         } catch (error: any) {
-            throw new Error("Failed to get URLs by hotelId: " + error.message);
+            throw new Error("Failed to get URLs by hotel_id: " + error.message);
         }
     }
 
-    async deleteAll(hotelId: string): Promise<void> {
+    async deleteAll(hotel_id: string): Promise<void> {
         try {
             await HotelImage.destroy({
                 where: {
-                    hotel_id: hotelId
+                    hotel_id: hotel_id
                 }
             });
         } catch (error) {

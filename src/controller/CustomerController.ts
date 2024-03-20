@@ -31,13 +31,9 @@ class CustomerController {
 
     async deleteCustomer(req: Request, res: Response) {
         try {
-            let id = parseInt(req.params["id"]);
+            const customer_id = parseInt(req.params["customer_id"]);
 
-            const existingCustomer = await Customer.findOne({
-                where: {
-                    id: id,
-                }
-            });
+            const existingCustomer = await Customer.findByPk(customer_id);
 
             if (!existingCustomer) {
                 return res.status(404).json({
@@ -46,7 +42,7 @@ class CustomerController {
                 });
             }
 
-            await new CustomerRepo().delete(id);
+            await new CustomerRepo().delete(customer_id);
 
             res.status(200).json({
                 status: 200,
@@ -59,14 +55,9 @@ class CustomerController {
 
     async getCustomerById(req: Request, res: Response) {
         try {
-            let id = parseInt(req.params["id"]);
+            const customer_id = parseInt(req.params["customer_id"]);
 
-            const existingCustomer = await Customer.findOne({
-                where: {
-                    id: id,
-                }
-            });
-
+            const existingCustomer = await Customer.findByPk(customer_id);
             if (!existingCustomer) {
                 return res.status(404).json({
                     status: 404,
@@ -74,11 +65,11 @@ class CustomerController {
                 });
             }
 
-            const retrievedCustomer = await new CustomerRepo().retrieveById(id);
+            const retrievedCustomer = await new CustomerRepo().retrieveById(customer_id);
 
             res.status(200).json({
                 status: 200,
-                message: `Successfully fetched customer by id ${id}!`,
+                message: `Successfully fetched customer by customer_id ${customer_id}!`,
                 data: retrievedCustomer,
             });
         } catch (error) {
@@ -102,13 +93,14 @@ class CustomerController {
 
     async updateCustomer(req: Request, res: Response) {
         try {
-            const id = parseInt(req.params["id"]);
-            const customerToUpdate = await Customer.findByPk(id);
+            const customer_id = parseInt(req.params["customer_id"]);
+
+            const customerToUpdate = await Customer.findByPk(customer_id);
 
             if (!customerToUpdate) {
                 return res.status(404).json({
                     status: 404,
-                    message: "Customer not found!"
+                    message: "Customer not found!",
                 });
             }
 
@@ -124,7 +116,7 @@ class CustomerController {
                 }
             });
 
-            await customerToUpdate.save();
+            await new CustomerRepo().update(customerToUpdate);
 
             res.status(200).json({
                 status: 200,

@@ -20,11 +20,11 @@ export const createStaffSchema = z.object({
         phone: z
             .string()
             .length(10, { message: "Phone must be 10 characters" }),
-        hotel_id: z.union([z.string(), z.number()])
-            .refine(value => {
-                if (typeof value === 'number') return true;
-                return /^\d+$/.test(value);
-            }),
+        // hotel_id: z.union([z.string(), z.number()])
+        //     .refine(value => {
+        //         if (typeof value === 'number') return true;
+        //         return /^\d+$/.test(value);
+        //     }),
         role: z.string().refine(value => value === 'manager' || value === 'receptionist', {
             message: 'Role name must be manager or receptionist!'
         })
@@ -34,7 +34,7 @@ export const createStaffSchema = z.object({
 });
 
 export const updateStaffSchema = z.object({
-    params: z.object({ id: z.string() }),
+    params: z.object({ staff_id: z.string() }),
     body: z
         .object({
             email: z
@@ -55,11 +55,11 @@ export const updateStaffSchema = z.object({
             phone: z
                 .string()
                 .length(10, { message: "Phone must be 10 characters" }),
-            hotel_id: z.union([z.string(), z.number()])
-                .refine(value => {
-                    if (typeof value === 'number') return true;
-                    return /^\d+$/.test(value);
-                }),
+            // hotel_id: z.union([z.string(), z.number()])
+            //     .refine(value => {
+            //         if (typeof value === 'number') return true;
+            //         return /^\d+$/.test(value);
+            //     }),
             role: z.string().refine(value => value === 'manager' || value === 'receptionist', {
                 message: 'Role name must be manager or receptionist!'
             })

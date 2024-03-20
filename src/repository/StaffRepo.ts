@@ -4,12 +4,12 @@ import { Staff } from "../model/Staff";
 interface IStaffRepo {
     save(newStaff: Staff): Promise<void>;
     update(updatedStaff: Staff): Promise<void>;
-    delete(staffId: number): Promise<void>;
-    retrieveById(staffId: number): Promise<Staff>;
+    delete(staff_id: number): Promise<void>;
+    retrieveById(staff_id: number): Promise<Staff>;
     retrieveAll(): Promise<any[]>;
     retrieveAllManagers(): Promise<Staff[]>;
     retrieveAllReceptionists(): Promise<Staff[]>;
-    retrieveAllStaffByHotelId(hotelId: number): Promise<Staff[]>;
+    retrieveAllStaffByHotelId(hotel_id: number): Promise<Staff[]>;
 }
 
 export class StaffRepo implements IStaffRepo {
@@ -34,11 +34,7 @@ export class StaffRepo implements IStaffRepo {
 
     async update(updatedStaff: Staff): Promise<void> {
         try {
-            const existingStaff = await Staff.findOne({
-                where: {
-                    id: updatedStaff.id,
-                },
-            });
+            const existingStaff = await Staff.findByPk(updatedStaff.id);
 
             if (!existingStaff) {
                 throw new Error("Staff not found!");
@@ -60,13 +56,9 @@ export class StaffRepo implements IStaffRepo {
         }
     }
 
-    async delete(staffId: number): Promise<void> {
+    async delete(staff_id: number): Promise<void> {
         try {
-            const existingStaff = await Staff.findOne({
-                where: {
-                    id: staffId,
-                },
-            });
+            const existingStaff = await Staff.findByPk(staff_id);
             if (!existingStaff) {
                 throw new Error("Staff not found!");
             }
@@ -77,13 +69,9 @@ export class StaffRepo implements IStaffRepo {
         }
     }
 
-    async retrieveById(staffId: number): Promise<Staff> {
+    async retrieveById(staff_id: number): Promise<Staff> {
         try {
-            const existingStaff = await Staff.findOne({
-                where: {
-                    id: staffId,
-                },
-            });
+            const existingStaff = await Staff.findByPk(staff_id);
             if (!existingStaff) {
                 throw new Error("Staff not found!");
             }
@@ -189,11 +177,11 @@ export class StaffRepo implements IStaffRepo {
         }
     }
 
-    async retrieveAllStaffByHotelId(hotelId: number): Promise<Staff[]> {
+    async retrieveAllStaffByHotelId(hotel_id: number): Promise<Staff[]> {
         try {
             const staffs = await Staff.findAll({
                 where: {
-                    hotel_id: hotelId
+                    hotel_id: hotel_id
                 },
                 order: [['id', 'asc']]
             });
