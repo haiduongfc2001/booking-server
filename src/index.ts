@@ -39,8 +39,7 @@ class App {
     });
     this.app.use("/api/v1/service", ServiceRouter);
     this.app.use("/api/v1/customer", CustomerRouter);
-    this.app.use("/api/v1/hotel", HotelRouter);
-    this.app.use("/api/v1/hotel-image", HotelImageRouter);
+    this.app.use("/api/v1/hotel", HotelRouter, HotelImageRouter);
     this.app.use("/api/v1/staff", StaffRouter);
     this.app.use("/api/v1/room", RoomRouter);
   }

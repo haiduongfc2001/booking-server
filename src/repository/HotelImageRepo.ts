@@ -13,7 +13,9 @@ export class HotelImageRepo implements IHotelImageRepo {
         try {
             await HotelImage.create({
                 hotel_id: newHotelImage.hotel_id,
-                url: newHotelImage.url
+                url: newHotelImage.url,
+                caption: newHotelImage.caption,
+                is_primary: newHotelImage.is_primary,
             });
         } catch (error: any) {
             if (error instanceof ValidationError) {
@@ -32,11 +34,13 @@ export class HotelImageRepo implements IHotelImageRepo {
                 where: {
                     hotel_id: hotelId
                 },
-                attributes: ['id', 'url']
+                attributes: ['id', 'url', 'caption', 'is_primary']
             });
             return hotelImages.map(image => ({
                 id: image.id,
-                url: image.url
+                url: image.url,
+                caption: image.caption,
+                is_primary: image.is_primary,
             }));
         } catch (error: any) {
             throw new Error("Failed to get URLs by hotelId: " + error.message);

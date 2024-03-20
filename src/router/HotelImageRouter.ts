@@ -10,19 +10,19 @@ const upload = multer({ storage: storage });
 
 class HotelImageRoutes extends BaseRoutes {
     public routes(): void {
-        this.router.get("/:hotel_id", HotelImageController.getImagesByHotelId);
+        this.router.get("/:hotel_id/getImages", HotelImageController.getImagesByHotelId);
         this.router.post(
-            "/",
+            "/:hotel_id/createImages",
             // validate(createHotelImageSchema),
             upload.array('image'),
             HotelImageController.createImages
         )
         this.router.patch(
-            "/:hotel_id",
+            "/:hotel_id/updateImages",
             upload.array('image'),
             HotelImageController.updateImagesByHotelId
         );
-        this.router.delete("/:hotel_id", HotelImageController.deleteImagesByHotelId);
+        this.router.delete("/:hotel_id/deleteImages", HotelImageController.deleteImagesByHotelId);
     }
 }
 

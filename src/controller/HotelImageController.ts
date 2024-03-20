@@ -20,7 +20,7 @@ class HotelImageController {
             }
 
             // Check if the hotel_id exists in the hotel table
-            const hotel_id = req.body.hotel_id;
+            const hotel_id = req.params.hotel_id;
             const hotelExists = await Hotel.findByPk(hotel_id);
             if (!hotelExists) {
                 return res.status(404).json({
@@ -29,12 +29,13 @@ class HotelImageController {
                 });
             }
 
+            // Define the folder or path within the bucket
+            const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}`;
+            let index = 0;
+
             const files = req.files as Express.Multer.File[];
 
             for (const file of files) {
-                // Define the folder or path within the bucket
-                const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}`;
-
                 // Upload the file to MinIO server with specified object name
                 const metaData = { 'Content-Type': file.mimetype };
                 const objectName = `${folder}/${Date.now()}_${generateRandomString(10)}_${file.originalname.replace(/\s/g, '')}`;
@@ -43,11 +44,16 @@ class HotelImageController {
                 // Generate URL for the uploaded file
                 const fileUrl = await minioClient.presignedGetObject(DEFAULT_MINIO.BUCKET, objectName);
 
-                // Create a new HotelImage object with hotel_id and fileUrl
+                // Create a new HotelImage object with hotel_id, fileUrl, caption, and is_primary
                 const newHotelImage = new HotelImage({
                     hotel_id: hotel_id,
-                    url: fileUrl
+                    url: fileUrl,
+                    caption: req.body?.captions[index],
+                    is_primary: req.body?.is_primarys[index],
                 });
+
+                // Increment index
+                index++;
 
                 // Save the new HotelImage object to the database
                 await newHotelImage.save();
@@ -66,6 +72,7 @@ class HotelImageController {
     async getImagesByHotelId(req: Request, res: Response) {
         try {
             const hotel_id = req.params.hotel_id;
+
             const hotelExists = await Hotel.findByPk(hotel_id);
             if (!hotelExists) {
                 return res.status(404).json({
@@ -149,6 +156,8 @@ class HotelImageController {
         try {
             // Extract hotel_id from request parameters
             const hotel_id = req.params.hotel_id;
+            const { deleteImages, captions, is_primarys, image_ids, captions_update } = req.body;
+
             const hotelExists = await Hotel.findByPk(hotel_id);
             if (!hotelExists) {
                 return res.status(404).json({
@@ -158,9 +167,7 @@ class HotelImageController {
             }
 
             // Check if deleteImages is provided in the request and it's an array
-            if (Array.isArray(req.body.deleteImages) && req.body.deleteImages.length > 0) {
-                const deleteImages = req.body.deleteImages;
-
+            if (Array.isArray(deleteImages) && deleteImages.length > 0) {
                 // List objects (images) from MinIO server corresponding to the hotel_id
                 const objectsList: string[] = []; // Specify the type as string[]
                 // const objectsStream = minioClient.listObjectsV2(DEFAULT_MINIO.BUCKET, `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}`, true);
@@ -182,15 +189,15 @@ class HotelImageController {
                 await hotelImageRepo.deleteImages(deleteImages);
             }
 
+            // Define the folder or path within the bucket
+            const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}`;
+            let index = 0;
 
             // Check if files are provided in the request
             if (Array.isArray(req.files) && req.files.length > 0) {
                 const files = req.files as Express.Multer.File[];
 
                 for (const file of files) {
-                    // Define the folder or path within the bucket
-                    const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}`;
-
                     // Upload the file to MinIO server with specified object name
                     const metaData = { 'Content-Type': file.mimetype };
                     const objectName = `${folder}/${Date.now()}_${generateRandomString(10)}_${file.originalname.replace(/\s/g, '')}}`;
@@ -202,11 +209,40 @@ class HotelImageController {
                     // Create a new HotelImage object with hotel_id and fileUrl
                     const newHotelImage = new HotelImage({
                         hotel_id: hotel_id,
-                        url: fileUrl
+                        url: fileUrl,
+                        caption: captions[index],
+                        is_primary: is_primarys[index],
                     });
+
+                    // Increment index
+                    index++;
 
                     // Save the new HotelImage object to the database
                     await newHotelImage.save();
+                }
+            }
+
+            if (Array.isArray(req.body?.image_ids) && req.body?.image_ids.length > 0) {
+                const { image_ids, captions } = req.body;
+
+                for (let i = 0; i < image_ids.length; i++) {
+                    const imageId = image_ids[i];
+                    const imageCaption = captions[i];
+
+                    let hotelImage = await HotelImage.findByPk(imageId);
+
+                    if (!hotelImage) {
+                        console.error(`HotelImage with ID ${imageId} not found.`);
+                        continue; // Skip to the next iteration if imageId is not found
+                    }
+
+                    // Update caption if it exists and is not empty or null
+                    if (imageCaption !== null && imageCaption !== '') {
+                        hotelImage.caption = imageCaption;
+                    }
+
+                    // Save the updated hotel image
+                    await hotelImage.save();
                 }
             }
 
@@ -216,15 +252,12 @@ class HotelImageController {
                 message: "Successfully updated images by hotel_id"
             });
         } catch (error) {
-            // Handle error if any
-            console.error("Error updating images by hotel_id:", error);
             res.status(500).json({
                 status: 500,
                 message: "Internal Server Error!"
             });
         }
     }
-
 }
 
 export default new HotelImageController()

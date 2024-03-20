@@ -9,6 +9,8 @@ export class HotelImage extends Model {
     public static HOTEL_IMAGE_ID = "id" as string;
     public static HOTEL_IMAGE_HOTEL_ID = "hotel_id" as string;
     public static HOTEL_IMAGE_URL = "url" as string;
+    public static HOTEL_IMAGE_CAPTION = "caption" as string;
+    public static HOTEL_IMAGE_IS_PRIMARY = "is_primary" as string;
 
     @Column({
         type: DataType.INTEGER,
@@ -35,4 +37,19 @@ export class HotelImage extends Model {
         field: HotelImage.HOTEL_IMAGE_URL,
     })
     url!: string;
+
+    @Column({
+        type: DataType.STRING,
+        defaultValue: "",
+        field: HotelImage.HOTEL_IMAGE_CAPTION,
+    })
+    caption?: string;
+
+    @Column({
+        type: DataType.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        field: HotelImage.HOTEL_IMAGE_IS_PRIMARY,
+    })
+    is_primary!: boolean;
 }
