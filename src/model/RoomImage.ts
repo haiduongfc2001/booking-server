@@ -9,6 +9,8 @@ export class RoomImage extends Model {
     public static ROOM_IMAGE_ID = "id" as string;
     public static ROOM_IMAGE_ROOM_ID = "room_id" as string;
     public static ROOM_IMAGE_URL = "url" as string;
+    public static ROOM_IMAGE_CAPTION = "caption" as string;
+    public static ROOM_IMAGE_IS_PRIMARY = "is_primary" as string;
 
     @Column({
         type: DataType.INTEGER,
@@ -35,4 +37,19 @@ export class RoomImage extends Model {
         field: RoomImage.ROOM_IMAGE_URL,
     })
     url!: string;
+
+    @Column({
+        type: DataType.STRING,
+        defaultValue: "",
+        field: RoomImage.ROOM_IMAGE_CAPTION,
+    })
+    caption?: string;
+
+    @Column({
+        type: DataType.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        field: RoomImage.ROOM_IMAGE_IS_PRIMARY,
+    })
+    is_primary!: boolean;
 }

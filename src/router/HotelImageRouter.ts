@@ -12,10 +12,10 @@ class HotelImageRoutes extends BaseRoutes {
     public routes(): void {
         this.router.get("/:hotel_id/getImages", HotelImageController.getImagesByHotelId);
         this.router.post(
-            "/:hotel_id/createImages",
+            "/:hotel_id/createHotelImages",
             // validate(createHotelImageSchema),
             upload.array('image'),
-            HotelImageController.createImages
+            HotelImageController.createHotelImages
         )
         this.router.patch(
             "/:hotel_id/updateImages",

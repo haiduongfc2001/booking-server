@@ -9,7 +9,7 @@ import ErrorHandler from "../utils/ErrorHandler";
 
 class HotelImageController {
     // Function to handle creation of a new hotel image
-    async createImages(req: Request, res: Response) {
+    async createHotelImages(req: Request, res: Response) {
         try {
             // Check if files are uploaded
             if (!req.files || req.files.length === 0) {
