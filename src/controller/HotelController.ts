@@ -66,10 +66,12 @@ class HotelController {
                 });
             }
 
+            const hotelInfo = await new HotelRepo().retrieveById(hotel_id)
+
             res.status(200).json({
                 status: 200,
                 message: `Successfully fetched hotel by id ${hotel_id}!`,
-                data: existingHotel,
+                data: hotelInfo,
             });
 
         } catch (error) {

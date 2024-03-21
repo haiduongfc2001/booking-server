@@ -18,7 +18,7 @@ class HotelImageRoutes extends BaseRoutes {
             HotelImageController.createHotelImages
         )
         this.router.patch(
-            "/:hotel_id/updateImages",
+            "/:hotel_id/updateImagesByHotelId",
             upload.array('image'),
             HotelImageController.updateImagesByHotelId
         );

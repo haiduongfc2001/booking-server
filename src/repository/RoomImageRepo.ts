@@ -22,4 +22,18 @@ export class RoomImageRepo implements IRoomImageRepo {
             throw new Error("Failed to get URLs by room_id: " + error.message);
         }
     }
+
+    async deleteImages(imagesToDelete: Array<string>): Promise<void> {
+        try {
+            for (const id of imagesToDelete) {
+                await RoomImage.destroy({
+                    where: {
+                        id: id
+                    }
+                });
+            }
+        } catch (error) {
+            console.error("Error deleting images:", error);
+        }
+    }
 }

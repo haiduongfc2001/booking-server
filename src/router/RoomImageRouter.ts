@@ -14,6 +14,11 @@ class HotelRoutes extends BaseRoutes {
             upload.array('image'),
             RoomImageController.createRoomImages
         )
+        this.router.patch(
+            "/:hotel_id/room/:room_id/updateImagesByRoomId",
+            upload.array('image'),
+            RoomImageController.updateImagesByRoomId
+        );
     }
 }
 
