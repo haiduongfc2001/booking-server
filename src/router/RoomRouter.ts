@@ -10,6 +10,7 @@ const storage = multer.memoryStorage();
 class RoomRoutes extends BaseRoutes {
     public routes(): void {
         this.router.get("/room/getAllRooms", RoomController.getAllRooms);
+        this.router.get("/:hotel_id/room/getAllRoomsByHotelId", RoomController.getAllRoomsByHotelId);
         this.router.get("/:hotel_id/room/:room_id/getRoomById", RoomController.getRoomById);
         this.router.post("/:hotel_id/createRoom",
             validate(createRoomSchema), RoomController.createRoom);
