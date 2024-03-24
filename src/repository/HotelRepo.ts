@@ -74,7 +74,9 @@ export class HotelRepo implements IHotelRepo {
                 ...hotel.toJSON(),
                 images: hotelImages.map(image => ({
                     id: image.id,
-                    url: image.url
+                    url: image.url,
+                    caption: image.caption,
+                    is_primary: image.is_primary,
                 }))
             }
 
@@ -101,7 +103,9 @@ export class HotelRepo implements IHotelRepo {
                         ...hotel.toJSON(),
                         images: hotelImages.map((image) => ({
                             id: image.id,
-                            url: image.url
+                            url: image.url,
+                            caption: image.caption,
+                            is_primary: image.is_primary,
                         })),
                     };
                 })

@@ -9,14 +9,26 @@ export const createRoomSchema = z.object({
             .string()
             .min(1, { message: "Type must be at least 1 character long!" }),
         price: z
-            .number()
-            .min(0, { message: "Price must be a positive number!" }),
+            .string()
+            .or(z.number())
+            .transform((val) => (typeof val === "string" ? parseFloat(val) : val))
+            .refine((val) => {
+                return typeof val === "number" && val >= 0;
+            }, { message: "Price must be a positive number!" }),
         discount: z
-            .number()
-            .min(0, { message: "Discount must be a positive number or zero!" }),
+            .string()
+            .or(z.number())
+            .transform((val) => (typeof val === "string" ? parseFloat(val) : val))
+            .refine((val) => {
+                return typeof val === "number" && val >= 0;
+            }, { message: "Discount must be a positive number or zero!" }),
         capacity: z
-            .number()
-            .min(1, { message: "Capacity must be a positive number!" }),
+            .string()
+            .or(z.number())
+            .transform((val) => (typeof val === "string" ? parseFloat(val) : val))
+            .refine((val) => {
+                return typeof val === "number" && val >= 1;
+            }, { message: "Capacity must be a positive number!" }),
         description: z
             .string()
             .min(1, { message: "Description must be at least 1 character long!" }),
@@ -38,14 +50,26 @@ export const updateRoomSchema = z.object({
                 .string()
                 .min(1, { message: "Type must be at least 1 character long!" }),
             price: z
-                .number()
-                .min(0, { message: "Price must be a positive number!" }),
+                .string()
+                .or(z.number())
+                .transform((val) => (typeof val === "string" ? parseFloat(val) : val))
+                .refine((val) => {
+                    return typeof val === "number" && val >= 0;
+                }, { message: "Price must be a positive number!" }),
             discount: z
-                .number()
-                .min(0, { message: "Discount must be a positive number or zero!" }),
+                .string()
+                .or(z.number())
+                .transform((val) => (typeof val === "string" ? parseFloat(val) : val))
+                .refine((val) => {
+                    return typeof val === "number" && val >= 0;
+                }, { message: "Discount must be a positive number or zero!" }),
             capacity: z
-                .number()
-                .min(1, { message: "Capacity must be a positive number!" }),
+                .string()
+                .or(z.number())
+                .transform((val) => (typeof val === "string" ? parseFloat(val) : val))
+                .refine((val) => {
+                    return typeof val === "number" && val >= 1;
+                }, { message: "Capacity must be a positive number!" }),
             description: z
                 .string()
                 .min(1, { message: "Description must be at least 1 character long!" }),

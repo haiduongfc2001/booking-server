@@ -89,17 +89,15 @@ export class StaffRepo implements IStaffRepo {
 
             const staffsWithHotel = await Promise.all(
                 staffs.map(async (staff: Staff) => {
-                    const staffHotels = await Hotel.findAll({
+                    const staffHotel = await Hotel.findOne({
                         where: {
                             id: staff.hotel_id,
                         },
                     });
+
                     return {
                         ...staff.toJSON(),
-                        hotel: staffHotels.map((hotel) => ({
-                            id: hotel.id,
-                            name: hotel.name
-                        })),
+                        hotel: staffHotel ? { id: staffHotel.id, name: staffHotel.name } : null,
                     };
                 })
             )

@@ -1,9 +1,6 @@
 import { Request, Response } from "express";
 import { Hotel } from "../model/Hotel";
 import { HotelRepo } from "../repository/HotelRepo";
-import { minioClient } from "../config/minio";
-import generateRandomString from "../utils/RandomString";
-import { DEFAULT_MINIO } from "../config/constant";
 import ErrorHandler from "../utils/ErrorHandler";
 import { StaffRepo } from "../repository/StaffRepo";
 import { RoomRepo } from "../repository/RoomRepo";
