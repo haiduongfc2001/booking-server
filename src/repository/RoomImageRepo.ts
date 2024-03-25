@@ -3,6 +3,8 @@ import { ValidationError } from "sequelize";
 
 interface IRoomImageRepo {
     getUrlsByRoomId(room_id: number): Promise<{ id: number, url: string }[]>;
+    deleteImage(room_image_id: number): Promise<void>;
+    deleteImages(imagesToDelete: Array<string>): Promise<void>;
 }
 
 export class RoomImageRepo implements IRoomImageRepo {
@@ -20,6 +22,18 @@ export class RoomImageRepo implements IRoomImageRepo {
             }));
         } catch (error: any) {
             throw new Error("Failed to get URLs by room_id: " + error.message);
+        }
+    }
+
+    async deleteImage(room_image_id: number): Promise<void> {
+        try {
+            await RoomImage.destroy({
+                where: {
+                    id: room_image_id
+                }
+            });
+        } catch (error) {
+            console.error("Error deleting image:", error);
         }
     }
 

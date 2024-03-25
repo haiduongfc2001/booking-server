@@ -78,11 +78,17 @@ export class RoomRepo implements IRoomRepo {
 
     async delete(room_id: number): Promise<void> {
         try {
-            const existingRoom = await Room.findByPk(room_id)
+            const existingRoom = await Room.findByPk(room_id);
 
             if (!existingRoom) {
                 throw new Error("Room not found!");
             }
+
+            await RoomImage.destroy({
+                where: {
+                    room_id: room_id
+                }
+            });
 
             await existingRoom.destroy();
         } catch (error) {
@@ -143,7 +149,6 @@ export class RoomRepo implements IRoomRepo {
                 throw new Error("Room not found!");
             }
 
-            existingRoom.hotel_id = updatedRoom.hotel_id;
             existingRoom.number = updatedRoom.number;
             existingRoom.type = updatedRoom.type;
             existingRoom.price = updatedRoom.price;

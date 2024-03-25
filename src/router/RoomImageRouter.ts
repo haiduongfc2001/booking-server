@@ -19,6 +19,10 @@ class HotelRoutes extends BaseRoutes {
             upload.array('image'),
             RoomImageController.updateImagesByRoomId
         );
+        this.router.delete(
+            "/:hotel_id/room/:room_id/image/:room_image_id/deleteImage",
+            RoomImageController.deleteImageByRoomId
+        )
     }
 }
 

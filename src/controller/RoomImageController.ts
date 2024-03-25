@@ -206,6 +206,44 @@ class RoomImageController {
             return ErrorHandler.handleServerError(res, error);
         }
     }
+
+    async deleteImageByRoomId(req: Request, res: Response) {
+        try {
+            const room_id = parseInt(req.params.room_id);
+            const room_image_id = parseInt(req.params.room_image_id);
+
+            const room_image = await RoomImage.findOne({
+                where: {
+                    id: room_image_id,
+                    room_id: room_id
+                }
+            });
+
+            if (!room_image) {
+                return res.status(404).json({
+                    status: 404,
+                    message: 'Room Image not found!'
+                });
+            }
+
+            const modifiedUrl = room_image.url.replace(DEFAULT_MINIO.END_POINT, "").split('?')[0];
+
+            // Remove the object from MinIO storage
+            await minioClient.removeObject(DEFAULT_MINIO.BUCKET, modifiedUrl);
+
+            // Delete the room image record from the database
+            const roomImageRepo = new RoomImageRepo();
+            await roomImageRepo.deleteImage(room_image_id);
+
+            res.status(200).json({
+                status: 200,
+                message: "Room Image deleted successfully!",
+            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
+        }
+    }
+
 }
 
 export default new RoomImageController()

@@ -21,7 +21,8 @@ class RoomRoutes extends BaseRoutes {
         );
         this.router.patch(
             "/:hotel_id/room/:room_id/updateRoom",
-            validate(updateRoomSchema),
+            // validate(updateRoomSchema),
+            upload.array('images', 5),
             RoomController.updateRoom
         );
         this.router.delete("/:hotel_id/room/:room_id/deleteRoom", RoomController.deleteRoom);
