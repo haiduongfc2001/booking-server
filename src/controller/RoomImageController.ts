@@ -6,6 +6,7 @@ import { Room } from "../model/Room";
 import { DEFAULT_MINIO } from "../config/constant";
 import { minioClient } from "../config/minio";
 import generateRandomString from "../utils/RandomString";
+import { Op } from "sequelize";
 
 class RoomImageController {
     async getImagesByRoomId(req: Request, res: Response) {
@@ -32,6 +33,61 @@ class RoomImageController {
                 status: 200,
                 message: "Successfully fetched Images by room_id",
                 data: urls,
+            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
+        }
+    }
+
+    async createRoomImage(req: Request, res: Response) {
+        try {
+            const hotel_id = req.params.hotel_id;
+            const room_id = req.params.room_id;
+            const { url, caption, is_primary } = req.body;
+            const file = req.file;
+
+
+            if (!file) {
+                return res.status(400).json({
+                    status: 400,
+                    message: "No file uploaded!"
+                });
+            }
+
+            const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}`;
+            const metaData = { 'Content-Type': file.mimetype };
+            const objectName = `${folder}/${Date.now()}_${generateRandomString(10)}_${file.originalname.replace(/\s/g, '')}`;
+            await minioClient.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
+
+            // Generate URL for the uploaded file
+            const fileUrl = await minioClient.presignedGetObject(DEFAULT_MINIO.BUCKET, objectName);
+
+            // Create a new RoomImage object with room_id, fileUrl, caption, and is_primary
+            const newRoomImage = new RoomImage({
+                room_id: room_id,
+                url: fileUrl,
+                caption: caption,
+                is_primary: is_primary,
+            });
+
+            // Save the new RoomImage object to the database
+            await newRoomImage.save();
+
+            if (is_primary === true) {
+                await RoomImage.update({ is_primary: false }, {
+                    where: {
+                        room_id: room_id,
+                        id: {
+                            [Op.ne]: newRoomImage.id
+                        }
+                    }
+                });
+            }
+
+            res.status(201).json({
+                status: 201,
+                message: "Room Image created successfully!",
+                data: newRoomImage
             });
         } catch (error) {
             return ErrorHandler.handleServerError(res, error);
@@ -99,6 +155,56 @@ class RoomImageController {
                 status: 201,
                 message: "Successfully created new room images!",
             });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
+        }
+    }
+
+    async updateRoomImageById(req: Request, res: Response) {
+        try {
+            const room_id = parseInt(req.params.room_id);
+            const room_image_id = parseInt(req.params.room_image_id);
+            const { caption, is_primary } = req.body;
+
+            const room_image = await RoomImage.findOne({
+                where: {
+                    id: room_image_id,
+                    room_id: room_id
+                }
+            });
+
+            if (!room_image) {
+                return res.status(404).json({
+                    status: 404,
+                    message: 'Room Image not found!'
+                });
+            }
+
+            if (caption !== undefined) {
+                room_image.caption = caption;
+            }
+
+            if (is_primary !== undefined) {
+                if (is_primary === true || is_primary === "true") {
+                    // Set all is_primary to false for other room_images with the same room_id
+                    await RoomImage.update({ is_primary: false }, {
+                        where: {
+                            room_id: room_id,
+                            id: { [Op.ne]: room_image_id } // Exclude the current room_image
+                        }
+                    });
+                }
+                room_image.is_primary = is_primary;
+            }
+
+            // Save room_image
+            await room_image.save();
+
+            res.status(200).json({
+                status: 200,
+                message: "Room Image updated successfully!",
+            });
+
         } catch (error) {
             return ErrorHandler.handleServerError(res, error);
         }
@@ -207,56 +313,7 @@ class RoomImageController {
         }
     }
 
-    async updateRoomImageById(req: Request, res: Response) {
-        try {
-            const room_id = parseInt(req.params.room_id);
-            const room_image_id = parseInt(req.params.room_image_id);
-            const { caption, is_primary } = req.body;
-
-            const room_image = await RoomImage.findOne({
-                where: {
-                    id: room_image_id,
-                    room_id: room_id
-                }
-            });
-
-            if (!room_image) {
-                return res.status(404).json({
-                    status: 404,
-                    message: 'Room Image not found!'
-                });
-            }
-
-            if (caption !== undefined) {
-                room_image.caption = caption;
-            }
-
-            if (is_primary !== undefined) {
-                if (is_primary === true) {
-                    await RoomImage.update({ is_primary: false }, {
-                        where: {
-                            room_id: room_id
-                        }
-                    });
-                }
-                room_image.is_primary = is_primary;
-            }
-
-            // Lưu room_image
-            await room_image.save();
-
-            res.status(200).json({
-                status: 200,
-                message: "Room Image updated successfully!",
-            });
-
-        } catch (error) {
-
-        }
-
-    }
-
-    async deleteImageByRoomId(req: Request, res: Response) {
+    async deleteRoomImageById(req: Request, res: Response) {
         try {
             const room_id = parseInt(req.params.room_id);
             const room_image_id = parseInt(req.params.room_image_id);

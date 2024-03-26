@@ -3,7 +3,6 @@ import { RoomRepo } from "../repository/RoomRepo";
 import ErrorHandler from "../utils/ErrorHandler";
 import { Room } from "../model/Room";
 import { Hotel } from "../model/Hotel";
-import RoomImageController from "./RoomImageController";
 import { DEFAULT_MINIO } from "../config/constant";
 import { minioClient } from "../config/minio";
 import generateRandomString from "../utils/RandomString";
@@ -238,31 +237,6 @@ class RoomController {
             });
 
             await new RoomRepo().update(room);
-
-            const { deleteImages } = req.body;
-
-            // Check if deleteImages is provided in the request and it's an array
-            if (Array.isArray(deleteImages) && deleteImages.length > 0) {
-                // List objects (images) from MinIO server corresponding to the hotel_id
-                const objectsList: string[] = []; // Specify the type as string[]
-                // const objectsStream = minioClient.listObjectsV2(DEFAULT_MINIO.BUCKET, `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}`, true);
-
-                // Collect objects to be deleted
-                for await (const id of deleteImages) {
-                    const hotelImage = await RoomImage.findByPk(id)
-                    if (hotelImage) {
-                        const modifiedUrl = hotelImage.url.replace(DEFAULT_MINIO.END_POINT, "").split('?')[0];
-                        objectsList.push(modifiedUrl);
-                    }
-                }
-
-                // Remove objects from MinIO server
-                await minioClient.removeObjects(DEFAULT_MINIO.BUCKET, objectsList);
-
-                // Delete images from the database
-                const hotelImageRepo = new RoomImageRepo();
-                await hotelImageRepo.deleteImages(deleteImages);
-            }
 
             res.status(200).json({
                 status: 200,

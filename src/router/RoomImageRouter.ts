@@ -10,22 +10,27 @@ class HotelRoutes extends BaseRoutes {
     public routes(): void {
         this.router.get("/:hotel_id/room/:room_id/getImagesByRoomId", RoomImageController.getImagesByRoomId);
         this.router.post(
+            "/:hotel_id/room/:room_id/createRoomImage",
+            upload.single('image'),
+            RoomImageController.createRoomImage
+        )
+        this.router.post(
             "/:hotel_id/room/:room_id/createRoomImages",
-            upload.array('image'),
+            upload.array('images', 5),
             RoomImageController.createRoomImages
         )
+        this.router.patch(
+            "/:hotel_id/room/:room_id/image/:room_image_id/updateRoomImageById",
+            RoomImageController.updateRoomImageById
+        );
         this.router.patch(
             "/:hotel_id/room/:room_id/updateImagesByRoomId",
             upload.array('image'),
             RoomImageController.updateImagesByRoomId
         );
-        this.router.patch(
-            "/:hotel_id/room/:room_id/image/:room_image_id/updateRoomImageById",
-            RoomImageController.updateRoomImageById
-        );
         this.router.delete(
             "/:hotel_id/room/:room_id/image/:room_image_id/deleteImage",
-            RoomImageController.deleteImageByRoomId
+            RoomImageController.deleteRoomImageById
         )
     }
 }
