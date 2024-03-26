@@ -207,6 +207,55 @@ class RoomImageController {
         }
     }
 
+    async updateRoomImageById(req: Request, res: Response) {
+        try {
+            const room_id = parseInt(req.params.room_id);
+            const room_image_id = parseInt(req.params.room_image_id);
+            const { caption, is_primary } = req.body;
+
+            const room_image = await RoomImage.findOne({
+                where: {
+                    id: room_image_id,
+                    room_id: room_id
+                }
+            });
+
+            if (!room_image) {
+                return res.status(404).json({
+                    status: 404,
+                    message: 'Room Image not found!'
+                });
+            }
+
+            if (caption !== undefined) {
+                room_image.caption = caption;
+            }
+
+            if (is_primary !== undefined) {
+                if (is_primary === true) {
+                    await RoomImage.update({ is_primary: false }, {
+                        where: {
+                            room_id: room_id
+                        }
+                    });
+                }
+                room_image.is_primary = is_primary;
+            }
+
+            // Lưu room_image
+            await room_image.save();
+
+            res.status(200).json({
+                status: 200,
+                message: "Room Image updated successfully!",
+            });
+
+        } catch (error) {
+
+        }
+
+    }
+
     async deleteImageByRoomId(req: Request, res: Response) {
         try {
             const room_id = parseInt(req.params.room_id);
