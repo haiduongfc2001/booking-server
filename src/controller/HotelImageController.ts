@@ -45,19 +45,38 @@ class HotelImageController {
                 // Generate URL for the uploaded file
                 const fileUrl = await minioClient.presignedGetObject(DEFAULT_MINIO.BUCKET, objectName);
 
+                const is_primary = req.body?.is_primarys[index]
+
                 // Create a new HotelImage object with hotel_id, fileUrl, caption, and is_primary
                 const newHotelImage = new HotelImage({
                     hotel_id: hotel_id,
                     url: fileUrl,
                     caption: req.body?.captions[index],
-                    is_primary: req.body?.is_primarys[index],
+                    is_primary: is_primary,
                 });
+
+
 
                 // Increment index
                 index++;
 
                 // Save the new HotelImage object to the database
-                await newHotelImage.save();
+                const hotelImage = await newHotelImage.save();
+
+
+
+                if (is_primary !== undefined) {
+                    if (is_primary === true || is_primary === "true") {
+                        // Set all is_primary to false for other room_images with the same room_id
+                        await HotelImage.update({ is_primary: false }, {
+                            where: {
+                                hotel_id: hotel_id,
+                                id: { [Op.ne]: hotelImage.id } // Exclude the current room_image
+                            }
+                        });
+                    }
+                    hotelImage.is_primary = is_primary;
+                }
             }
 
             // Respond with success message
@@ -300,6 +319,43 @@ class HotelImageController {
                 message: "Hotel Image updated successfully!",
             });
 
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
+        }
+    }
+
+    async deleteHotelImageById(req: Request, res: Response) {
+        try {
+            const hotel_id = parseInt(req.params.hotel_id);
+            const hotel_image_id = parseInt(req.params.hotel_image_id);
+
+            const hotel_image = await HotelImage.findOne({
+                where: {
+                    id: hotel_image_id,
+                    hotel_id: hotel_id
+                }
+            });
+
+            if (!hotel_image) {
+                return res.status(404).json({
+                    status: 404,
+                    message: 'Hotel Image not found!'
+                });
+            }
+
+            const modifiedUrl = hotel_image.url.replace(DEFAULT_MINIO.END_POINT, "").split('?')[0];
+
+            // Remove the object from MinIO storage
+            await minioClient.removeObject(DEFAULT_MINIO.BUCKET, modifiedUrl);
+
+            // Delete the hotel image record from the database
+            const hotelImageRepo = new HotelImageRepo();
+            await hotelImageRepo.deleteImage(hotel_image_id);
+
+            res.status(200).json({
+                status: 200,
+                message: "Hotel Image deleted successfully!",
+            });
         } catch (error) {
             return ErrorHandler.handleServerError(res, error);
         }

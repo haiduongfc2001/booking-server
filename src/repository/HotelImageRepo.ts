@@ -6,6 +6,7 @@ interface IHotelImageRepo {
     getUrlsByHotelId(hotel_id: string): Promise<{ id: number, url: string }[]>;
     deleteAll(hotel_id: string): Promise<void>;
     deleteImages(imagesToDelete: Array<string>): Promise<void>;
+    deleteImage(hotel_image_id: number): Promise<void>;
 }
 
 export class HotelImageRepo implements IHotelImageRepo {
@@ -70,6 +71,18 @@ export class HotelImageRepo implements IHotelImageRepo {
             }
         } catch (error) {
             console.error("Error deleting images:", error);
+        }
+    }
+
+    async deleteImage(hotel_image_id: number): Promise<void> {
+        try {
+            await HotelImage.destroy({
+                where: {
+                    id: hotel_image_id
+                }
+            });
+        } catch (error) {
+            console.error("Error deleting image:", error);
         }
     }
 }

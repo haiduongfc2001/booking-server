@@ -13,8 +13,7 @@ class HotelImageRoutes extends BaseRoutes {
         this.router.get("/:hotel_id/getImages", HotelImageController.getImagesByHotelId);
         this.router.post(
             "/:hotel_id/createHotelImages",
-            // validate(createHotelImageSchema),
-            upload.array('image'),
+            upload.array('images', 5),
             HotelImageController.createHotelImages
         )
         this.router.patch(
@@ -27,6 +26,10 @@ class HotelImageRoutes extends BaseRoutes {
             HotelImageController.updateHotelImageById
         );
         this.router.delete("/:hotel_id/deleteImages", HotelImageController.deleteImagesByHotelId);
+        this.router.delete(
+            "/:hotel_id/image/:hotel_image_id/deleteImage",
+            HotelImageController.deleteHotelImageById
+        )
     }
 }
 
