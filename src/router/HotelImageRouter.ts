@@ -22,6 +22,10 @@ class HotelImageRoutes extends BaseRoutes {
             upload.array('image'),
             HotelImageController.updateImagesByHotelId
         );
+        this.router.patch(
+            "/:hotel_id/image/:hotel_image_id/updateHotelImageById",
+            HotelImageController.updateHotelImageById
+        );
         this.router.delete("/:hotel_id/deleteImages", HotelImageController.deleteImagesByHotelId);
     }
 }

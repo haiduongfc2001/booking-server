@@ -143,6 +143,18 @@ class RoomImageController {
                     is_primary: req.body?.is_primarys[index],
                 });
 
+                if (req.body?.is_primarys[index] !== undefined) {
+                    if (req.body?.is_primarys[index] === true || req.body?.is_primarys[index] === "true") {
+                        // Set all req.body?.is_primarys[index] to false for other room_images with the same room_id
+                        await RoomImage.update({ is_primary: false }, {
+                            where: {
+                                room_id: room_id,
+                            }
+                        });
+                    }
+                    newRoomImage.is_primary = req.body?.is_primarys[index];
+                }
+
                 // Increment index
                 index++;
 

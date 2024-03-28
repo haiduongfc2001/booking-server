@@ -6,6 +6,7 @@ import { minioClient } from "../config/minio";
 import { Hotel } from "../model/Hotel";
 import { DEFAULT_MINIO } from "../config/constant";
 import ErrorHandler from "../utils/ErrorHandler";
+import { Op } from "sequelize";
 
 class HotelImageController {
     // Function to handle creation of a new hotel image
@@ -247,6 +248,58 @@ class HotelImageController {
                 status: 200,
                 message: "Successfully updated images by hotel_id"
             });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
+        }
+    }
+
+
+
+    async updateHotelImageById(req: Request, res: Response) {
+        try {
+            const hotel_id = parseInt(req.params.hotel_id);
+            const hotel_image_id = parseInt(req.params.hotel_image_id);
+            const { caption, is_primary } = req.body;
+
+            const hotel_image = await HotelImage.findOne({
+                where: {
+                    id: hotel_image_id,
+                    hotel_id: hotel_id
+                }
+            });
+
+            if (!hotel_image) {
+                return res.status(404).json({
+                    status: 404,
+                    message: 'Hotel Image not found!'
+                });
+            }
+
+            if (caption !== undefined) {
+                hotel_image.caption = caption;
+            }
+
+            if (is_primary !== undefined) {
+                if (is_primary === true || is_primary === "true") {
+                    // Set all is_primary to false for other hotel_images with the same hotel_id
+                    await HotelImage.update({ is_primary: false }, {
+                        where: {
+                            hotel_id: hotel_id,
+                            id: { [Op.ne]: hotel_image_id } // Exclude the current hotel_image
+                        }
+                    });
+                }
+                hotel_image.is_primary = is_primary;
+            }
+
+            // Save hotel_image
+            await hotel_image.save();
+
+            res.status(200).json({
+                status: 200,
+                message: "Hotel Image updated successfully!",
+            });
+
         } catch (error) {
             return ErrorHandler.handleServerError(res, error);
         }
