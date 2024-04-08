@@ -50,6 +50,19 @@ class AddressController {
             return ErrorHandler.handleServerError(res, error);
         }
     }
+    async getAllWards(req: Request, res: Response) {
+        try {
+            const wardData = await new AddressRepo().retrieveAllWards();
+
+            res.status(200).json({
+                status: 200,
+                message: "Successfully fetched all wards data!",
+                data: wardData,
+            });
+        } catch (error) {
+            return ErrorHandler.handleServerError(res, error);
+        }
+    }
 }
 
 export default new AddressController()
