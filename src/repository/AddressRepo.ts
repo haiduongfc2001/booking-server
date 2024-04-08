@@ -26,5 +26,4 @@ export class AddressRepo implements IAddressRepo {
             throw new Error("Failed to retrieve all districts!");
         }
     }
-
 }
