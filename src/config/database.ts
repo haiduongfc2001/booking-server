@@ -7,6 +7,7 @@ import { HotelImage } from "../model/HotelImage";
 import { Staff } from "../model/Staff";
 import { Room } from "../model/Room";
 import { RoomImage } from "../model/RoomImage";
+import { Province } from "../model/Province";
 
 dotenv.config();
 
@@ -52,7 +53,7 @@ class Database {
       host: this.POSTGRES_HOST,
       port: this.POSTGRES_PORT,
       dialect: "postgres",
-      models: [Service, Customer, Hotel, HotelImage, Staff, Room, RoomImage],
+      models: [Service, Customer, Hotel, HotelImage, Staff, Room, RoomImage, Province],
       define: config.define,
       logging: false,
     });

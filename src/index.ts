@@ -9,6 +9,7 @@ import StaffRouter from "./router/StaffRouter";
 import RoomRouter from "./router/RoomRouter";
 import * as dotenv from "dotenv";
 import RoomImageRouter from "./router/RoomImageRouter";
+import AddressRouter from "./router/AddressRouter";
 dotenv.config();
 
 class App {
@@ -47,6 +48,7 @@ class App {
     apiRouter.use("/hotel", RoomRouter);
     apiRouter.use("/hotel", StaffRouter);
     apiRouter.use("/hotel", RoomImageRouter);
+    apiRouter.use("/address", AddressRouter);
 
     this.app.use("/api/v1", apiRouter);
   }
