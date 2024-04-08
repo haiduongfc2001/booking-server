@@ -7,6 +7,7 @@ class AddressRoutes extends BaseRoutes {
         this.router.get("/getAllDistricts", AddressController.getAllDistricts);
         this.router.get("/getAllWards", AddressController.getAllWards);
         this.router.get("/province/:province_id/districts/getAll", AddressController.getAllDistrictsByProvinceId);
+        this.router.get("/province/district/:district_id/wards/getAll", AddressController.getAllWardsByDistrictId);
     }
 }
 

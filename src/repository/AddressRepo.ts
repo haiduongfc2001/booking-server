@@ -11,7 +11,9 @@ interface IAddressRepo {
 export class AddressRepo implements IAddressRepo {
     async retrieveAllProvinces(): Promise<Province[]> {
         try {
-            const provinces = await Province.findAll();
+            const provinces = await Province.findAll({
+                attributes: ['id', 'name', 'level']
+            });
 
             return provinces;
         } catch (error) {
