@@ -30,7 +30,7 @@ export class RoomRepo implements IRoomRepo {
                 where: {
                     hotel_id: hotel_id
                 },
-                order: [['id', 'asc']]
+                order: [['number', 'asc']]
             });
 
             const roomWithImages = await Promise.all(
