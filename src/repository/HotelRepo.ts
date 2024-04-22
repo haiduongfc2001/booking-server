@@ -1,6 +1,5 @@
 import { Hotel } from "../model/Hotel";
 import { HotelImage } from "../model/HotelImage";
-import { RoomRepo } from "./RoomRepo";
 
 interface IHotelRepo {
     save(hotel: Hotel): Promise<void>;
@@ -68,35 +67,20 @@ export class HotelRepo implements IHotelRepo {
             const hotelImages = await HotelImage.findAll({
                 where: {
                     hotel_id: hotel_id,
-                },
-                order: [['id', 'asc']]
+                }
             });
 
-            const roomListByHotelId = await new RoomRepo().retrieveAllRoomsByHotelId(hotel_id);
-
-            const hotelInfo = {
+            const hotelWithImages = {
                 ...hotel.toJSON(),
                 images: hotelImages.map(image => ({
                     id: image.id,
                     url: image.url,
                     caption: image.caption,
                     is_primary: image.is_primary,
-                })),
-                roomList: roomListByHotelId.map(room => ({
-                    id: room.id,
-                    number: room.number,
-                    type: room.type,
-                    price: room.price,
-                    discount: room.discount,
-                    capacity: room.capacity,
-                    description: room.description,
-                    rating_average: room.rating_average,
-                    status: room.status,
-                    images: room.images,
                 }))
-            };
+            }
 
-            return hotelInfo;
+            return hotelWithImages;
         } catch (error) {
             throw new Error("Failed to retrieve hotel by ID!");
         }

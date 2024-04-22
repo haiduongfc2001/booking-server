@@ -81,6 +81,61 @@ class HotelController {
     }
   }
 
+  async getHotelDetail(req: Request, res: Response) {
+    try {
+      const hotel_id = parseInt(req.params?.hotel_id);
+
+      const existingHotel = await Hotel.findByPk(hotel_id);
+
+      if (!existingHotel) {
+        return res.status(404).json({
+          status: 404,
+          message: "Hotel not found!",
+        });
+      }
+
+      const hotelImages = await HotelImage.findAll({
+        where: {
+          hotel_id: hotel_id,
+        },
+        order: [['id', 'asc']]
+      });
+
+      const roomListByHotelId = await new RoomRepo().retrieveAllRoomsByHotelId(hotel_id);
+
+      const hotelInfo = {
+        ...existingHotel.toJSON(),
+        images: hotelImages.map(image => ({
+          id: image.id,
+          url: image.url,
+          caption: image.caption,
+          is_primary: image.is_primary,
+        })),
+        roomList: roomListByHotelId.map(room => ({
+          id: room.id,
+          number: room.number,
+          type: room.type,
+          price: room.price,
+          discount: room.discount,
+          capacity: room.capacity,
+          description: room.description,
+          rating_average: room.rating_average,
+          status: room.status,
+          images: room.images,
+        }))
+      };
+
+      res.status(200).json({
+        status: 200,
+        message: `Successfully fetched hotel by id ${hotel_id}!`,
+        data: hotelInfo,
+      });
+
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
   async getStaffByHotelId(req: Request, res: Response) {
     try {
       const hotel_id = parseInt(req.params["hotel_id"]);

@@ -8,6 +8,7 @@ class HotelRoutes extends BaseRoutes {
         this.router.get("/getAllHotels", HotelController.getAllHotels);
         this.router.get("/getHotelList", HotelController.getHotelList);
         this.router.get("/:hotel_id/getHotelById", HotelController.getHotelById);
+        this.router.get("/:hotel_id/getHotelDetail", HotelController.getHotelDetail);
         this.router.get("/:hotel_id/getStaffByHotelId", HotelController.getStaffByHotelId);
         this.router.get("/:hotel_id/getRoomByHotelId", HotelController.getRoomByHotelId);
         this.router.get("/getOutstandingHotels", HotelController.getOutstandingHotels);
