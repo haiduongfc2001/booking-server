@@ -5,15 +5,14 @@ WORKDIR /app
 
 COPY package.json yarn.lock ./
 
-RUN yarn global add nodemon
-RUN yarn install
+RUN yarn 
 
-COPY . /app
+COPY . .
 
 # Stage 2: Development
 FROM build as dev
 
-EXPOSE 3000
+EXPOSE 5000
 
 CMD ["yarn", "dev"]
 
