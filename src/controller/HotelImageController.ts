@@ -7,6 +7,7 @@ import { Hotel } from "../model/Hotel";
 import { DEFAULT_MINIO } from "../config/constant";
 import ErrorHandler from "../utils/ErrorHandler";
 import { Op } from "sequelize";
+import getFileType from "../utils/GetFileType";
 
 class HotelImageController {
     // Function to handle creation of a new hotel image
@@ -39,31 +40,29 @@ class HotelImageController {
             for (const file of files) {
                 // Upload the file to MinIO server with specified object name
                 const metaData = { 'Content-Type': file.mimetype };
-                const objectName = `${folder}/${Date.now()}_${generateRandomString(10)}_${file.originalname.replace(/\s/g, '')}`;
+                // `${folder}/${Date.now()}_${generateRandomString(16)}_${file.originalname.replace(/\s/g, '')}`
+                const typeFile = getFileType(file.originalname)
+                const newName = `${Date.now()}_${generateRandomString(16)}.${typeFile}`;
+                const objectName = `${folder}/${newName}`;
+
                 await minioClient.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
 
-                // Generate URL for the uploaded file
-                const fileUrl = await minioClient.presignedGetObject(DEFAULT_MINIO.BUCKET, objectName);
-
-                const is_primary = req.body?.is_primarys[index]
+                const caption = req.body?.captions[index];
+                const is_primary = req.body?.is_primarys[index];
 
                 // Create a new HotelImage object with hotel_id, fileUrl, caption, and is_primary
                 const newHotelImage = new HotelImage({
                     hotel_id: hotel_id,
-                    url: fileUrl,
-                    caption: req.body?.captions[index],
-                    is_primary: is_primary,
+                    url: newName,
+                    caption,
+                    is_primary,
                 });
-
-
 
                 // Increment index
                 index++;
 
                 // Save the new HotelImage object to the database
                 const hotelImage = await newHotelImage.save();
-
-
 
                 if (is_primary !== undefined) {
                     if (is_primary === true || is_primary === "true") {
@@ -144,7 +143,6 @@ class HotelImageController {
                 ErrorHandler.handleServerError(res, e);
             });
 
-
             // After collecting objects, remove them from MinIO server
             objectsStream.on('end', () => {
                 minioClient.removeObjects(DEFAULT_MINIO.BUCKET, objectsList, function (e) {
@@ -182,17 +180,19 @@ class HotelImageController {
                 });
             }
 
+            const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}`;
+
             // Check if deleteImages is provided in the request and it's an array
             if (Array.isArray(deleteImages) && deleteImages.length > 0) {
                 // List objects (images) from MinIO server corresponding to the hotel_id
                 const objectsList: string[] = []; // Specify the type as string[]
-                // const objectsStream = minioClient.listObjectsV2(DEFAULT_MINIO.BUCKET, `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}`, true);
+                // const objectsStream = minioClient.listObjectsV2(DEFAULT_MINIO.BUCKET, `${folder}`, true);
 
                 // Collect objects to be deleted
                 for await (const id of deleteImages) {
                     const hotelImage = await HotelImage.findByPk(id)
                     if (hotelImage) {
-                        const modifiedUrl = hotelImage.url.replace(DEFAULT_MINIO.END_POINT, "").split('?')[0];
+                        const modifiedUrl = `${folder}/${hotelImage.url}`;
                         objectsList.push(modifiedUrl);
                     }
                 }
@@ -206,7 +206,6 @@ class HotelImageController {
             }
 
             // Define the folder or path within the bucket
-            const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}`;
             let index = 0;
 
             // Check if files are provided in the request
@@ -216,18 +215,20 @@ class HotelImageController {
                 for (const file of files) {
                     // Upload the file to MinIO server with specified object name
                     const metaData = { 'Content-Type': file.mimetype };
-                    const objectName = `${folder}/${Date.now()}_${generateRandomString(10)}_${file.originalname.replace(/\s/g, '')}}`;
+                    const typeFile = getFileType(file.originalname)
+                    const newName = `${Date.now()}_${generateRandomString(16)}.${typeFile}`;
+                    const objectName = `${folder}/${newName}`;
                     await minioClient.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
 
-                    // Generate URL for the uploaded file
-                    const fileUrl = await minioClient.presignedGetObject(DEFAULT_MINIO.BUCKET, objectName);
+                    const caption = req.body?.captions[index];
+                    const is_primary = req.body?.is_primarys[index];
 
                     // Create a new HotelImage object with hotel_id and fileUrl
                     const newHotelImage = new HotelImage({
                         hotel_id: hotel_id,
-                        url: fileUrl,
-                        caption: captions[index],
-                        is_primary: is_primarys[index],
+                        url: newName,
+                        caption,
+                        is_primary,
                     });
 
                     // Increment index
@@ -235,6 +236,22 @@ class HotelImageController {
 
                     // Save the new HotelImage object to the database
                     await newHotelImage.save();
+
+                    // Save the new HotelImage object to the database
+                    const hotelImage = await newHotelImage.save();
+
+                    if (is_primary !== undefined) {
+                        if (is_primary === true || is_primary === "true") {
+                            // Set all is_primary to false for other room_images with the same room_id
+                            await HotelImage.update({ is_primary: false }, {
+                                where: {
+                                    hotel_id: hotel_id,
+                                    id: { [Op.ne]: hotelImage.id } // Exclude the current room_image
+                                }
+                            });
+                        }
+                        hotelImage.is_primary = is_primary;
+                    }
                 }
             }
 
@@ -271,8 +288,6 @@ class HotelImageController {
             return ErrorHandler.handleServerError(res, error);
         }
     }
-
-
 
     async updateHotelImageById(req: Request, res: Response) {
         try {
@@ -343,10 +358,8 @@ class HotelImageController {
                 });
             }
 
-            const modifiedUrl = hotel_image.url.replace(DEFAULT_MINIO.END_POINT, "").split('?')[0];
-
             // Remove the object from MinIO storage
-            await minioClient.removeObject(DEFAULT_MINIO.BUCKET, modifiedUrl);
+            await minioClient.removeObject(DEFAULT_MINIO.BUCKET, `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${hotel_image.url}`);
 
             // Delete the hotel image record from the database
             const hotelImageRepo = new HotelImageRepo();

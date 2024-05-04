@@ -9,6 +9,8 @@ import { Sequelize } from "sequelize-typescript";
 import { HotelImage } from "../model/HotelImage";
 import { db } from "../config/database";
 import { QueryTypes } from 'sequelize';
+import { minioClient } from "../config/minio";
+import { DEFAULT_MINIO } from "../config/constant";
 
 class HotelController {
   async createHotel(req: Request, res: Response) {
@@ -290,10 +292,27 @@ class HotelController {
           type: QueryTypes.SELECT,
         });
 
+        const updatedHotels = await Promise.all(hotels.map(async (hotel: any) => {
+          // Generate presigned URL for hotel avatar
+          const presignedUrl = await new Promise<string>((resolve, reject) => {
+            minioClient.presignedGetObject(DEFAULT_MINIO.BUCKET, `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.hotel_id}/${hotel.hotel_avatar}`, 24 * 60 * 60, function (err, presignedUrl) {
+              if (err) reject(err);
+              else resolve(presignedUrl);
+            });
+          });
+
+          // Return updated hotel object with presigned URL
+          return {
+            ...hotel,
+            hotel_avatar: presignedUrl
+          };
+        }));
+
+
         res.status(200).json({
           status: 200,
           message: "Successfully fetched outstanding hotel data!",
-          data: hotels
+          data: updatedHotels
         });
       }
     } catch (error) {
@@ -302,4 +321,4 @@ class HotelController {
   }
 }
 
-export default new HotelController()
+export default new HotelController();

@@ -8,6 +8,7 @@ import { minioClient } from "../config/minio";
 import generateRandomString from "../utils/RandomString";
 import { RoomImage } from "../model/RoomImage";
 import { RoomImageRepo } from "../repository/RoomImageRepo";
+import getFileType from "../utils/GetFileType";
 
 class RoomController {
     async getAllRooms(req: Request, res: Response) {
@@ -113,16 +114,15 @@ class RoomController {
                 for (const file of files) {
                     // Upload the file to MinIO server with specified object name
                     const metaData = { 'Content-Type': file.mimetype };
-                    const objectName = `${folder}/${Date.now()}_${generateRandomString(10)}_${file.originalname.replace(/\s/g, '')}`;
+                    const typeFile = getFileType(file.originalname)
+                    const newName = `${Date.now()}_${generateRandomString(16)}.${typeFile}`;
+                    const objectName = `${folder}/${newName}`;
                     await minioClient.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
-
-                    // Generate URL for the uploaded file
-                    const fileUrl = await minioClient.presignedGetObject(DEFAULT_MINIO.BUCKET, objectName);
 
                     // Create a new RoomImage object with room_id, fileUrl, caption, and is_primary
                     const newRoomImage = new RoomImage({
                         room_id: room_id,
-                        url: fileUrl,
+                        url: newName,
                         caption: req.body?.captions[index],
                         is_primary: req.body?.is_primarys[index],
                     });

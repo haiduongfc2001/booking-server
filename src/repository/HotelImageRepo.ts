@@ -1,3 +1,5 @@
+import { DEFAULT_MINIO } from "../config/constant";
+import { minioClient } from "../config/minio";
 import { HotelImage } from "../model/HotelImage";
 import { ValidationError } from "sequelize";
 
@@ -37,12 +39,28 @@ export class HotelImageRepo implements IHotelImageRepo {
                 },
                 attributes: ['id', 'url', 'caption', 'is_primary']
             });
-            return hotelImages.map(image => ({
-                id: image.id,
-                url: image.url,
-                caption: image.caption,
-                is_primary: image.is_primary,
+
+            const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}`;
+
+            const urlsWithPresignedUrls = await Promise.all(hotelImages.map(async (image) => {
+                const presignedUrl = await new Promise<string>((resolve, reject) => {
+                    minioClient.presignedGetObject(DEFAULT_MINIO.BUCKET, `${folder}/${image.url}`, 24 * 60 * 60, (err, presignedUrl) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(presignedUrl);
+                        }
+                    });
+                });
+                return {
+                    id: image.id,
+                    url: presignedUrl,
+                    caption: image.caption,
+                    is_primary: image.is_primary,
+                };
             }));
+
+            return urlsWithPresignedUrls;
         } catch (error: any) {
             throw new Error("Failed to get URLs by hotel_id: " + error.message);
         }

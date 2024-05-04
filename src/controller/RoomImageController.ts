@@ -7,10 +7,12 @@ import { DEFAULT_MINIO } from "../config/constant";
 import { minioClient } from "../config/minio";
 import generateRandomString from "../utils/RandomString";
 import { Op } from "sequelize";
+import getFileType from "../utils/GetFileType";
 
 class RoomImageController {
     async getImagesByRoomId(req: Request, res: Response) {
         try {
+            const hotel_id = parseInt(req.params.hotel_id);
             const room_id = parseInt(req.params.room_id);
 
             const image = await RoomImage.findOne({
@@ -27,7 +29,7 @@ class RoomImageController {
             }
 
             const roomImageRepo = new RoomImageRepo();
-            const urls = await roomImageRepo.getUrlsByRoomId(room_id);
+            const urls = await roomImageRepo.getUrlsByRoomId(hotel_id, room_id);
 
             return res.status(200).json({
                 status: 200,
@@ -41,9 +43,8 @@ class RoomImageController {
 
     async createRoomImage(req: Request, res: Response) {
         try {
-            const hotel_id = req.params.hotel_id;
-            const room_id = req.params.room_id;
-            const { url, caption, is_primary } = req.body;
+            const { hotel_id, room_id } = req.params;
+            const { caption, is_primary } = req.body;
             const file = req.file;
 
 
@@ -56,32 +57,34 @@ class RoomImageController {
 
             const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}`;
             const metaData = { 'Content-Type': file.mimetype };
-            const objectName = `${folder}/${Date.now()}_${generateRandomString(10)}_${file.originalname.replace(/\s/g, '')}`;
-            await minioClient.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
+            const typeFile = getFileType(file.originalname)
+            const newName = `${Date.now()}_${generateRandomString(16)}.${typeFile}`;
+            const objectName = `${folder}/${newName}`;
 
-            // Generate URL for the uploaded file
-            const fileUrl = await minioClient.presignedGetObject(DEFAULT_MINIO.BUCKET, objectName);
+            await minioClient.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
 
             // Create a new RoomImage object with room_id, fileUrl, caption, and is_primary
             const newRoomImage = new RoomImage({
                 room_id: room_id,
-                url: fileUrl,
+                url: newName,
                 caption: caption,
                 is_primary: is_primary,
             });
 
             // Save the new RoomImage object to the database
-            await newRoomImage.save();
+            const roomImage = await newRoomImage.save();
 
-            if (is_primary === true) {
-                await RoomImage.update({ is_primary: false }, {
-                    where: {
-                        room_id: room_id,
-                        id: {
-                            [Op.ne]: newRoomImage.id
+            if (is_primary !== undefined) {
+                if (is_primary === true || is_primary === "true") {
+                    // Set all is_primary to false for other room_images with the same room_id
+                    await RoomImage.update({ is_primary: false }, {
+                        where: {
+                            room_id: room_id,
+                            id: { [Op.ne]: roomImage.id } // Exclude the current room_image
                         }
-                    }
-                });
+                    });
+                }
+                roomImage.is_primary = is_primary;
             }
 
             res.status(201).json({
@@ -105,8 +108,7 @@ class RoomImageController {
             }
 
             // Check if the room_id exists in the room table
-            const hotel_id = req.params.hotel_id;
-            const room_id = req.params.room_id;
+            const { hotel_id, room_id } = req.params;
             const roomExists = await Room.findOne({
                 where: {
                     id: room_id,
@@ -129,37 +131,41 @@ class RoomImageController {
             for (const file of files) {
                 // Upload the file to MinIO server with specified object name
                 const metaData = { 'Content-Type': file.mimetype };
-                const objectName = `${folder}/${Date.now()}_${generateRandomString(10)}_${file.originalname.replace(/\s/g, '')}`;
+                const typeFile = getFileType(file.originalname)
+                const newName = `${Date.now()}_${generateRandomString(16)}.${typeFile}`;
+                const objectName = `${folder}/${newName}`;
+
                 await minioClient.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
 
-                // Generate URL for the uploaded file
-                const fileUrl = await minioClient.presignedGetObject(DEFAULT_MINIO.BUCKET, objectName);
+                const caption = req.body?.captions[index]
+                const is_primary = req.body?.is_primarys[index]
 
-                // Create a new RoomImage object with room_id, fileUrl, caption, and is_primary
+                // Create a new RoomImage object with room_id and fileUrl
                 const newRoomImage = new RoomImage({
                     room_id: room_id,
-                    url: fileUrl,
-                    caption: req.body?.captions[index],
-                    is_primary: req.body?.is_primarys[index],
+                    url: newName,
+                    caption,
+                    is_primary,
                 });
-
-                if (req.body?.is_primarys[index] !== undefined) {
-                    if (req.body?.is_primarys[index] === true || req.body?.is_primarys[index] === "true") {
-                        // Set all req.body?.is_primarys[index] to false for other room_images with the same room_id
-                        await RoomImage.update({ is_primary: false }, {
-                            where: {
-                                room_id: room_id,
-                            }
-                        });
-                    }
-                    newRoomImage.is_primary = req.body?.is_primarys[index];
-                }
 
                 // Increment index
                 index++;
 
-                // Save the new RoomImage object to the database
-                await newRoomImage.save();
+                // Save the new HotelImage object to the database
+                const roomImage = await newRoomImage.save();
+
+                if (is_primary !== undefined) {
+                    if (is_primary === true || is_primary === "true") {
+                        // Set all is_primary to false for other room_images with the same room_id
+                        await RoomImage.update({ is_primary: false }, {
+                            where: {
+                                room_id: room_id,
+                                id: { [Op.ne]: roomImage.id } // Exclude the current room_image
+                            }
+                        });
+                    }
+                    roomImage.is_primary = is_primary;
+                }
             }
 
             // Respond with success message
@@ -224,11 +230,10 @@ class RoomImageController {
 
     async updateImagesByRoomId(req: Request, res: Response) {
         try {
-            const { deleteImages, captions, is_primarys, image_ids, captions_update } = req.body;
+            const { deleteImages, captions, is_primarys } = req.body;
+            const { hotel_id, room_id } = req.params;
 
             // Check if the room_id exists in the room table
-            const hotel_id = req.params.hotel_id;
-            const room_id = req.params.room_id;
             const roomExists = await Room.findOne({
                 where: {
                     id: room_id,
@@ -242,12 +247,15 @@ class RoomImageController {
                 });
             }
 
+            const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}`;
+
+            // Delete room images
             if (Array.isArray(deleteImages) && deleteImages.length > 0) {
                 const objectsList: string[] = [];
                 for await (const id of deleteImages) {
                     const roomImage = await RoomImage.findByPk(id)
                     if (roomImage) {
-                        const modifiedUrl = roomImage.url.replace(DEFAULT_MINIO.END_POINT, "").split('?')[0];
+                        const modifiedUrl = `${folder}/${roomImage.url}`;
                         objectsList.push(modifiedUrl);
                     }
                 }
@@ -259,9 +267,9 @@ class RoomImageController {
             }
 
             // Define the folder or path within the bucket
-            const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}`;
             let index = 0;
 
+            // Upload room images
             // Check if files are provided in the request
             if (Array.isArray(req.files) && req.files.length > 0) {
                 const files = req.files as Express.Multer.File[];
@@ -269,28 +277,45 @@ class RoomImageController {
                 for (const file of files) {
                     // Upload the file to MinIO server with specified object name
                     const metaData = { 'Content-Type': file.mimetype };
-                    const objectName = `${folder}/${Date.now()}_${generateRandomString(10)}_${file.originalname.replace(/\s/g, '')}}`;
+                    const typeFile = getFileType(file.originalname)
+                    const newName = `${Date.now()}_${generateRandomString(16)}.${typeFile}`;
+                    const objectName = `${folder}/${newName}`;
+
                     await minioClient.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
 
-                    // Generate URL for the uploaded file
-                    const fileUrl = await minioClient.presignedGetObject(DEFAULT_MINIO.BUCKET, objectName);
+                    const caption = req.body?.captions[index]
+                    const is_primary = req.body?.is_primarys[index]
 
                     // Create a new RoomImage object with room_id and fileUrl
                     const newRoomImage = new RoomImage({
                         room_id: room_id,
-                        url: fileUrl,
-                        caption: captions[index],
-                        is_primary: is_primarys[index],
+                        url: newName,
+                        caption,
+                        is_primary,
                     });
 
                     // Increment index
                     index++;
 
-                    // Save the new RoomImage object to the database
-                    await newRoomImage.save();
+                    // Save the new HotelImage object to the database
+                    const roomImage = await newRoomImage.save();
+
+                    if (is_primary !== undefined) {
+                        if (is_primary === true || is_primary === "true") {
+                            // Set all is_primary to false for other room_images with the same room_id
+                            await RoomImage.update({ is_primary: false }, {
+                                where: {
+                                    room_id: room_id,
+                                    id: { [Op.ne]: roomImage.id } // Exclude the current room_image
+                                }
+                            });
+                        }
+                        roomImage.is_primary = is_primary;
+                    }
                 }
             }
 
+            // Update caption of room image
             if (Array.isArray(req.body?.image_ids) && req.body?.image_ids.length > 0) {
                 const { image_ids, captions } = req.body;
 
@@ -327,24 +352,25 @@ class RoomImageController {
 
     async deleteRoomImageById(req: Request, res: Response) {
         try {
+            const hotel_id = parseInt(req.params.hotel_id);
             const room_id = parseInt(req.params.room_id);
             const room_image_id = parseInt(req.params.room_image_id);
 
-            const room_image = await RoomImage.findOne({
+            const roomImage = await RoomImage.findOne({
                 where: {
                     id: room_image_id,
                     room_id: room_id
                 }
             });
 
-            if (!room_image) {
+            if (!roomImage) {
                 return res.status(404).json({
                     status: 404,
                     message: 'Room Image not found!'
                 });
             }
 
-            const modifiedUrl = room_image.url.replace(DEFAULT_MINIO.END_POINT, "").split('?')[0];
+            const modifiedUrl = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}/${roomImage.url}`;
 
             // Remove the object from MinIO storage
             await minioClient.removeObject(DEFAULT_MINIO.BUCKET, modifiedUrl);
