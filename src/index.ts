@@ -1,5 +1,5 @@
 import express, { Application, Request, Response } from "express";
-import cors from 'cors';
+import cors from "cors";
 import { db } from "./config/database";
 import ServiceRouter from "./router/ServiceRouter";
 import CustomerRouter from "./router/CustomerRouter";
@@ -29,9 +29,11 @@ class App {
   private setupMiddleware(): void {
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
-    this.app.use(cors({
-      origin: (process.env.ALLOWED_ORIGINS || "").split(","),
-    }));
+    this.app.use(
+      cors({
+        origin: (process.env.ALLOWED_ORIGINS || "").split(","),
+      })
+    );
   }
 
   private setupRoutes(): void {

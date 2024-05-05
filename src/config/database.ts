@@ -44,8 +44,8 @@ class Database {
     const config = {
       define: {
         createdAt: "created_at",
-        updatedAt: "updated_at"
-      }
+        updatedAt: "updated_at",
+      },
     };
 
     this.sequelize = new Sequelize({
@@ -55,14 +55,27 @@ class Database {
       host: this.POSTGRES_HOST,
       port: this.POSTGRES_PORT,
       dialect: "postgres",
-      models: [Service, Customer, Hotel, HotelImage, Staff, Room, RoomImage, Province, District, Ward],
+      models: [
+        Service,
+        Customer,
+        Hotel,
+        HotelImage,
+        Staff,
+        Room,
+        RoomImage,
+        Province,
+        District,
+        Ward,
+      ],
       define: config.define,
       logging: false,
     });
 
     try {
       await this.sequelize.authenticate();
-      console.log("✅ PostgreSQL Connection has been established successfully.");
+      console.log(
+        "✅ PostgreSQL Connection has been established successfully."
+      );
     } catch (error) {
       console.error("❌ Unable to connect to the PostgreSQL database:", error);
     }

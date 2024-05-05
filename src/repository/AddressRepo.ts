@@ -3,41 +3,41 @@ import { Province } from "../model/Province";
 import { Ward } from "../model/Ward";
 
 interface IAddressRepo {
-    retrieveAllProvinces(): Promise<Province[]>;
-    retrieveAllDistricts(): Promise<District[]>;
-    retrieveAllWards(): Promise<Ward[]>;
+  retrieveAllProvinces(): Promise<Province[]>;
+  retrieveAllDistricts(): Promise<District[]>;
+  retrieveAllWards(): Promise<Ward[]>;
 }
 
 export class AddressRepo implements IAddressRepo {
-    async retrieveAllProvinces(): Promise<Province[]> {
-        try {
-            const provinces = await Province.findAll({
-                attributes: ['id', 'name', 'level']
-            });
+  async retrieveAllProvinces(): Promise<Province[]> {
+    try {
+      const provinces = await Province.findAll({
+        attributes: ["id", "name", "level"],
+      });
 
-            return provinces;
-        } catch (error) {
-            throw new Error("Failed to retrieve all provinces!");
-        }
+      return provinces;
+    } catch (error) {
+      throw new Error("Failed to retrieve all provinces!");
     }
+  }
 
-    async retrieveAllDistricts(): Promise<District[]> {
-        try {
-            const districts = await District.findAll();
+  async retrieveAllDistricts(): Promise<District[]> {
+    try {
+      const districts = await District.findAll();
 
-            return districts;
-        } catch (error) {
-            throw new Error("Failed to retrieve all districts!");
-        }
+      return districts;
+    } catch (error) {
+      throw new Error("Failed to retrieve all districts!");
     }
+  }
 
-    async retrieveAllWards(): Promise<Ward[]> {
-        try {
-            const wards = await Ward.findAll();
+  async retrieveAllWards(): Promise<Ward[]> {
+    try {
+      const wards = await Ward.findAll();
 
-            return wards;
-        } catch (error) {
-            throw new Error("Failed to retrieve all wards!");
-        }
+      return wards;
+    } catch (error) {
+      throw new Error("Failed to retrieve all wards!");
     }
+  }
 }

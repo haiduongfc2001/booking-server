@@ -11,241 +11,254 @@ import { RoomImageRepo } from "../repository/RoomImageRepo";
 import getFileType from "../utils/GetFileType";
 
 class RoomController {
-    async getAllRooms(req: Request, res: Response) {
-        try {
-            const roomsData = await new RoomRepo().retrieveAll();
+	async getAllRooms(req: Request, res: Response) {
+		try {
+			const roomsData = await new RoomRepo().retrieveAll();
 
-            res.status(200).json({
-                status: 200,
-                message: "Successfully fetched all room data!",
-                data: roomsData,
-            });
-        } catch (error) {
-            return ErrorHandler.handleServerError(res, error);
-        }
-    }
+			res.status(200).json({
+				status: 200,
+				message: "Successfully fetched all room data!",
+				data: roomsData,
+			});
+		} catch (error) {
+			return ErrorHandler.handleServerError(res, error);
+		}
+	}
 
-    async getAllRoomsByHotelId(req: Request, res: Response) {
-        try {
-            const hotel_id = parseInt(req.params?.hotel_id)
+	async getAllRoomsByHotelId(req: Request, res: Response) {
+		try {
+			const hotel_id = parseInt(req.params?.hotel_id);
 
-            const roomsList = await Room.findAll({
-                where: {
-                    hotel_id: hotel_id
-                }
-            });
+			const roomsList = await Room.findAll({
+				where: {
+					hotel_id: hotel_id,
+				},
+			});
 
-            if (roomsList.length === 0) {
-                return res.status(404).json({
-                    status: 404,
-                    message: "No rooms found for the specified hotel!",
-                });
-            }
+			if (roomsList.length === 0) {
+				return res.status(404).json({
+					status: 404,
+					message: "No rooms found for the specified hotel!",
+				});
+			}
 
-            const roomsData = await new RoomRepo().retrieveAllRoomsByHotelId(hotel_id);
+			const roomsData = await new RoomRepo().retrieveAllRoomsByHotelId(
+				hotel_id
+			);
 
-            res.status(200).json({
-                status: 200,
-                message: "Successfully fetched all room data!",
-                data: roomsData,
-            });
-        } catch (error) {
-            return ErrorHandler.handleServerError(res, error);
-        }
-    }
+			res.status(200).json({
+				status: 200,
+				message: "Successfully fetched all room data!",
+				data: roomsData,
+			});
+		} catch (error) {
+			return ErrorHandler.handleServerError(res, error);
+		}
+	}
 
-    async createRoom(req: Request, res: Response) {
-        try {
-            const hotel_id = parseInt(req.params?.hotel_id);
-            const room_number = req.body?.number;
+	async createRoom(req: Request, res: Response) {
+		try {
+			const hotel_id = parseInt(req.params?.hotel_id);
+			const room_number = req.body?.number;
 
-            const existingHotel = await Hotel.findByPk(hotel_id);
+			const existingHotel = await Hotel.findByPk(hotel_id);
 
-            if (!existingHotel) {
-                return res.status(404).json({
-                    status: 404,
-                    message: "Hotel not found!",
-                });
-            }
+			if (!existingHotel) {
+				return res.status(404).json({
+					status: 404,
+					message: "Hotel not found!",
+				});
+			}
 
-            const existingRoomNumber = await Room.findOne({
-                where: {
-                    hotel_id: hotel_id,
-                    number: room_number,
-                }
-            });
+			const existingRoomNumber = await Room.findOne({
+				where: {
+					hotel_id: hotel_id,
+					number: room_number,
+				},
+			});
 
-            if (existingRoomNumber) {
-                return res.status(400).json({
-                    status: 400,
-                    message: "Room number already exists!",
-                });
-            }
+			if (existingRoomNumber) {
+				return res.status(400).json({
+					status: 400,
+					message: "Room number already exists!",
+				});
+			}
 
-            const newRoom = new Room();
-            newRoom.hotel_id = hotel_id;
-            newRoom.number = req.body.number;
-            newRoom.type = req.body.type;
-            newRoom.price = Number(req.body.price);
-            newRoom.discount = Number(req.body.discount);
-            newRoom.capacity = Number(req.body.capacity);
-            newRoom.description = req.body.description;
-            newRoom.status = req.body.status;
+			const newRoom = new Room();
+			newRoom.hotel_id = hotel_id;
+			newRoom.number = req.body.number;
+			newRoom.type = req.body.type;
+			newRoom.price = Number(req.body.price);
+			newRoom.discount = Number(req.body.discount);
+			newRoom.capacity = Number(req.body.capacity);
+			newRoom.description = req.body.description;
+			newRoom.status = req.body.status;
 
-            await new RoomRepo().save(newRoom);
+			await new RoomRepo().save(newRoom);
 
-            const savedRoom = await Room.findOne({
-                where: {
-                    hotel_id: newRoom.hotel_id,
-                    number: newRoom.number
-                }
-            })
+			const savedRoom = await Room.findOne({
+				where: {
+					hotel_id: newRoom.hotel_id,
+					number: newRoom.number,
+				},
+			});
 
-            if (req.files && savedRoom) {
-                const room_id = savedRoom.id;
-                const hotel_id = savedRoom.hotel_id;
+			if (req.files && savedRoom) {
+				const room_id = savedRoom.id;
+				const hotel_id = savedRoom.hotel_id;
 
-                // Define the folder or path within the bucket
-                const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}`;
-                let index = 0;
+				// Define the folder or path within the bucket
+				const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}`;
+				let index = 0;
 
-                const files = req.files as Express.Multer.File[];
+				const files = req.files as Express.Multer.File[];
 
-                for (const file of files) {
-                    // Upload the file to MinIO server with specified object name
-                    const metaData = { 'Content-Type': file.mimetype };
-                    const typeFile = getFileType(file.originalname)
-                    const newName = `${Date.now()}_${generateRandomString(16)}.${typeFile}`;
-                    const objectName = `${folder}/${newName}`;
-                    await minioClient.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
+				for (const file of files) {
+					// Upload the file to MinIO server with specified object name
+					const metaData = { "Content-Type": file.mimetype };
+					const typeFile = getFileType(file.originalname);
+					const newName = `${Date.now()}_${generateRandomString(
+						16
+					)}.${typeFile}`;
+					const objectName = `${folder}/${newName}`;
+					await minioClient.putObject(
+						DEFAULT_MINIO.BUCKET,
+						objectName,
+						file.buffer,
+						metaData
+					);
 
-                    // Create a new RoomImage object with room_id, fileUrl, caption, and is_primary
-                    const newRoomImage = new RoomImage({
-                        room_id: room_id,
-                        url: newName,
-                        caption: req.body?.captions[index],
-                        is_primary: req.body?.is_primarys[index],
-                    });
+					// Create a new RoomImage object with room_id, fileUrl, caption, and is_primary
+					const newRoomImage = new RoomImage({
+						room_id: room_id,
+						url: newName,
+						caption: req.body?.captions[index],
+						is_primary: req.body?.is_primarys[index],
+					});
 
-                    // Increment index
-                    index++;
+					// Increment index
+					index++;
 
-                    // Save the new RoomImage object to the database
-                    await newRoomImage.save();
-                }
-            }
+					// Save the new RoomImage object to the database
+					await newRoomImage.save();
+				}
+			}
 
-            res.status(201).json({
-                status: 201,
-                message: "Successfully created room!",
-            });
-        } catch (error) {
-            return ErrorHandler.handleServerError(res, error);
-        }
-    }
+			res.status(201).json({
+				status: 201,
+				message: "Successfully created room!",
+			});
+		} catch (error) {
+			return ErrorHandler.handleServerError(res, error);
+		}
+	}
 
-    async deleteRoom(req: Request, res: Response) {
-        try {
-            const hotel_id = parseInt(req.params.hotel_id);
-            const room_id = parseInt(req.params.room_id);
+	async deleteRoom(req: Request, res: Response) {
+		try {
+			const hotel_id = parseInt(req.params.hotel_id);
+			const room_id = parseInt(req.params.room_id);
 
-            const room = await Room.findOne({
-                where: {
-                    id: room_id,
-                    hotel_id: hotel_id
-                }
-            });
+			const room = await Room.findOne({
+				where: {
+					id: room_id,
+					hotel_id: hotel_id,
+				},
+			});
 
-            if (!room) {
-                return res.status(404).json({
-                    status: 404,
-                    message: 'Room not found!'
-                });
-            }
+			if (!room) {
+				return res.status(404).json({
+					status: 404,
+					message: "Room not found!",
+				});
+			}
 
-            await new RoomRepo().delete(room_id);
+			await new RoomRepo().delete(room_id);
 
-            res.status(200).json({
-                status: 200,
-                message: "Successfully deleted room!",
-            });
-        } catch (error) {
-            return ErrorHandler.handleServerError(res, error);
-        }
-    }
+			res.status(200).json({
+				status: 200,
+				message: "Successfully deleted room!",
+			});
+		} catch (error) {
+			return ErrorHandler.handleServerError(res, error);
+		}
+	}
 
+	async getRoomById(req: Request, res: Response) {
+		try {
+			const hotel_id = parseInt(req.params.hotel_id);
+			const room_id = parseInt(req.params.room_id);
 
-    async getRoomById(req: Request, res: Response) {
-        try {
-            const hotel_id = parseInt(req.params.hotel_id);
-            const room_id = parseInt(req.params.room_id);
+			const room = await Room.findOne({
+				where: {
+					id: room_id,
+					hotel_id: hotel_id,
+				},
+			});
 
-            const room = await Room.findOne({
-                where: {
-                    id: room_id,
-                    hotel_id: hotel_id
-                }
-            });
+			if (!room) {
+				return res.status(404).json({
+					status: 404,
+					message: "Room not found!",
+				});
+			}
 
-            if (!room) {
-                return res.status(404).json({
-                    status: 404,
-                    message: 'Room not found!'
-                });
-            }
+			const roomInfo = await new RoomRepo().retrieveById(room_id);
 
-            const roomInfo = await new RoomRepo().retrieveById(room_id);
+			res.status(200).json({
+				status: 200,
+				message: `Successfully fetched room by id ${room_id}!`,
+				data: roomInfo,
+			});
+		} catch (error) {
+			return ErrorHandler.handleServerError(res, error);
+		}
+	}
 
-            res.status(200).json({
-                status: 200,
-                message: `Successfully fetched room by id ${room_id}!`,
-                data: roomInfo,
-            });
-        } catch (error) {
-            return ErrorHandler.handleServerError(res, error);
-        }
-    }
+	async updateRoom(req: Request, res: Response) {
+		try {
+			const hotel_id = parseInt(req.params.hotel_id);
+			const room_id = parseInt(req.params.room_id);
 
-    async updateRoom(req: Request, res: Response) {
-        try {
-            const hotel_id = parseInt(req.params.hotel_id);
-            const room_id = parseInt(req.params.room_id);
+			const room = await Room.findOne({
+				where: {
+					id: room_id,
+					hotel_id: hotel_id,
+				},
+			});
 
-            const room = await Room.findOne({
-                where: {
-                    id: room_id,
-                    hotel_id: hotel_id
-                }
-            });
+			if (!room) {
+				return res.status(404).json({
+					status: 404,
+					message: "Room not found!",
+				});
+			}
 
-            if (!room) {
-                return res.status(404).json({
-                    status: 404,
-                    message: 'Room not found!'
-                });
-            }
+			const fieldsToUpdate = [
+				"number",
+				"type",
+				"price",
+				"discount",
+				"capacity",
+				"description",
+				"status",
+			];
 
-            const fieldsToUpdate = [
-                'number', 'type', 'price',
-                'discount', 'capacity', 'description', 'status'
-            ];
+			fieldsToUpdate.forEach((field) => {
+				if (req.body[field]) {
+					(room as any)[field] = req.body[field];
+				}
+			});
 
-            fieldsToUpdate.forEach(field => {
-                if (req.body[field]) {
-                    (room as any)[field] = req.body[field];
-                }
-            });
+			await new RoomRepo().update(room);
 
-            await new RoomRepo().update(room);
-
-            res.status(200).json({
-                status: 200,
-                message: "Successfully updated room data!",
-            });
-        } catch (error) {
-            return ErrorHandler.handleServerError(res, error);
-        }
-    }
+			res.status(200).json({
+				status: 200,
+				message: "Successfully updated room data!",
+			});
+		} catch (error) {
+			return ErrorHandler.handleServerError(res, error);
+		}
+	}
 }
 
-export default new RoomController()
+export default new RoomController();

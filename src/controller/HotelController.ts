@@ -8,7 +8,7 @@ import { Room } from "../model/Room";
 import { Sequelize } from "sequelize-typescript";
 import { HotelImage } from "../model/HotelImage";
 import { db } from "../config/database";
-import { QueryTypes } from 'sequelize';
+import { QueryTypes } from "sequelize";
 import { minioClient } from "../config/minio";
 import { DEFAULT_MINIO } from "../config/constant";
 
@@ -70,14 +70,13 @@ class HotelController {
         });
       }
 
-      const hotelInfo = await new HotelRepo().retrieveById(hotel_id)
+      const hotelInfo = await new HotelRepo().retrieveById(hotel_id);
 
       res.status(200).json({
         status: 200,
         message: `Successfully fetched hotel by id ${hotel_id}!`,
         data: hotelInfo,
       });
-
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
     }
@@ -100,20 +99,22 @@ class HotelController {
         where: {
           hotel_id: hotel_id,
         },
-        order: [['id', 'asc']]
+        order: [["id", "asc"]],
       });
 
-      const roomListByHotelId = await new RoomRepo().retrieveAllRoomsByHotelId(hotel_id);
+      const roomListByHotelId = await new RoomRepo().retrieveAllRoomsByHotelId(
+        hotel_id
+      );
 
       const hotelInfo = {
         ...existingHotel.toJSON(),
-        images: hotelImages.map(image => ({
+        images: hotelImages.map((image) => ({
           id: image.id,
           url: image.url,
           caption: image.caption,
           is_primary: image.is_primary,
         })),
-        roomList: roomListByHotelId.map(room => ({
+        roomList: roomListByHotelId.map((room) => ({
           id: room.id,
           number: room.number,
           type: room.type,
@@ -124,7 +125,7 @@ class HotelController {
           rating_average: room.rating_average,
           status: room.status,
           images: room.images,
-        }))
+        })),
       };
 
       res.status(200).json({
@@ -132,7 +133,6 @@ class HotelController {
         message: `Successfully fetched hotel by id ${hotel_id}!`,
         data: hotelInfo,
       });
-
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
     }
@@ -184,7 +184,6 @@ class HotelController {
     });
   }
 
-
   async getAllHotels(req: Request, res: Response) {
     try {
       const hotelsData = await new HotelRepo().retrieveAll();
@@ -203,19 +202,17 @@ class HotelController {
     try {
       const hotels = await new HotelRepo().retrieveAll();
 
-      const hotelList = hotels.map(hotel => ({
+      const hotelList = hotels.map((hotel) => ({
         id: hotel.id,
         name: hotel.name,
-      }))
+      }));
 
       res.status(200).json({
         status: 200,
         message: "Hotel list successfully retrieved!",
         data: hotelList,
       });
-    } catch (error) {
-
-    }
+    } catch (error) { }
   }
 
   async updateHotel(req: Request, res: Response) {
@@ -226,15 +223,19 @@ class HotelController {
       if (!hotelToUpdate) {
         return res.status(404).json({
           status: 404,
-          message: "Hotel not found!"
+          message: "Hotel not found!",
         });
       }
 
       const fieldsToUpdate = [
-        'name', 'address', 'location', 'description', 'contact'
+        "name",
+        "address",
+        "location",
+        "description",
+        "contact",
       ];
 
-      fieldsToUpdate.forEach(field => {
+      fieldsToUpdate.forEach((field) => {
         if (req.body[field]) {
           (hotelToUpdate as any)[field] = req.body[field];
         }
@@ -292,27 +293,35 @@ class HotelController {
           type: QueryTypes.SELECT,
         });
 
-        const updatedHotels = await Promise.all(hotels.map(async (hotel: any) => {
-          // Generate presigned URL for hotel avatar
-          const presignedUrl = await new Promise<string>((resolve, reject) => {
-            minioClient.presignedGetObject(DEFAULT_MINIO.BUCKET, `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.hotel_id}/${hotel.hotel_avatar}`, 24 * 60 * 60, function (err, presignedUrl) {
-              if (err) reject(err);
-              else resolve(presignedUrl);
-            });
-          });
+        const updatedHotels = await Promise.all(
+          hotels.map(async (hotel: any) => {
+            // Generate presigned URL for hotel avatar
+            const presignedUrl = await new Promise<string>(
+              (resolve, reject) => {
+                minioClient.presignedGetObject(
+                  DEFAULT_MINIO.BUCKET,
+                  `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.hotel_id}/${hotel.hotel_avatar}`,
+                  24 * 60 * 60,
+                  function (err, presignedUrl) {
+                    if (err) reject(err);
+                    else resolve(presignedUrl);
+                  }
+                );
+              }
+            );
 
-          // Return updated hotel object with presigned URL
-          return {
-            ...hotel,
-            hotel_avatar: presignedUrl
-          };
-        }));
-
+            // Return updated hotel object with presigned URL
+            return {
+              ...hotel,
+              hotel_avatar: presignedUrl,
+            };
+          })
+        );
 
         res.status(200).json({
           status: 200,
           message: "Successfully fetched outstanding hotel data!",
-          data: updatedHotels
+          data: updatedHotels,
         });
       }
     } catch (error) {
