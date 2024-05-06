@@ -13,7 +13,6 @@ import {
 export class Customer extends Model {
 	public static CUSTOMER_TABLE_NAME = "customer" as string;
 	public static CUSTOMER_ID = "id" as string;
-	public static CUSTOMER_USERNAME = "username" as string;
 	public static CUSTOMER_PASSWORD = "password" as string;
 	public static CUSTOMER_EMAIL = "email" as string;
 	public static CUSTOMER_FULL_NAME = "full_name" as string;
@@ -35,19 +34,11 @@ export class Customer extends Model {
 	id!: number;
 
 	@Column({
-		type: DataType.STRING(100),
-		allowNull: false,
-		// unique: true,
-		field: Customer.CUSTOMER_USERNAME,
-	})
-	username!: string;
-
-	@Column({
 		type: DataType.STRING(255),
 		allowNull: false,
-		field: Customer.CUSTOMER_PASSWORD,
+		field: Customer.CUSTOMER_FULL_NAME,
 	})
-	password!: string;
+	full_name!: string;
 
 	@IsEmail
 	@Column({
@@ -61,9 +52,9 @@ export class Customer extends Model {
 	@Column({
 		type: DataType.STRING(255),
 		allowNull: false,
-		field: Customer.CUSTOMER_FULL_NAME,
+		field: Customer.CUSTOMER_PASSWORD,
 	})
-	full_name!: string;
+	password!: string;
 
 	@Column({
 		type: DataType.ENUM("male", "female", "other"),
@@ -74,7 +65,7 @@ export class Customer extends Model {
 
 	@Column({
 		type: DataType.STRING(255),
-		allowNull: false,
+		// allowNull: false,
 		// unique: true,
 		field: Customer.CUSTOMER_PHONE,
 	})

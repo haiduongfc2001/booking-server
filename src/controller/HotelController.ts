@@ -328,6 +328,42 @@ class HotelController {
       return ErrorHandler.handleServerError(res, error);
     }
   }
+
+  async getHotelSearchResults(req: Request, res: Response) {
+    try {
+      // const payload = {
+      //   location: "Hà Nội",
+      //   checkInDate: "2024-05-06",
+      //   checkOutDate: "2024-05-07",
+      //   numberOfRooms: 1,
+      //   numberOfAdults: 1,
+      //   numberOfChildren: 1,
+      //   filters: {
+      //     childrenAges: [7, 10],
+      //     priceRange: [0, 5000000],
+      //     selectedAmenities: ["Nhà hàng"],
+      //     selectedRoomType: ["Phòng đôi", "Suite"],
+      //     minRating: "8.0",
+      //   },
+      // };
+
+      const {
+        location,
+        checkInDate,
+        checkOutDate,
+        numberOfRooms,
+        numberOfAdults,
+        childrenAges,
+        filters,
+        page,
+        size,
+      } = req.body;
+
+
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
 }
 
 export default new HotelController();

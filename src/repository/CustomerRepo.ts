@@ -2,6 +2,7 @@ import { Customer } from "../model/Customer";
 
 interface ICustomerRepo {
   save(newCustomer: Customer): Promise<void>;
+  create(newCustomer: Customer): Promise<void>;
   update(updatedCustomer: Customer): Promise<void>;
   delete(customer_id: number): Promise<void>;
   retrieveById(customer_id: number): Promise<Customer>;
@@ -12,7 +13,6 @@ export class CustomerRepo implements ICustomerRepo {
   async save(newCustomer: Customer): Promise<void> {
     try {
       await Customer.create({
-        username: newCustomer.username,
         password: newCustomer.password,
         email: newCustomer.email,
         full_name: newCustomer.full_name,
@@ -28,6 +28,21 @@ export class CustomerRepo implements ICustomerRepo {
     }
   }
 
+  async create(newCustomer: Customer): Promise<void> {
+    try {
+      await Customer.create({
+        email: newCustomer.email,
+        password: newCustomer.password,
+        full_name: newCustomer.full_name,
+        gender: newCustomer.gender,
+        phone: newCustomer.phone,
+        is_verified: newCustomer.is_verified
+      });
+    } catch (error) {
+      throw new Error("Failed to save customer!");
+    }
+  }
+
   async update(updatedCustomer: Customer): Promise<void> {
     try {
       const existingCustomer = await Customer.findByPk(updatedCustomer.id);
@@ -36,7 +51,6 @@ export class CustomerRepo implements ICustomerRepo {
         throw new Error("Customer not found!");
       }
 
-      existingCustomer.username = updatedCustomer.username;
       existingCustomer.password = updatedCustomer.password;
       existingCustomer.email = updatedCustomer.email;
       existingCustomer.full_name = updatedCustomer.full_name;

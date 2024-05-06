@@ -18,6 +18,15 @@ class CustomerRoutes extends BaseRoutes {
       validate(createCustomerSchema),
       CustomerController.createCustomer
     );
+    this.router.post(
+      "/register",
+      // validate(createCustomerSchema),
+      CustomerController.customerRegister
+    );
+    this.router.post(
+      "/verify",
+      CustomerController.verifyMail
+    );
     this.router.patch(
       "/:customer_id/updateCustomer",
       validate(updateCustomerSchema),

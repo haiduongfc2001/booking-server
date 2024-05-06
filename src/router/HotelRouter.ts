@@ -24,6 +24,10 @@ class HotelRoutes extends BaseRoutes {
       "/getOutstandingHotels",
       HotelController.getOutstandingHotels
     );
+    this.router.get(
+      "/getHotelSearchResults",
+      HotelController.getHotelSearchResults
+    );
     this.router.post(
       "/createHotel",
       validate(createHotelSchema),

@@ -2,9 +2,6 @@ import { z } from "zod";
 
 export const createCustomerSchema = z.object({
   body: z.object({
-    username: z
-      .string()
-      .min(1, { message: "Username must be greater than 1 characters!" }),
     email: z
       .string()
       .email({ message: "Email is invalid!" })
@@ -24,7 +21,7 @@ export const createCustomerSchema = z.object({
           message: "Gender must be male, female or other",
         }
       ),
-    phone: z.string().length(10, { message: "Phone must be 10 characters" }),
+    // phone: z.string().length(10, { message: "Phone must be 10 characters" }),
     // dob: z.string(),
     // avatar: z.string(),
     // address: z.string(),
@@ -36,9 +33,6 @@ export const updateCustomerSchema = z.object({
   params: z.object({ customer_id: z.string() }),
   body: z
     .object({
-      username: z
-        .string()
-        .min(1, { message: "Username must be greater than 1 characters!" }),
       email: z
         .string()
         .email({ message: "Email is invalid!" })
@@ -59,7 +53,7 @@ export const updateCustomerSchema = z.object({
             message: "Gender must be male, female or other",
           }
         ),
-      phone: z.string().length(10, { message: "Phone must be 10 characters" }),
+      // phone: z.string().length(10, { message: "Phone must be 10 characters" }),
       // dob: z.string(),
       // avatar: z.string(),
       // address: z.string(),
