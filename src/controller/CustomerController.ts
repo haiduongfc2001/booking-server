@@ -4,7 +4,8 @@ import { CustomerRepo } from "../repository/CustomerRepo";
 import ErrorHandler from "../utils/ErrorHandler";
 import securePassword from "../utils/SecurePassword";
 import sendVerifyMail from "../utils/SendVerifyMail";
-import { where } from "sequelize";
+import bcrypt from "bcrypt";
+import generateToken from "../utils/GenerateToken";
 
 class CustomerController {
 	async createCustomer(req: Request, res: Response) {
@@ -209,7 +210,53 @@ class CustomerController {
 	}
 
 	async customerLogin(req: Request, res: Response) {
+		const { email, password } = req.body;
+
+		// Input validation (optional)
+		if (!email || !password) {
+			return res.status(400).json({
+				status: 400,
+				message: "Vui lòng cung cấp email và mật khẩu!",
+			});
+		}
+
 		try {
+			// Find customer by email
+			const customer = await Customer.findOne({ where: { email } });
+
+			if (!customer) {
+				return res.status(401).json({
+					status: 401,
+					message: "Email hoặc mật khẩu không hợp lệ!",
+				});
+			}
+
+			// Compare password hashes securely
+			const isPasswordValid = await bcrypt.compare(password, customer.password);
+
+			if (!isPasswordValid) {
+				return res.status(401).json({
+					status: 401,
+					message: "Email hoặc mật khẩu không hợp lệ!",
+				});
+			}
+
+			if (!customer.is_verified) {
+				return res.status(401).json({
+					status: 401,
+					message: "Email chưa được xác thực. Vui lòng kiểm tra email của bạn!",
+				});
+			}
+
+			// Generate JWT with appropriate expiry (consider using refresh tokens)
+			const token = generateToken(customer.id);
+
+			// Login successful
+			res.status(200).json({
+				status: 200,
+				message: "Đăng nhập thành công!",
+				token,
+			});
 		} catch (error) {
 			return ErrorHandler.handleServerError(res, error);
 		}
