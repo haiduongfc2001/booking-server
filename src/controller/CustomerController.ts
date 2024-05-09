@@ -5,7 +5,7 @@ import ErrorHandler from "../utils/ErrorHandler";
 import securePassword from "../utils/SecurePassword";
 import sendVerifyMail from "../utils/SendVerifyMail";
 import bcrypt from "bcrypt";
-import generateToken from "../utils/GenerateToken";
+import { generateCustomerToken } from "../utils/GenerateToken";
 
 class CustomerController {
 	async createCustomer(req: Request, res: Response) {
@@ -180,8 +180,7 @@ class CustomerController {
 					await sendVerifyMail(full_name, email, customerData.id);
 					return res.status(200).json({
 						status: 201,
-						message:
-							"Xin vui lòng xác thực tài khoản trong tin nhắn được chúng tôi gửi trong email của bạn!",
+						message: "Đăng ký tài khoản thành công!",
 					});
 				} else {
 					res
@@ -249,7 +248,7 @@ class CustomerController {
 			}
 
 			// Generate JWT with appropriate expiry (consider using refresh tokens)
-			const token = generateToken(customer.id);
+			const token = generateCustomerToken(customer.id, customer.email);
 
 			// Login successful
 			res.status(200).json({

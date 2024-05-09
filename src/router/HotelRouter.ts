@@ -2,43 +2,67 @@ import BaseRoutes from "./base/BaseRouter";
 import HotelController from "../controller/HotelController";
 import validate from "../helper/validate";
 import { createHotelSchema, updateHotelSchema } from "../schema/HotelSchema";
+import { authFullRole } from "../middleware/AuthCustomer";
 
 class HotelRoutes extends BaseRoutes {
   public routes(): void {
-    this.router.get("/getAllHotels", HotelController.getAllHotels);
-    this.router.get("/getHotelList", HotelController.getHotelList);
-    this.router.get("/:hotel_id/getHotelById", HotelController.getHotelById);
+    this.router.get(
+      "/getAllHotels",
+      authFullRole,
+      HotelController.getAllHotels
+    );
+    this.router.get(
+      "/getHotelList",
+      authFullRole,
+      HotelController.getHotelList
+    );
+    this.router.get(
+      "/:hotel_id/getHotelById",
+      authFullRole,
+      HotelController.getHotelById
+    );
     this.router.get(
       "/:hotel_id/getHotelDetail",
+      authFullRole,
       HotelController.getHotelDetail
     );
     this.router.get(
       "/:hotel_id/getStaffByHotelId",
+      authFullRole,
       HotelController.getStaffByHotelId
     );
     this.router.get(
       "/:hotel_id/getRoomByHotelId",
+      authFullRole,
       HotelController.getRoomByHotelId
     );
     this.router.get(
       "/getOutstandingHotels",
+      authFullRole,
       HotelController.getOutstandingHotels
     );
     this.router.get(
       "/getHotelSearchResults",
+      authFullRole,
       HotelController.getHotelSearchResults
     );
     this.router.post(
       "/createHotel",
+      authFullRole,
       validate(createHotelSchema),
       HotelController.createHotel
     );
     this.router.patch(
       "/:hotel_id/updateHotel",
+      authFullRole,
       validate(updateHotelSchema),
       HotelController.updateHotel
     );
-    this.router.delete("/:hotel_id/deleteHotel", HotelController.deleteHotel);
+    this.router.delete(
+      "/:hotel_id/deleteHotel",
+      authFullRole,
+      HotelController.deleteHotel
+    );
   }
 }
 

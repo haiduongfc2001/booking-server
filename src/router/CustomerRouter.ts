@@ -5,42 +5,43 @@ import {
   createCustomerSchema,
   updateCustomerSchema,
 } from "../schema/CustomerSchema";
-import { authCustomer } from "../middleware/AuthCustomer";
+import { authFullRole } from "../middleware/AuthCustomer";
 
 class CustomerRoutes extends BaseRoutes {
   public routes(): void {
     this.router.get(
       "/getAllCustomers",
-      authCustomer,
+      authFullRole,
       CustomerController.getAllCustomers
     );
     this.router.get(
       "/:customer_id/getCustomerById",
-      authCustomer,
+      authFullRole,
       CustomerController.getCustomerById
     );
     this.router.post(
       "/createCustomer",
-      authCustomer,
+      authFullRole,
       validate(createCustomerSchema),
       CustomerController.createCustomer
     );
     this.router.post(
       "/register",
+      authFullRole,
       // validate(createCustomerSchema),
       CustomerController.customerRegister
     );
-    this.router.post("/verify", CustomerController.verifyMail);
-    this.router.post("/login", CustomerController.customerLogin);
+    this.router.post("/verify", authFullRole, CustomerController.verifyMail);
+    this.router.post("/login", authFullRole, CustomerController.customerLogin);
     this.router.patch(
       "/:customer_id/updateCustomer",
-      authCustomer,
+      authFullRole,
       validate(updateCustomerSchema),
       CustomerController.updateCustomer
     );
     this.router.delete(
       "/:customer_id/deleteCustomer",
-      authCustomer,
+      authFullRole,
       CustomerController.deleteCustomer
     );
   }

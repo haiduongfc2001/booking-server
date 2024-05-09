@@ -36,7 +36,7 @@ const sendVerifyMail = async (
     const mailOptions: MailOptions = {
       from: EMAIL_USERNAME!,
       to: email,
-      subject: "For Verification Mail",
+      subject: "Xác thực email",
       text: "Plaintext version of the message",
       html: `
             <!DOCTYPE html>
