@@ -1,7 +1,7 @@
 import BaseRoutes from "./base/BaseRouter";
 import RoomImageController from "../controller/RoomImageController";
 import multer from "multer";
-import { authFullRole } from "../middleware/AuthCustomer";
+import { authFullRole } from "../middleware/Auth.middleware";
 
 // Set up multer storage
 const storage = multer.memoryStorage();

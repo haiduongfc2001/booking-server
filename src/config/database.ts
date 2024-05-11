@@ -10,6 +10,7 @@ import { RoomImage } from "../model/RoomImage";
 import { Province } from "../model/Province";
 import { District } from "../model/District";
 import { Ward } from "../model/Ward";
+import { Promotion } from "../model/Promotion";
 
 dotenv.config();
 
@@ -63,6 +64,7 @@ class Database {
         Staff,
         Room,
         RoomImage,
+        Promotion,
         Province,
         District,
         Ward,

@@ -18,7 +18,7 @@ export class Staff extends Model {
   public static STAFF_GENDER = "gender" as const;
   public static STAFF_PHONE = "phone" as string;
   public static STAFF_AVATAR = "avatar" as string;
-  public static STAFF_HOTEL_ID = "hotel_id" as string;
+  public static HOTEL_ID = "hotel_id" as string;
   public static STAFF_ROLE = "role" as const;
   public static STAFF_TOKEN = "token" as string;
 
@@ -76,7 +76,7 @@ export class Staff extends Model {
 
   @Column({
     type: DataType.INTEGER,
-    field: Staff.STAFF_HOTEL_ID,
+    field: Staff.HOTEL_ID,
   })
   hotel_id!: number;
 

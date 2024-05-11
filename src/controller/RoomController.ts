@@ -7,7 +7,6 @@ import { DEFAULT_MINIO } from "../config/constant";
 import { minioClient } from "../config/minio";
 import generateRandomString from "../utils/RandomString";
 import { RoomImage } from "../model/RoomImage";
-import { RoomImageRepo } from "../repository/RoomImageRepo";
 import getFileType from "../utils/GetFileType";
 
 class RoomController {
@@ -24,6 +23,7 @@ class RoomController {
 			return ErrorHandler.handleServerError(res, error);
 		}
 	}
+
 
 	async getAllRoomsByHotelId(req: Request, res: Response) {
 		try {
@@ -59,6 +59,15 @@ class RoomController {
 	async createRoom(req: Request, res: Response) {
 		try {
 			const hotel_id = parseInt(req.params?.hotel_id);
+			const {
+				number,
+				type,
+				price,
+				adult_occupancy,
+				child_occupancy,
+				description,
+				status,
+			} = req.body;
 			const room_number = req.body?.number;
 
 			const existingHotel = await Hotel.findByPk(hotel_id);
@@ -84,15 +93,16 @@ class RoomController {
 				});
 			}
 
-			const newRoom = new Room();
-			newRoom.hotel_id = hotel_id;
-			newRoom.number = req.body.number;
-			newRoom.type = req.body.type;
-			newRoom.price = Number(req.body.price);
-			newRoom.discount = Number(req.body.discount);
-			newRoom.capacity = Number(req.body.capacity);
-			newRoom.description = req.body.description;
-			newRoom.status = req.body.status;
+			const newRoom = new Room({
+				hotel_id,
+				number,
+				type,
+				price: Number(price),
+				adult_occupancy: Number(adult_occupancy),
+				child_occupancy: Number(child_occupancy),
+				description,
+				status,
+			});
 
 			await new RoomRepo().save(newRoom);
 
@@ -237,8 +247,6 @@ class RoomController {
 				"number",
 				"type",
 				"price",
-				"discount",
-				"capacity",
 				"description",
 				"status",
 			];

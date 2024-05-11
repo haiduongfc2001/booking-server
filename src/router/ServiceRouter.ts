@@ -5,7 +5,7 @@ import {
   createServiceSchema,
   updateServiceSchema,
 } from "../schema/ServiceSchema";
-import { authFullRole } from "../middleware/AuthCustomer";
+import { authFullRole } from "../middleware/Auth.middleware";
 
 class ServiceRoutes extends BaseRoutes {
   public routes(): void {

@@ -16,7 +16,7 @@ export class Ward extends Model {
   public static WARD_ID = "id" as string;
   public static WARD_NAME = "name" as string;
   public static WARD_LEVEL = "level" as string;
-  public static WARD_DISTRICT_ID = "district_id" as string;
+  public static DISTRICT_ID = "district_id" as string;
 
   @Column({
     type: DataType.STRING(10),
@@ -44,7 +44,7 @@ export class Ward extends Model {
   @Column({
     type: DataType.STRING(10),
     allowNull: false,
-    field: Ward.WARD_DISTRICT_ID,
+    field: Ward.DISTRICT_ID,
   })
   district_id!: string;
 

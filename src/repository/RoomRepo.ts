@@ -1,3 +1,5 @@
+import { DEFAULT_MINIO } from "../config/constant";
+import { minioClient } from "../config/minio";
 import { Room } from "../model/Room";
 import { RoomImage } from "../model/RoomImage";
 
@@ -11,14 +13,66 @@ interface IRoomRepo {
   retrieveRoomByHotelId(hotel_id: number): Promise<Room[]>;
 }
 
+interface IRoomImage {
+  id: number;
+  url: string;
+  caption: string;
+  is_primary: boolean;
+}
+
+// Interface for response with presigned URLs
+interface RoomWithImages {
+  // Existing room properties from Room model
+  [key: string]: any;
+  images: IRoomImage[];
+}
+
 export class RoomRepo implements IRoomRepo {
-  async retrieveAll(): Promise<any[]> {
+  private async generatePresignedUrl(room: Room, imageUrl: string): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      minioClient.presignedGetObject(
+        DEFAULT_MINIO.BUCKET,
+        `${DEFAULT_MINIO.HOTEL_PATH}/${room.hotel_id}/${DEFAULT_MINIO.ROOM_PATH}/${room.id}/${imageUrl}`,
+        24 * 60 * 60,
+        (err, presignedUrl) => {
+          if (err) reject(err);
+          else resolve(presignedUrl);
+        }
+      );
+    });
+  }
+
+  async retrieveAll(): Promise<RoomWithImages[]> {
     try {
       const rooms = await Room.findAll({
         order: [["id", "asc"]],
       });
 
-      return rooms;
+      // Fetch room images in parallel using Promise.all
+      const roomImagePromises = rooms.map(async (room) => {
+        const roomImages = await RoomImage.findAll({
+          where: { room_id: room.id },
+        });
+
+        const imagesWithUrl = await Promise.all(
+          roomImages.map((image) =>
+            this.generatePresignedUrl(room, image.url).then((presignedUrl) => ({
+              ...image.toJSON(),
+              url: presignedUrl,
+            }))
+          )
+        );
+
+        return {
+          ...room.toJSON(),
+          images: imagesWithUrl,
+        };
+      });
+
+      // Wait for all image presigned URLs to be generated
+      const roomWithImages = await Promise.all(roomImagePromises);
+
+      return roomWithImages;
     } catch (error) {
       throw new Error("Failed to retrieve all rooms!");
     }
@@ -66,8 +120,8 @@ export class RoomRepo implements IRoomRepo {
         number: newRoom.number,
         type: newRoom.type,
         price: newRoom.price,
-        discount: newRoom.discount,
-        capacity: newRoom.capacity,
+        adult_occupancy: newRoom.adult_occupancy,
+        child_occupancy: newRoom.child_occupancy,
         description: newRoom.description,
         status: newRoom.status,
       });
@@ -149,8 +203,8 @@ export class RoomRepo implements IRoomRepo {
       existingRoom.number = updatedRoom.number;
       existingRoom.type = updatedRoom.type;
       existingRoom.price = updatedRoom.price;
-      existingRoom.discount = updatedRoom.discount;
-      existingRoom.capacity = updatedRoom.capacity;
+      existingRoom.adult_occupancy = updatedRoom.adult_occupancy;
+      existingRoom.child_occupancy = updatedRoom.child_occupancy;
       existingRoom.description = updatedRoom.description;
       existingRoom.status = updatedRoom.status;
 

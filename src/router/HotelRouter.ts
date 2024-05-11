@@ -2,7 +2,7 @@ import BaseRoutes from "./base/BaseRouter";
 import HotelController from "../controller/HotelController";
 import validate from "../helper/validate";
 import { createHotelSchema, updateHotelSchema } from "../schema/HotelSchema";
-import { authFullRole } from "../middleware/AuthCustomer";
+import { authFullRole } from "../middleware/Auth.middleware";
 
 class HotelRoutes extends BaseRoutes {
   public routes(): void {

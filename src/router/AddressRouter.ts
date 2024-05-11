@@ -1,6 +1,6 @@
 import BaseRoutes from "./base/BaseRouter";
 import AddressController from "../controller/AddressController";
-import { authFullRole } from "../middleware/AuthCustomer";
+import { authFullRole } from "../middleware/Auth.middleware";
 
 class AddressRoutes extends BaseRoutes {
   public routes(): void {

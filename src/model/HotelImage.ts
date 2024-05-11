@@ -14,7 +14,7 @@ import { Hotel } from "./Hotel";
 export class HotelImage extends Model {
   public static HOTEL_IMAGE_TABLE_NAME = "hotel_image" as string;
   public static HOTEL_IMAGE_ID = "id" as string;
-  public static HOTEL_IMAGE_HOTEL_ID = "hotel_id" as string;
+  public static HOTEL_ID = "hotel_id" as string;
   public static HOTEL_IMAGE_URL = "url" as string;
   public static HOTEL_IMAGE_CAPTION = "caption" as string;
   public static HOTEL_IMAGE_IS_PRIMARY = "is_primary" as string;
@@ -31,7 +31,7 @@ export class HotelImage extends Model {
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
-    field: HotelImage.HOTEL_IMAGE_HOTEL_ID,
+    field: HotelImage.HOTEL_ID,
   })
   hotel_id!: number;
 

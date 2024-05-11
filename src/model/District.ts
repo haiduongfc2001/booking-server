@@ -16,7 +16,7 @@ export class District extends Model {
 	public static DISTRICT_ID = "id" as string;
 	public static DISTRICT_NAME = "name" as string;
 	public static DISTRICT_LEVEL = "level" as string;
-	public static DISTRICT_PROVINCE_ID = "province_id" as string;
+	public static PROVINCE_ID = "province_id" as string;
 
 	@Column({
 		type: DataType.STRING(10),
@@ -44,7 +44,7 @@ export class District extends Model {
 	@Column({
 		type: DataType.STRING(10),
 		allowNull: false,
-		field: District.DISTRICT_PROVINCE_ID,
+		field: District.PROVINCE_ID,
 	})
 	province_id!: string;
 

@@ -5,7 +5,7 @@ import {
   createCustomerSchema,
   updateCustomerSchema,
 } from "../schema/CustomerSchema";
-import { authFullRole } from "../middleware/AuthCustomer";
+import { authFullRole } from "../middleware/Auth.middleware";
 
 class CustomerRoutes extends BaseRoutes {
   public routes(): void {

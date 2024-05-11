@@ -3,7 +3,7 @@ import RoomController from "../controller/RoomController";
 import multer from "multer";
 import validate from "../helper/validate";
 import { createRoomSchema, updateRoomSchema } from "../schema/RoomSchema";
-import { authFullRole } from "../middleware/AuthCustomer";
+import { authFullRole } from "../middleware/Auth.middleware";
 
 // Set up multer storage
 const storage = multer.memoryStorage();

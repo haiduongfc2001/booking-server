@@ -4,8 +4,6 @@ import { HotelRepo } from "../repository/HotelRepo";
 import ErrorHandler from "../utils/ErrorHandler";
 import { StaffRepo } from "../repository/StaffRepo";
 import { RoomRepo } from "../repository/RoomRepo";
-import { Room } from "../model/Room";
-import { Sequelize } from "sequelize-typescript";
 import { HotelImage } from "../model/HotelImage";
 import { db } from "../config/database";
 import { QueryTypes } from "sequelize";
@@ -119,8 +117,8 @@ class HotelController {
           number: room.number,
           type: room.type,
           price: room.price,
-          discount: room.discount,
-          capacity: room.capacity,
+          adult_occupancy: room.adult_occupancy,
+          child_occupancy: room.child_occupancy,
           description: room.description,
           rating_average: room.rating_average,
           status: room.status,
@@ -262,31 +260,47 @@ class HotelController {
           h.id AS hotel_id,
           h.name AS hotel_name,
           h.address AS hotel_address,
+
           (
-            SELECT hi.url
-            FROM hotel_image hi
-            WHERE hi.hotel_id = h.id 
-              AND hi.is_primary = true
-            LIMIT 1
+              SELECT hi.url
+              FROM hotel_image hi
+              WHERE hi.hotel_id = h.id
+                AND hi.is_primary = true
+              LIMIT 1 
           ) AS hotel_avatar,
-          MIN(r.price - r.discount) AS min_room_price,
+
+          MIN(CASE
+                  WHEN p.discount_type = 'percentage' THEN r.price * (1 - p.discount_value / 100)
+                  WHEN p.discount_type = 'fixed_amount' THEN r.price - p.discount_value
+                  ELSE r.price
+              END) AS min_room_price,
+
           (
-            SELECT r.price
-            FROM (
-                SELECT
-                    r.price,
-                    ROW_NUMBER() OVER (ORDER BY r.price - r.discount) AS rn
-                FROM room r
-                WHERE r.hotel_id = h.id
-            ) r
-            WHERE r.rn = 1
-        ) AS original_room_price
+              SELECT r.price
+              FROM (
+                  SELECT
+                      r.price,
+                      ROW_NUMBER() OVER (ORDER BY CASE
+                                                    WHEN MIN(p.discount_type) = 'percentage' THEN r.price * (1 - p.discount_value / 100)
+                                                    WHEN MIN(p.discount_type) = 'fixed_amount' THEN r.price - p.discount_value
+                                                    ELSE r.price
+                                                END) AS rn
+                  FROM room r
+                  LEFT JOIN promotion p ON r.id = p.room_id  
+                  WHERE r.hotel_id = h.id  
+                  GROUP BY r.price, r.id, p.discount_value 
+              ) r
+              WHERE r.rn = 1  
+          ) AS original_room_price
+
         FROM
-          hotel h
+            hotel h
         JOIN
-          room r ON h.id = r.hotel_id
+            room r ON h.id = r.hotel_id
+        LEFT JOIN promotion p ON r.id = p.room_id
+
         GROUP BY
-          h.id, h.name, h.address;
+            h.id, h.name, h.address, p.discount_value;
       `;
 
         const hotels = await sequelize.query(query, {

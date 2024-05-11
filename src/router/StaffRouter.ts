@@ -2,7 +2,7 @@ import BaseRoutes from "./base/BaseRouter";
 import StaffController from "../controller/StaffController";
 import validate from "../helper/validate";
 import { createStaffSchema, updateStaffSchema } from "../schema/StaffSchema";
-import { authFullRole } from "../middleware/AuthCustomer";
+import { authFullRole } from "../middleware/Auth.middleware";
 
 class StaffRoutes extends BaseRoutes {
   public routes(): void {

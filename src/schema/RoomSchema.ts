@@ -18,23 +18,23 @@ export const createRoomSchema = z.object({
         },
         { message: "Price must be a positive number!" }
       ),
-    discount: z
-      .string()
-      .or(z.number())
-      .transform((val) => (typeof val === "string" ? parseFloat(val) : val))
-      .refine(
-        (val) => {
-          return typeof val === "number" && val >= 0;
-        },
-        { message: "Discount must be a positive number or zero!" }
-      ),
-    capacity: z
+    adult_occupancy: z
       .string()
       .or(z.number())
       .transform((val) => (typeof val === "string" ? parseFloat(val) : val))
       .refine(
         (val) => {
           return typeof val === "number" && val >= 1;
+        },
+        { message: "Capacity must be a positive number!" }
+      ),
+    child_occupancy: z
+      .string()
+      .or(z.number())
+      .transform((val) => (typeof val === "string" ? parseFloat(val) : val))
+      .refine(
+        (val) => {
+          return typeof val === "number" && val >= 0;
         },
         { message: "Capacity must be a positive number!" }
       ),
@@ -65,23 +65,23 @@ export const updateRoomSchema = z.object({
           },
           { message: "Price must be a positive number!" }
         ),
-      discount: z
-        .string()
-        .or(z.number())
-        .transform((val) => (typeof val === "string" ? parseFloat(val) : val))
-        .refine(
-          (val) => {
-            return typeof val === "number" && val >= 0;
-          },
-          { message: "Discount must be a positive number or zero!" }
-        ),
-      capacity: z
+      adult_occupancy: z
         .string()
         .or(z.number())
         .transform((val) => (typeof val === "string" ? parseFloat(val) : val))
         .refine(
           (val) => {
             return typeof val === "number" && val >= 1;
+          },
+          { message: "Capacity must be a positive number!" }
+        ),
+      child_occupancy: z
+        .string()
+        .or(z.number())
+        .transform((val) => (typeof val === "string" ? parseFloat(val) : val))
+        .refine(
+          (val) => {
+            return typeof val === "number" && val >= 0;
           },
           { message: "Capacity must be a positive number!" }
         ),

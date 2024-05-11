@@ -14,14 +14,13 @@ import { Hotel } from "./Hotel";
 })
 export class Room extends Model {
   public static ROOM_ID = "id";
-  public static ROOM_HOTEL_ID = "hotel_id";
+  public static HOTEL_ID = "hotel_id";
   public static ROOM_NUMBER = "number";
   public static ROOM_TYPE = "type";
   public static ROOM_PRICE = "price";
-  public static ROOM_DISCOUNT = "discount";
-  public static ROOM_CAPACITY = "capacity";
+  public static ROOM_ADULT_OCCUPANCY = "adult_occupancy";
+  public static ROOM_CHILD_OCCUPANCY = "child_occupancy";
   public static ROOM_DESCRIPTION = "description";
-  public static ROOM_RATING_AVERAGE = "rating_average";
   public static ROOM_STATUS = "status" as const;
 
   @Column({
@@ -36,7 +35,7 @@ export class Room extends Model {
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
-    field: "hotel_id",
+    field: Room.HOTEL_ID,
   })
   hotel_id!: number;
 
@@ -67,16 +66,16 @@ export class Room extends Model {
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
-    field: Room.ROOM_DISCOUNT,
+    field: Room.ROOM_ADULT_OCCUPANCY,
   })
-  discount!: number;
+  adult_occupancy!: number;
 
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
-    field: Room.ROOM_CAPACITY,
+    field: Room.ROOM_CHILD_OCCUPANCY,
   })
-  capacity!: number;
+  child_occupancy!: number;
 
   @Column({
     type: DataType.TEXT,
@@ -84,18 +83,6 @@ export class Room extends Model {
     field: Room.ROOM_DESCRIPTION,
   })
   description!: string;
-
-  @Default(0.0)
-  @Column({
-    type: DataType.DECIMAL(2, 1),
-    allowNull: false,
-    validate: {
-      min: 0.0,
-      max: 5.0,
-    },
-    field: Room.ROOM_RATING_AVERAGE,
-  })
-  rating_average!: number;
 
   @Default("available")
   @Column({
