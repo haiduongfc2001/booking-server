@@ -27,12 +27,11 @@ class CustomerRoutes extends BaseRoutes {
     );
     this.router.post(
       "/register",
-      authFullRole,
       // validate(createCustomerSchema),
       CustomerController.customerRegister
     );
-    this.router.post("/verify", authFullRole, CustomerController.verifyMail);
-    this.router.post("/login", authFullRole, CustomerController.customerLogin);
+    this.router.post("/verify", CustomerController.verifyMail);
+    this.router.post("/login", CustomerController.customerLogin);
     this.router.patch(
       "/:customer_id/updateCustomer",
       authFullRole,

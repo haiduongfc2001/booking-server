@@ -48,6 +48,7 @@ class StaffRoutes extends BaseRoutes {
       authFullRole,
       StaffController.deleteStaff
     );
+    this.router.post("/staff/login", StaffController.staffLogin);
   }
 }
 

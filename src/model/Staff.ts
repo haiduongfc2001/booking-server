@@ -17,7 +17,6 @@ export class Staff extends Model {
   public static STAFF_FULL_NAME = "full_name" as string;
   public static STAFF_GENDER = "gender" as const;
   public static STAFF_PHONE = "phone" as string;
-  public static STAFF_DOB = "dob" as string;
   public static STAFF_AVATAR = "avatar" as string;
   public static STAFF_HOTEL_ID = "hotel_id" as string;
   public static STAFF_ROLE = "role" as const;
@@ -68,12 +67,6 @@ export class Staff extends Model {
     field: Staff.STAFF_PHONE,
   })
   phone!: string;
-
-  @Column({
-    type: DataType.STRING(255),
-    field: Staff.STAFF_DOB,
-  })
-  dob!: string;
 
   @Column({
     type: DataType.STRING(255),

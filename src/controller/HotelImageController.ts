@@ -111,7 +111,7 @@ class HotelImageController {
 			const hotelImageRepo = new HotelImageRepo();
 			const urls = await hotelImageRepo.getUrlsByHotelId(hotel_id);
 
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: "Successfully fetched URLs by hotel_id",
 				data: urls,
@@ -170,7 +170,7 @@ class HotelImageController {
 						}
 
 						// Respond with success message
-						res.status(200).json({
+						return res.status(200).json({
 							status: 200,
 							message: "Successfully deleted images by hotel_id",
 						});
@@ -315,7 +315,7 @@ class HotelImageController {
 			}
 
 			// Respond with success message
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: "Successfully updated images by hotel_id",
 			});
@@ -367,7 +367,7 @@ class HotelImageController {
 			// Save hotel_image
 			await hotel_image.save();
 
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: "Hotel Image updated successfully!",
 			});
@@ -405,7 +405,7 @@ class HotelImageController {
 			const hotelImageRepo = new HotelImageRepo();
 			await hotelImageRepo.deleteImage(hotel_image_id);
 
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: "Hotel Image deleted successfully!",
 			});

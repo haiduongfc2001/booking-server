@@ -21,7 +21,6 @@ export class StaffRepo implements IStaffRepo {
         full_name: newStaff.full_name,
         gender: newStaff.gender,
         phone: newStaff.phone,
-        dob: newStaff.dob,
         avatar: newStaff.avatar,
         hotel_id: newStaff.hotel_id,
         role: newStaff.role,
@@ -44,7 +43,6 @@ export class StaffRepo implements IStaffRepo {
       existingStaff.full_name = updatedStaff.full_name;
       existingStaff.gender = updatedStaff.gender;
       existingStaff.phone = updatedStaff.phone;
-      existingStaff.dob = updatedStaff.dob;
       existingStaff.avatar = updatedStaff.avatar;
       existingStaff.hotel_id = updatedStaff.hotel_id;
       existingStaff.role = updatedStaff.role;

@@ -48,7 +48,7 @@ class HotelController {
 
       await new HotelRepo().delete(hotel_id);
 
-      res.status(200).json({
+      return res.status(200).json({
         status: 200,
         message: "Successfully deleted hotel!",
       });
@@ -72,7 +72,7 @@ class HotelController {
 
       const hotelInfo = await new HotelRepo().retrieveById(hotel_id);
 
-      res.status(200).json({
+      return res.status(200).json({
         status: 200,
         message: `Successfully fetched hotel by id ${hotel_id}!`,
         data: hotelInfo,
@@ -128,7 +128,7 @@ class HotelController {
         })),
       };
 
-      res.status(200).json({
+      return res.status(200).json({
         status: 200,
         message: `Successfully fetched hotel by id ${hotel_id}!`,
         data: hotelInfo,
@@ -153,7 +153,7 @@ class HotelController {
 
       const staffs = await new StaffRepo().retrieveAllStaffByHotelId(hotel_id);
 
-      res.status(200).json({
+      return res.status(200).json({
         status: 200,
         message: `Successfully fetched staff by hotel id ${hotel_id}!`,
         data: staffs,
@@ -177,7 +177,7 @@ class HotelController {
 
     const rooms = await new RoomRepo().retrieveRoomByHotelId(hotel_id);
 
-    res.status(200).json({
+    return res.status(200).json({
       status: 200,
       message: `Successfully fetched room by hotel id ${hotel_id}!`,
       data: rooms,
@@ -188,7 +188,7 @@ class HotelController {
     try {
       const hotelsData = await new HotelRepo().retrieveAll();
 
-      res.status(200).json({
+      return res.status(200).json({
         status: 200,
         message: "Successfully fetched all hotel data!",
         data: hotelsData,
@@ -207,7 +207,7 @@ class HotelController {
         name: hotel.name,
       }));
 
-      res.status(200).json({
+      return res.status(200).json({
         status: 200,
         message: "Hotel list successfully retrieved!",
         data: hotelList,
@@ -243,7 +243,7 @@ class HotelController {
 
       await new HotelRepo().update(hotelToUpdate);
 
-      res.status(200).json({
+      return res.status(200).json({
         status: 200,
         message: "Successfully updated hotel data!",
       });
@@ -318,7 +318,7 @@ class HotelController {
           })
         );
 
-        res.status(200).json({
+        return res.status(200).json({
           status: 200,
           message: "Successfully fetched outstanding hotel data!",
           data: updatedHotels,

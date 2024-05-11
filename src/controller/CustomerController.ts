@@ -47,7 +47,7 @@ class CustomerController {
 
 			await new CustomerRepo().delete(customer_id);
 
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: "Successfully deleted customer!",
 			});
@@ -72,7 +72,7 @@ class CustomerController {
 				customer_id
 			);
 
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: `Successfully fetched customer by customer_id ${customer_id}!`,
 				data: retrievedCustomer,
@@ -86,7 +86,7 @@ class CustomerController {
 		try {
 			const allCustomers = await new CustomerRepo().retrieveAll();
 
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: "Successfully fetched all customer data!",
 				data: allCustomers,
@@ -129,7 +129,7 @@ class CustomerController {
 
 			await new CustomerRepo().update(customerToUpdate);
 
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: "Successfully updated customer data!",
 			});
@@ -251,7 +251,7 @@ class CustomerController {
 			const token = generateCustomerToken(customer.id, customer.email);
 
 			// Login successful
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: "Đăng nhập thành công!",
 				token,

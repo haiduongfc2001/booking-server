@@ -26,7 +26,7 @@ class ServiceController {
 			const service_id = parseInt(req.params?.service_id);
 			await new ServiceRepo().delete(service_id);
 
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: "Successfully deleted service!",
 			});
@@ -40,7 +40,7 @@ class ServiceController {
 			const service_id = parseInt(req.params?.service_id);
 			const service = await new ServiceRepo().retrieveById(service_id);
 
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: `Successfully fetched service by id ${service_id}!`,
 				data: service,
@@ -54,7 +54,7 @@ class ServiceController {
 		try {
 			const services = await new ServiceRepo().retrieveAll();
 
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: "Successfully fetched all service data!",
 				data: services,
@@ -75,7 +75,7 @@ class ServiceController {
 
 			await new ServiceRepo().update(updatedService);
 
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: "Successfully updated service data!",
 			});

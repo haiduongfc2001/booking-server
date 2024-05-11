@@ -9,7 +9,7 @@ class AddressController {
     try {
       const provinceData = await new AddressRepo().retrieveAllProvinces();
 
-      res.status(200).json({
+      return res.status(200).json({
         status: 200,
         message: "Successfully fetched all provinces data!",
         data: provinceData,
@@ -23,7 +23,7 @@ class AddressController {
     try {
       const districtData = await new AddressRepo().retrieveAllDistricts();
 
-      res.status(200).json({
+      return res.status(200).json({
         status: 200,
         message: "Successfully fetched all districts data!",
         data: districtData,
@@ -42,7 +42,7 @@ class AddressController {
         attributes: ["id", "name", "level"],
       });
 
-      res.status(200).json({
+      return res.status(200).json({
         status: 200,
         message: "Successfully fetched all districts data!",
         data: districtData,
@@ -56,7 +56,7 @@ class AddressController {
     try {
       const wardData = await new AddressRepo().retrieveAllWards();
 
-      res.status(200).json({
+      return res.status(200).json({
         status: 200,
         message: "Successfully fetched all wards data!",
         data: wardData,
@@ -75,7 +75,7 @@ class AddressController {
         attributes: ["id", "name", "level"],
       });
 
-      res.status(200).json({
+      return res.status(200).json({
         status: 200,
         message: "Successfully fetched all wards data!",
         data: wardData,

@@ -236,7 +236,7 @@ class RoomImageController {
 			// Save room_image
 			await room_image.save();
 
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: "Room Image updated successfully!",
 			});
@@ -371,7 +371,7 @@ class RoomImageController {
 			}
 
 			// Respond with success message
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: "Successfully updated images by room_id",
 			});
@@ -409,7 +409,7 @@ class RoomImageController {
 			const roomImageRepo = new RoomImageRepo();
 			await roomImageRepo.deleteImage(room_image_id);
 
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: "Room Image deleted successfully!",
 			});

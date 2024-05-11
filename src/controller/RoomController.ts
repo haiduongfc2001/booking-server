@@ -15,7 +15,7 @@ class RoomController {
 		try {
 			const roomsData = await new RoomRepo().retrieveAll();
 
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: "Successfully fetched all room data!",
 				data: roomsData,
@@ -46,7 +46,7 @@ class RoomController {
 				hotel_id
 			);
 
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: "Successfully fetched all room data!",
 				data: roomsData,
@@ -174,7 +174,7 @@ class RoomController {
 
 			await new RoomRepo().delete(room_id);
 
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: "Successfully deleted room!",
 			});
@@ -204,7 +204,7 @@ class RoomController {
 
 			const roomInfo = await new RoomRepo().retrieveById(room_id);
 
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: `Successfully fetched room by id ${room_id}!`,
 				data: roomInfo,
@@ -251,7 +251,7 @@ class RoomController {
 
 			await new RoomRepo().update(room);
 
-			res.status(200).json({
+			return res.status(200).json({
 				status: 200,
 				message: "Successfully updated room data!",
 			});

@@ -21,7 +21,7 @@ export const createStaffSchema = z.object({
           message: "Gender must be male, female or other",
         }
       ),
-    phone: z.string().length(10, { message: "Phone must be 10 characters" }),
+    // phone: z.string().length(10, { message: "Phone must be 10 characters" }),
     // hotel_id: z.union([z.string(), z.number()])
     //     .refine(value => {
     //         if (typeof value === 'number') return true;
@@ -32,7 +32,6 @@ export const createStaffSchema = z.object({
       .refine((value) => value === "manager" || value === "receptionist", {
         message: "Role name must be manager or receptionist!",
       }),
-    // dob: z.string(),
     // avatar: z.string(),
   }),
 });
@@ -72,7 +71,6 @@ export const updateStaffSchema = z.object({
         .refine((value) => value === "manager" || value === "receptionist", {
           message: "Role name must be manager or receptionist!",
         }),
-      // dob: z.string(),
       // avatar: z.string(),
     })
     .partial(),
