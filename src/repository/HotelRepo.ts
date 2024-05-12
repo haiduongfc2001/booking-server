@@ -1,3 +1,5 @@
+import { DEFAULT_MINIO } from "../config/constant";
+import { minioClient } from "../config/minio";
 import { Hotel } from "../model/Hotel";
 import { HotelImage } from "../model/HotelImage";
 
@@ -5,11 +7,72 @@ interface IHotelRepo {
   save(hotel: Hotel): Promise<void>;
   update(hotel: Hotel): Promise<void>;
   delete(hotel_id: number): Promise<void>;
-  retrieveById(hotel_id: number): Promise<any[]>;
-  retrieveAll(): Promise<any[]>;
+  retrieveAll(): Promise<HotelWithImages[]>;
+  retrieveById(hotel_id: number): Promise<HotelWithImages>;
+}
+
+interface IHotelImage {
+  id: number;
+  url: string;
+  caption: string;
+  is_primary: boolean;
+}
+
+// Interface for response with presigned URLs
+interface HotelWithImages {
+  // Existing hotel properties from Hotel model
+  [key: string]: any;
+  images: IHotelImage[];
 }
 
 export class HotelRepo implements IHotelRepo {
+  private async generatePresignedUrl(
+    hotel: Hotel,
+    imageUrl: string
+  ): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      minioClient.presignedGetObject(
+        DEFAULT_MINIO.BUCKET,
+        `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.id}/${imageUrl}`,
+        24 * 60 * 60,
+        (err, presignedUrl) => {
+          if (err) reject(err);
+          else resolve(presignedUrl);
+        }
+      );
+    });
+  }
+
+  private async fetchHotel(hotel_id: number): Promise<Hotel> {
+    const hotel = await Hotel.findByPk(hotel_id);
+    if (!hotel) {
+      throw new Error("Hotel not found!");
+    }
+    return hotel;
+  }
+
+  private async fetchHotels(query: any): Promise<HotelWithImages[]> {
+    const hotels = await Hotel.findAll(query);
+    return Promise.all(
+      hotels.map(async (hotel) => ({
+        ...hotel.toJSON(),
+        images: await this.fetchHotelImages(hotel),
+      }))
+    );
+  }
+
+  private async fetchHotelImages(hotel: Hotel): Promise<IHotelImage[]> {
+    const hotelImages = await HotelImage.findAll({
+      where: { hotel_id: hotel.id },
+    });
+    return Promise.all(
+      hotelImages.map(async (image) => ({
+        ...image.toJSON(),
+        url: await this.generatePresignedUrl(hotel, image.url),
+      }))
+    );
+  }
+
   async save(newHotel: Hotel): Promise<void> {
     try {
       await Hotel.create({
@@ -26,19 +89,8 @@ export class HotelRepo implements IHotelRepo {
 
   async update(updatedHotel: Hotel): Promise<void> {
     try {
-      const existingHotel = await Hotel.findByPk(updatedHotel.id);
-
-      if (!existingHotel) {
-        throw new Error("Hotel not found!");
-      }
-
-      existingHotel.name = updatedHotel.name;
-      existingHotel.address = updatedHotel.address;
-      existingHotel.location = updatedHotel.location;
-      existingHotel.description = updatedHotel.description;
-      existingHotel.contact = updatedHotel.contact;
-
-      await existingHotel.save();
+      const existingHotel = await this.fetchHotel(updatedHotel.id);
+      await existingHotel.update(updatedHotel);
     } catch (error) {
       throw new Error("Failed to update hotel!");
     }
@@ -46,74 +98,27 @@ export class HotelRepo implements IHotelRepo {
 
   async delete(hotel_id: number): Promise<void> {
     try {
-      const existingHotel = await Hotel.findByPk(hotel_id);
-      if (!existingHotel) {
-        throw new Error("Hotel not found!");
-      }
-
+      const existingHotel = await this.fetchHotel(hotel_id);
       await existingHotel.destroy();
     } catch (error) {
       throw new Error("Failed to delete hotel!");
     }
   }
 
-  async retrieveById(hotel_id: number): Promise<any[]> {
+  async retrieveAll(): Promise<HotelWithImages[]> {
     try {
-      const hotel = await Hotel.findByPk(hotel_id);
-      if (!hotel) {
-        throw new Error("Hotel not found!");
-      }
-
-      const hotelImages = await HotelImage.findAll({
-        where: {
-          hotel_id: hotel_id,
-        },
-      });
-
-      const hotelWithImages = {
-        ...hotel.toJSON(),
-        images: hotelImages.map((image) => ({
-          id: image.id,
-          url: image.url,
-          caption: image.caption,
-          is_primary: image.is_primary,
-        })),
-      };
-
-      return hotelWithImages;
+      return await this.fetchHotels({ order: [["id", "asc"]] });
     } catch (error) {
-      throw new Error("Failed to retrieve hotel by ID!");
+      throw new Error("Failed to retrieve all hotels!");
     }
   }
 
-  async retrieveAll(): Promise<any[]> {
+  async retrieveById(hotel_id: number): Promise<HotelWithImages> {
     try {
-      const hotels = await Hotel.findAll({
-        order: [["id", "asc"]],
-      });
-
-      const hotelsWithImages = await Promise.all(
-        hotels.map(async (hotel) => {
-          const hotelImages = await HotelImage.findAll({
-            where: {
-              hotel_id: hotel.id,
-            },
-          });
-          return {
-            ...hotel.toJSON(),
-            images: hotelImages.map((image) => ({
-              id: image.id,
-              url: image.url,
-              caption: image.caption,
-              is_primary: image.is_primary,
-            })),
-          };
-        })
-      );
-
-      return hotelsWithImages;
+      const hotel = await this.fetchHotel(hotel_id);
+      return { ...hotel.toJSON(), images: await this.fetchHotelImages(hotel) };
     } catch (error) {
-      throw new Error("Failed to retrieve all hotels!");
+      throw new Error("Failed to retrieve hotel by ID!");
     }
   }
 }

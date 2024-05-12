@@ -7,10 +7,9 @@ interface IRoomRepo {
   save(room: Room): Promise<void>;
   update(room: Room): Promise<void>;
   delete(room_id: number): Promise<void>;
-  retrieveAll(): Promise<any[]>;
-  retrieveAllRoomsByHotelId(hotel_id: number): Promise<any[]>;
-  retrieveById(room_id: number): Promise<Room>;
-  retrieveRoomByHotelId(hotel_id: number): Promise<Room[]>;
+  retrieveAll(): Promise<RoomWithImages[]>;
+  retrieveAllRoomsByHotelId(hotel_id: number): Promise<RoomWithImages[]>;
+  retrieveById(room_id: number): Promise<RoomWithImages>;
 }
 
 interface IRoomImage {
@@ -28,7 +27,10 @@ interface RoomWithImages {
 }
 
 export class RoomRepo implements IRoomRepo {
-  private async generatePresignedUrl(room: Room, imageUrl: string): Promise<string> {
+  private async generatePresignedUrl(
+    room: Room,
+    imageUrl: string
+  ): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       minioClient.presignedGetObject(
         DEFAULT_MINIO.BUCKET,
@@ -42,74 +44,59 @@ export class RoomRepo implements IRoomRepo {
     });
   }
 
+  private async fetchRoom(room_id: number): Promise<Room> {
+    const room = await Room.findByPk(room_id);
+    if (!room) {
+      throw new Error("Room not found!");
+    }
+    return room;
+  }
+
+  private async fetchRooms(query: any): Promise<RoomWithImages[]> {
+    const rooms = await Room.findAll(query);
+    return Promise.all(
+      rooms.map(async (room) => ({
+        ...room.toJSON(),
+        images: await this.fetchRoomImages(room),
+      }))
+    );
+  }
+
+  private async fetchRoomImages(room: Room): Promise<IRoomImage[]> {
+    const roomImages = await RoomImage.findAll({ where: { room_id: room.id } });
+    return Promise.all(
+      roomImages.map(async (image) => ({
+        ...image.toJSON(),
+        url: await this.generatePresignedUrl(room, image.url),
+      }))
+    );
+  }
+
   async retrieveAll(): Promise<RoomWithImages[]> {
     try {
-      const rooms = await Room.findAll({
-        order: [["id", "asc"]],
-      });
-
-      // Fetch room images in parallel using Promise.all
-      const roomImagePromises = rooms.map(async (room) => {
-        const roomImages = await RoomImage.findAll({
-          where: { room_id: room.id },
-        });
-
-        const imagesWithUrl = await Promise.all(
-          roomImages.map((image) =>
-            this.generatePresignedUrl(room, image.url).then((presignedUrl) => ({
-              ...image.toJSON(),
-              url: presignedUrl,
-            }))
-          )
-        );
-
-        return {
-          ...room.toJSON(),
-          images: imagesWithUrl,
-        };
-      });
-
-      // Wait for all image presigned URLs to be generated
-      const roomWithImages = await Promise.all(roomImagePromises);
-
-      return roomWithImages;
+      return await this.fetchRooms({ order: [["id", "asc"]] });
     } catch (error) {
       throw new Error("Failed to retrieve all rooms!");
     }
   }
 
-  async retrieveAllRoomsByHotelId(hotel_id: number): Promise<any[]> {
+  async retrieveAllRoomsByHotelId(hotel_id: number): Promise<RoomWithImages[]> {
     try {
-      const rooms = await Room.findAll({
-        where: {
-          hotel_id: hotel_id,
-        },
+      return await this.fetchRooms({
+        where: { hotel_id },
         order: [["number", "asc"]],
       });
-
-      const roomWithImages = await Promise.all(
-        rooms.map(async (room) => {
-          const roomImages = await RoomImage.findAll({
-            where: {
-              room_id: room.id,
-            },
-          });
-
-          return {
-            ...room.toJSON(),
-            images: roomImages.map((image) => ({
-              id: image.id,
-              url: image.url,
-              caption: image.caption,
-              is_primary: image.is_primary,
-            })),
-          };
-        })
-      );
-
-      return roomWithImages;
     } catch (error) {
-      throw new Error("Failed to retrieve all rooms!");
+      throw new Error("Failed to retrieve rooms by hotel ID!");
+    }
+  }
+
+  async retrieveById(room_id: number): Promise<RoomWithImages> {
+    try {
+      const room = await this.fetchRoom(room_id);
+      return { ...room.toJSON(), images: await this.fetchRoomImages(room) };
+    } catch (error) {
+      throw new Error("Failed to retrieve room by ID!");
     }
   }
 
@@ -146,50 +133,6 @@ export class RoomRepo implements IRoomRepo {
 
       await existingRoom.destroy();
     } catch (error) { }
-  }
-
-  async retrieveById(room_id: number): Promise<Room> {
-    try {
-      const existingRoom = await Room.findByPk(room_id);
-      if (!existingRoom) {
-        throw new Error("Room not found!");
-      }
-
-      const roomImages = await RoomImage.findAll({
-        where: {
-          room_id: room_id,
-        },
-      });
-
-      const roomWithImages = {
-        ...existingRoom.toJSON(),
-        images: roomImages.map((image) => ({
-          id: image.id,
-          url: image.url,
-          caption: image.caption,
-          is_primary: image.is_primary,
-        })),
-      };
-
-      return roomWithImages;
-    } catch (error) {
-      throw new Error("Failed to retrieve room by ID!");
-    }
-  }
-
-  async retrieveRoomByHotelId(hotel_id: number): Promise<Room[]> {
-    try {
-      const rooms = await Room.findAll({
-        where: {
-          hotel_id: hotel_id,
-        },
-        order: [["id", "asc"]],
-      });
-
-      return rooms;
-    } catch (error) {
-      throw new Error("Failed to retrieve room by ID!");
-    }
   }
 
   async update(updatedRoom: Room): Promise<void> {

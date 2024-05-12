@@ -13,12 +13,15 @@ import { DEFAULT_MINIO } from "../config/constant";
 class HotelController {
   async createHotel(req: Request, res: Response) {
     try {
-      const newHotel = new Hotel();
-      newHotel.name = req.body.name;
-      newHotel.address = req.body.address;
-      newHotel.location = req.body.location;
-      newHotel.description = req.body.description;
-      newHotel.contact = req.body.contact;
+      const { name, address, location, description, contact } = req.body;
+
+      const newHotel = new Hotel({
+        name,
+        address,
+        location,
+        description,
+        contact,
+      });
 
       await new HotelRepo().save(newHotel);
 
@@ -173,7 +176,7 @@ class HotelController {
       });
     }
 
-    const rooms = await new RoomRepo().retrieveRoomByHotelId(hotel_id);
+    const rooms = await new RoomRepo().retrieveAllRoomsByHotelId(hotel_id);
 
     return res.status(200).json({
       status: 200,
@@ -210,7 +213,9 @@ class HotelController {
         message: "Hotel list successfully retrieved!",
         data: hotelList,
       });
-    } catch (error) { }
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
   }
 
   async updateHotel(req: Request, res: Response) {
