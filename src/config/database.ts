@@ -11,6 +11,7 @@ import { Province } from "../model/Province";
 import { District } from "../model/District";
 import { Ward } from "../model/Ward";
 import { Promotion } from "../model/Promotion";
+import { Booking } from "../model/Booking";
 
 dotenv.config();
 
@@ -68,6 +69,7 @@ class Database {
         Province,
         District,
         Ward,
+        Booking,
       ],
       define: config.define,
       logging: false,
