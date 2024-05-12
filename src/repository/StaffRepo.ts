@@ -9,7 +9,7 @@ interface IStaffRepo {
   retrieveAll(): Promise<any[]>;
   retrieveAllManagers(): Promise<Staff[]>;
   retrieveAllReceptionists(): Promise<Staff[]>;
-  retrieveAllStaffByHotelId(hotel_id: number): Promise<Staff[]>;
+  retrieveAllStaffsByHotelId(hotel_id: number): Promise<Staff[]>;
 }
 
 export class StaffRepo implements IStaffRepo {
@@ -175,7 +175,7 @@ export class StaffRepo implements IStaffRepo {
     }
   }
 
-  async retrieveAllStaffByHotelId(hotel_id: number): Promise<Staff[]> {
+  async retrieveAllStaffsByHotelId(hotel_id: number): Promise<Staff[]> {
     try {
       const staffs = await Staff.findAll({
         where: {

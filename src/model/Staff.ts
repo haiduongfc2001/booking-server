@@ -4,13 +4,16 @@ import {
   Column,
   DataType,
   IsEmail,
+  ForeignKey,
+  BelongsTo,
 } from "sequelize-typescript";
+import { Hotel } from "./Hotel";
 
 @Table({
-  tableName: Staff.STAFF_TABLE_NAME,
+  tableName: Staff.TABLE_NAME,
 })
 export class Staff extends Model {
-  public static STAFF_TABLE_NAME = "staff" as string;
+  public static TABLE_NAME = "staff" as string;
   public static STAFF_ID = "id" as string;
   public static STAFF_EMAIL = "email" as string;
   public static STAFF_PASSWORD = "password" as string;
@@ -34,7 +37,7 @@ export class Staff extends Model {
   @Column({
     type: DataType.STRING(255),
     allowNull: false,
-    // unique: true,
+    unique: true,
     field: Staff.STAFF_EMAIL,
   })
   email!: string;
@@ -74,11 +77,16 @@ export class Staff extends Model {
   })
   avatar!: string;
 
+  @ForeignKey(() => Hotel)
   @Column({
     type: DataType.INTEGER,
+    allowNull: false,
     field: Staff.HOTEL_ID,
   })
   hotel_id!: number;
+
+  @BelongsTo(() => Hotel, "hotel_id")
+  hotel!: Hotel;
 
   @Column({
     type: DataType.ENUM("manager", "receptionist"),

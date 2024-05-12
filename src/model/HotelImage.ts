@@ -9,10 +9,10 @@ import {
 import { Hotel } from "./Hotel";
 
 @Table({
-  tableName: HotelImage.HOTEL_IMAGE_TABLE_NAME,
+  tableName: HotelImage.TABLE_NAME,
 })
 export class HotelImage extends Model {
-  public static HOTEL_IMAGE_TABLE_NAME = "hotel_image" as string;
+  public static TABLE_NAME = "hotel_image" as string;
   public static HOTEL_IMAGE_ID = "id" as string;
   public static HOTEL_ID = "hotel_id" as string;
   public static HOTEL_IMAGE_URL = "url" as string;

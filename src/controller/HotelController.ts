@@ -139,7 +139,7 @@ class HotelController {
     }
   }
 
-  async getStaffByHotelId(req: Request, res: Response) {
+  async getStaffsByHotelId(req: Request, res: Response) {
     try {
       const hotel_id = parseInt(req.params["hotel_id"]);
 
@@ -152,7 +152,7 @@ class HotelController {
         });
       }
 
-      const staffs = await new StaffRepo().retrieveAllStaffByHotelId(hotel_id);
+      const staffs = await new StaffRepo().retrieveAllStaffsByHotelId(hotel_id);
 
       return res.status(200).json({
         status: 200,
@@ -164,7 +164,7 @@ class HotelController {
     }
   }
 
-  async getRoomByHotelId(req: Request, res: Response) {
+  async getAllRoomsByHotelId(req: Request, res: Response) {
     const hotel_id = parseInt(req.params["hotel_id"]);
 
     const existingHotel = await Hotel.findByPk(hotel_id);
@@ -183,6 +183,32 @@ class HotelController {
       message: `Successfully fetched room by hotel id ${hotel_id}!`,
       data: rooms,
     });
+  }
+
+  async getAllStaffsByHotelId(req: Request, res: Response) {
+    try {
+      const hotel_id = parseInt(req.params.hotel_id);
+
+      const hotelExists = await Hotel.findByPk(hotel_id);
+      if (!hotelExists) {
+        return res.status(404).json({
+          status: 404,
+          message: "Hotel not found!",
+        });
+      }
+
+      const staffs = await new StaffRepo().retrieveAllStaffsByHotelId(
+        hotel_id
+      );
+
+      return res.status(200).json({
+        status: 200,
+        message: "Successfully fetched all staff data!",
+        data: staffs,
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
   }
 
   async getAllHotels(req: Request, res: Response) {

@@ -10,17 +10,18 @@ import {
 import { Hotel } from "./Hotel";
 
 @Table({
-  tableName: "room",
+  tableName: Room.TABLE_NAME,
 })
 export class Room extends Model {
-  public static ROOM_ID = "id";
-  public static HOTEL_ID = "hotel_id";
-  public static ROOM_NUMBER = "number";
-  public static ROOM_TYPE = "type";
-  public static ROOM_PRICE = "price";
-  public static ROOM_ADULT_OCCUPANCY = "adult_occupancy";
-  public static ROOM_CHILD_OCCUPANCY = "child_occupancy";
-  public static ROOM_DESCRIPTION = "description";
+  public static TABLE_NAME = "room" as string;
+  public static ROOM_ID = "id" as string;
+  public static HOTEL_ID = "hotel_id" as string;
+  public static ROOM_NUMBER = "number" as string;
+  public static ROOM_TYPE = "type" as string;
+  public static ROOM_PRICE = "price" as string;
+  public static ROOM_ADULT_OCCUPANCY = "adult_occupancy" as string;
+  public static ROOM_CHILD_OCCUPANCY = "child_occupancy" as string;
+  public static ROOM_DESCRIPTION = "description" as string;
   public static ROOM_STATUS = "status" as const;
 
   @Column({

@@ -8,10 +8,10 @@ import {
 } from "sequelize-typescript";
 
 @Table({
-	tableName: Customer.CUSTOMER_TABLE_NAME,
+	tableName: Customer.TABLE_NAME,
 })
 export class Customer extends Model {
-	public static CUSTOMER_TABLE_NAME = "customer" as string;
+	public static TABLE_NAME = "customer" as string;
 	public static CUSTOMER_ID = "id" as string;
 	public static CUSTOMER_PASSWORD = "password" as string;
 	public static CUSTOMER_EMAIL = "email" as string;

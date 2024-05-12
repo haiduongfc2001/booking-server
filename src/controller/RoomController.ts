@@ -24,38 +24,6 @@ class RoomController {
 		}
 	}
 
-
-	async getAllRoomsByHotelId(req: Request, res: Response) {
-		try {
-			const hotel_id = parseInt(req.params?.hotel_id);
-
-			const roomsList = await Room.findAll({
-				where: {
-					hotel_id: hotel_id,
-				},
-			});
-
-			if (roomsList.length === 0) {
-				return res.status(404).json({
-					status: 404,
-					message: "No rooms found for the specified hotel!",
-				});
-			}
-
-			const roomsData = await new RoomRepo().retrieveAllRoomsByHotelId(
-				hotel_id
-			);
-
-			return res.status(200).json({
-				status: 200,
-				message: "Successfully fetched all room data!",
-				data: roomsData,
-			});
-		} catch (error) {
-			return ErrorHandler.handleServerError(res, error);
-		}
-	}
-
 	async createRoom(req: Request, res: Response) {
 		try {
 			const hotel_id = parseInt(req.params?.hotel_id);

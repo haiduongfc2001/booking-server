@@ -9,10 +9,10 @@ import {
 import { District } from "./District";
 
 @Table({
-  tableName: Ward.WARD_TABLE_NAME,
+  tableName: Ward.TABLE_NAME,
 })
 export class Ward extends Model {
-  public static WARD_TABLE_NAME = "ward" as string;
+  public static TABLE_NAME = "ward" as string;
   public static WARD_ID = "id" as string;
   public static WARD_NAME = "name" as string;
   public static WARD_LEVEL = "level" as string;

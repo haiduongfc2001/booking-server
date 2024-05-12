@@ -9,10 +9,10 @@ import {
 import { Room } from "./Room";
 
 @Table({
-  tableName: RoomImage.ROOM_IMAGE_TABLE_NAME,
+  tableName: RoomImage.TABLE_NAME,
 })
 export class RoomImage extends Model {
-  public static ROOM_IMAGE_TABLE_NAME = "room_image" as string;
+  public static TABLE_NAME = "room_image" as string;
   public static ROOM_IMAGE_ID = "id" as string;
   public static ROOM_ID = "room_id" as string;
   public static ROOM_IMAGE_URL = "url" as string;

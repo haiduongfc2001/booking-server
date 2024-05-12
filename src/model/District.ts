@@ -9,10 +9,10 @@ import {
 import { Province } from "./Province";
 
 @Table({
-	tableName: District.DISTRICT_TABLE_NAME,
+	tableName: District.TABLE_NAME,
 })
 export class District extends Model {
-	public static DISTRICT_TABLE_NAME = "district" as string;
+	public static TABLE_NAME = "district" as string;
 	public static DISTRICT_ID = "id" as string;
 	public static DISTRICT_NAME = "name" as string;
 	public static DISTRICT_LEVEL = "level" as string;

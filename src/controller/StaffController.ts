@@ -32,7 +32,7 @@ class StaffController {
 
 			const existingEmail = await Staff.findOne({
 				where: {
-					email: req.body.email,
+					email,
 				},
 			});
 
@@ -74,7 +74,7 @@ class StaffController {
 			const existingStaff = await Staff.findOne({
 				where: {
 					id: staff_id,
-					hotel_id: hotel_id,
+					hotel_id,
 				},
 			});
 
@@ -104,7 +104,7 @@ class StaffController {
 			const existingStaff = await Staff.findOne({
 				where: {
 					id: staff_id,
-					hotel_id: hotel_id,
+					hotel_id,
 				},
 			});
 
@@ -115,12 +115,12 @@ class StaffController {
 				});
 			}
 
-			const newStaff = await new StaffRepo().retrieveById(staff_id);
+			const staff = await new StaffRepo().retrieveById(staff_id);
 
 			return res.status(200).json({
 				status: 200,
 				message: `Successfully fetched staff by id ${staff_id}!`,
-				data: newStaff,
+				data: staff,
 			});
 		} catch (error) {
 			return ErrorHandler.handleServerError(res, error);
@@ -129,38 +129,12 @@ class StaffController {
 
 	async getAllStaffs(req: Request, res: Response) {
 		try {
-			const newStaff = await new StaffRepo().retrieveAll();
+			const staffs = await new StaffRepo().retrieveAll();
 
 			return res.status(200).json({
 				status: 200,
 				message: "Successfully fetched all staff data!",
-				data: newStaff,
-			});
-		} catch (error) {
-			return ErrorHandler.handleServerError(res, error);
-		}
-	}
-
-	async getAllStaffsByHotelId(req: Request, res: Response) {
-		try {
-			const hotel_id = parseInt(req.params.hotel_id);
-
-			const hotelExists = await Hotel.findByPk(hotel_id);
-			if (!hotelExists) {
-				return res.status(404).json({
-					status: 404,
-					message: "Hotel not found!",
-				});
-			}
-
-			const newStaff = await new StaffRepo().retrieveAllStaffByHotelId(
-				hotel_id
-			);
-
-			return res.status(200).json({
-				status: 200,
-				message: "Successfully fetched all staff data!",
-				data: newStaff,
+				data: staffs,
 			});
 		} catch (error) {
 			return ErrorHandler.handleServerError(res, error);
@@ -169,12 +143,12 @@ class StaffController {
 
 	async getAllManagers(req: Request, res: Response) {
 		try {
-			const new_manager = await new StaffRepo().retrieveAllManagers();
+			const managers = await new StaffRepo().retrieveAllManagers();
 
 			return res.status(200).json({
 				status: 200,
 				message: "Successfully retrieved all managers!",
-				data: new_manager,
+				data: managers,
 			});
 		} catch (error) {
 			return ErrorHandler.handleServerError(res, error);
@@ -203,7 +177,7 @@ class StaffController {
 			const staffToUpdate = await Staff.findOne({
 				where: {
 					id: staff_id,
-					hotel_id: hotel_id,
+					hotel_id,
 				},
 			});
 
@@ -231,7 +205,8 @@ class StaffController {
 			});
 
 			if (req.body?.hotel_id) {
-				const hotel = await Hotel.findByPk(parseInt(req.body?.hotel_id));
+				const hotel_id = req.body.hotel_id;
+				const hotel = await Hotel.findByPk(parseInt(hotel_id));
 
 				if (!hotel) {
 					return res.status(404).json({
@@ -239,7 +214,7 @@ class StaffController {
 						message: "Hotel not found!",
 					});
 				}
-				staffToUpdate.hotel_id = parseInt(req.body.hotel_id);
+				staffToUpdate.hotel_id = parseInt(hotel_id);
 			}
 
 			await new StaffRepo().update(staffToUpdate);

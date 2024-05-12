@@ -12,11 +12,6 @@ class StaffRoutes extends BaseRoutes {
       StaffController.getAllStaffs
     );
     this.router.get(
-      "/:hotel_id/getAllStaffsByHotelId",
-      authFullRole,
-      StaffController.getAllStaffsByHotelId
-    );
-    this.router.get(
       "/getAllManagers",
       authFullRole,
       StaffController.getAllManagers

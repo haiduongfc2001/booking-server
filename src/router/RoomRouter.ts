@@ -17,11 +17,6 @@ class RoomRoutes extends BaseRoutes {
       RoomController.getAllRooms
     );
     this.router.get(
-      "/:hotel_id/room/getAllRoomsByHotelId",
-      authFullRole,
-      RoomController.getAllRoomsByHotelId
-    );
-    this.router.get(
       "/:hotel_id/room/:room_id/getRoomById",
       authFullRole,
       RoomController.getRoomById

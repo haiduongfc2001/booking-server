@@ -11,10 +11,10 @@ import {
 import { Room } from "./Room";
 
 @Table({
-  tableName: Promotion.PROMOTION_TABLE_NAME,
+  tableName: Promotion.TABLE_NAME,
 })
 export class Promotion extends Model {
-  public static PROMOTION_TABLE_NAME = "promotion" as string;
+  public static TABLE_NAME = "promotion" as string;
   public static PROMOTION_ID = "id" as string;
   public static ROOM_ID = "room_id" as string;
   public static PROMOTION_CODE = "code" as string;
@@ -49,7 +49,7 @@ export class Promotion extends Model {
   code!: string;
 
   @Column({
-    type: DataType.ENUM('percentage', 'fixed_amount'),
+    type: DataType.ENUM("percentage", "fixed_amount"),
     allowNull: false,
   })
   discount_type!: string;
@@ -59,8 +59,13 @@ export class Promotion extends Model {
     allowNull: false,
     validate: {
       customValidator(value: number) {
-        if (this.discount_type === "percentage" && (value <= 0 || value > 100)) {
-          throw new Error("Discount value must be between 0 and 100 for percentage type!");
+        if (
+          this.discount_type === "percentage" &&
+          (value <= 0 || value > 100)
+        ) {
+          throw new Error(
+            "Discount value must be between 0 and 100 for percentage type!"
+          );
         } else if (this.discount_type === "fixed_amount" && value <= 0) {
           throw new Error("Discount value must be greater than 0!");
         }

@@ -1,10 +1,10 @@
 import { Model, Table, Column, DataType } from "sequelize-typescript";
 
 @Table({
-	tableName: Hotel.HOTEL_TABLE_NAME,
+	tableName: Hotel.TABLE_NAME,
 })
 export class Hotel extends Model {
-	public static HOTEL_TABLE_NAME = "hotel" as string;
+	public static TABLE_NAME = "hotel" as string;
 	public static HOTEL_ID = "id" as string;
 	public static HOTEL_NAME = "name" as string;
 	public static HOTEL_ADDRESS = "address" as string;
