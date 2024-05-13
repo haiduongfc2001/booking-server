@@ -4,7 +4,7 @@ import { StaffRepo } from "../repository/StaffRepo";
 import ErrorHandler from "../utils/ErrorHandler";
 import { Hotel } from "../model/Hotel";
 import bcrypt from "bcrypt";
-import { ROLE } from "../config/constant";
+import { ROLE } from "../config/constant.config";
 import {
 	generateMangerToken,
 	generateReceptionistToken,

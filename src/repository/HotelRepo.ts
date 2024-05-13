@@ -1,5 +1,5 @@
-import { DEFAULT_MINIO } from "../config/constant";
-import { minioClient } from "../config/minio";
+import { DEFAULT_MINIO } from "../config/constant.config";
+import { minioClient } from "../config/minio.config";
 import { Hotel } from "../model/Hotel";
 import { HotelImage } from "../model/HotelImage";
 

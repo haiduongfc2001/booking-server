@@ -1,10 +1,9 @@
-import nodemailer, { TransportOptions } from "nodemailer";
-import * as dotenv from "dotenv";
+import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
-dotenv.config();
+import mailConfig from "../config/mail.config";
 
 const { EMAIL_HOST, EMAIL_PORT, EMAIL_USERNAME, EMAIL_PASSWORD, BASE_URL } =
-  process.env;
+  mailConfig;
 
 interface MailOptions {
   from: string;

@@ -26,11 +26,11 @@ class Database {
   private readonly POSTGRES_PASSWORD: string;
 
   private constructor() {
-    this.POSTGRES_DB = process.env.POSTGRES_DB || "";
-    this.POSTGRES_HOST = process.env.POSTGRES_HOST || "";
-    this.POSTGRES_PORT = Number(process.env.POSTGRES_PORT) || 5432;
-    this.POSTGRES_USER = process.env.POSTGRES_USER || "";
-    this.POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD || "";
+    this.POSTGRES_DB = process.env.POSTGRES_DB as string;
+    this.POSTGRES_HOST = process.env.POSTGRES_HOST as string;
+    this.POSTGRES_PORT = Number(process.env.POSTGRES_PORT) as number;
+    this.POSTGRES_USER = process.env.POSTGRES_USER as string;
+    this.POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD as string;
 
     this.connectToPostgreSQL();
   }
@@ -57,6 +57,12 @@ class Database {
       host: this.POSTGRES_HOST,
       port: this.POSTGRES_PORT,
       dialect: "postgres",
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000,
+      },
       models: [
         Service,
         Customer,
@@ -86,5 +92,5 @@ class Database {
   }
 }
 
-const db = Database.getInstance();
-export { db };
+const dbConfig = Database.getInstance();
+export { dbConfig };

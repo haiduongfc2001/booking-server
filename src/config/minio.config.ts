@@ -1,6 +1,6 @@
 import * as Minio from "minio";
 import * as dotenv from "dotenv";
-import { DEFAULT_MINIO } from "./constant";
+import { DEFAULT_MINIO } from "./constant.config";
 dotenv.config();
 
 const minioAccessKey = process.env.MINIO_ROOT_USER;

@@ -1,6 +1,6 @@
 import express, { Application, Request, Response } from "express";
 import cors from "cors";
-import { db } from "./config/database";
+import { dbConfig } from "./config/database.config";
 import ServiceRouter from "./router/ServiceRouter";
 import CustomerRouter from "./router/CustomerRouter";
 import HotelRouter from "./router/HotelRouter";
@@ -57,7 +57,7 @@ class App {
 
   private async startServer(): Promise<void> {
     const port = Number(process.env.PORT) || 5000;
-    await db.sequelize?.sync();
+    await dbConfig.sequelize?.sync();
     this.app.listen(port, () => {
       console.log(`✅ Server started successfully on port ${port}!`);
     });

@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { ROLE } from "../config/constant";
+import { ROLE } from "../config/constant.config";
 
 interface UserPayload {
   id: number;

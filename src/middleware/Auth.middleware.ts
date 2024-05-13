@@ -5,7 +5,7 @@ import jwt, {
   JsonWebTokenError,
 } from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
-import { ROLE_TYPE } from "../config/constant";
+import { ROLE_TYPE } from "../config/constant.config";
 
 interface CustomRequest extends Request {
   token: string | JwtPayload;

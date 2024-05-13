@@ -5,10 +5,10 @@ import ErrorHandler from "../utils/ErrorHandler";
 import { StaffRepo } from "../repository/StaffRepo";
 import { RoomRepo } from "../repository/RoomRepo";
 import { HotelImage } from "../model/HotelImage";
-import { db } from "../config/database";
+import { dbConfig } from "../config/database.config";
 import { QueryTypes } from "sequelize";
-import { minioClient } from "../config/minio";
-import { DEFAULT_MINIO } from "../config/constant";
+import { minioClient } from "../config/minio.config";
+import { DEFAULT_MINIO } from "../config/constant.config";
 
 class HotelController {
   async createHotel(req: Request, res: Response) {
@@ -283,7 +283,7 @@ class HotelController {
 
   async getOutstandingHotels(req: Request, res: Response) {
     try {
-      const sequelize = db.sequelize;
+      const sequelize = dbConfig.sequelize;
 
       if (sequelize) {
         const query = `
