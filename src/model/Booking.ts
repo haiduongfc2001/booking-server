@@ -64,14 +64,14 @@ export class Booking extends Model {
   check_out!: Date;
 
   @Column({
-    type: DataType.DECIMAL(10, 2),
+    type: DataType.INTEGER,
     allowNull: false,
     field: Booking.BOOKING_TOTAL_ROOM_PRICE,
   })
   total_room_price!: number;
 
   @Column({
-    type: DataType.DECIMAL(10, 2),
+    type: DataType.INTEGER,
     allowNull: false,
     field: Booking.BOOKING_TAX_AND_FEE,
   })

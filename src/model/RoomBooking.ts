@@ -77,21 +77,21 @@ export class RoomBooking extends Model {
   children_ages!: number[];
 
   @Column({
-    type: DataType.DECIMAL(10, 2),
+    type: DataType.INTEGER,
     allowNull: false,
     field: RoomBooking.ROOM_BOOKING_BASE_PRICE,
   })
   base_price!: number;
 
   @Column({
-    type: DataType.DECIMAL(10, 2),
+    type: DataType.INTEGER,
     allowNull: false,
     field: RoomBooking.ROOM_BOOKING_SURCHARGE,
   })
   surcharge!: number;
 
   @Column({
-    type: DataType.DECIMAL(10, 2),
+    type: DataType.INTEGER,
     allowNull: false,
     field: RoomBooking.ROOM_BOOKING_DISCOUNT,
   })

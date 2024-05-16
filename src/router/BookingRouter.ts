@@ -9,6 +9,11 @@ class BookingRoutes extends BaseRoutes {
       authFullRole,
       BookingController.getAllBookings
     );
+    this.router.get(
+      "/:booking_id/getBookingById",
+      authFullRole,
+      BookingController.getBookingById
+    );
   }
 }
 

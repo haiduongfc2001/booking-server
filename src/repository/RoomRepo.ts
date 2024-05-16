@@ -106,6 +106,7 @@ export class RoomRepo implements IRoomRepo {
     try {
       await Room.create({
         hotel_id: newRoom.hotel_id,
+        name: newRoom.name,
         number: newRoom.number,
         type: newRoom.type,
         price: newRoom.price,
@@ -145,6 +146,7 @@ export class RoomRepo implements IRoomRepo {
         throw new Error("Room not found!");
       }
 
+      existingRoom.name = updatedRoom.name;
       existingRoom.number = updatedRoom.number;
       existingRoom.type = updatedRoom.type;
       existingRoom.price = updatedRoom.price;

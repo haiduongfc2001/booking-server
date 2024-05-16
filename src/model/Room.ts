@@ -16,6 +16,7 @@ export class Room extends Model {
   public static TABLE_NAME = "room" as string;
   public static ROOM_ID = "id" as string;
   public static HOTEL_ID = "hotel_id" as string;
+  public static ROOM_NAME = "name" as string;
   public static ROOM_NUMBER = "number" as string;
   public static ROOM_TYPE = "type" as string;
   public static ROOM_PRICE = "price" as string;
@@ -42,6 +43,13 @@ export class Room extends Model {
 
   @BelongsTo(() => Hotel)
   hotel!: Hotel;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    field: Room.ROOM_NAME,
+  })
+  name!: string;
 
   @Column({
     type: DataType.STRING(100),

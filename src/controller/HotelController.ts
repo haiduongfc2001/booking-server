@@ -117,6 +117,7 @@ class HotelController {
         })),
         roomList: roomListByHotelId.map((room) => ({
           id: room.id,
+          name: room.name,
           number: room.number,
           type: room.type,
           price: room.price,

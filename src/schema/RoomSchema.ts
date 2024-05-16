@@ -2,6 +2,9 @@ import { z } from "zod";
 
 export const createRoomSchema = z.object({
   body: z.object({
+    name: z
+      .string()
+      .min(1, { message: "Room name must be at least 1 character long!" }),
     number: z
       .string()
       .min(1, { message: "Room number must be at least 1 character long!" }),
@@ -49,6 +52,9 @@ export const updateRoomSchema = z.object({
   params: z.object({ room_id: z.string() }),
   body: z
     .object({
+      name: z
+        .string()
+        .min(1, { message: "Room name must be at least 1 character long!" }),
       number: z
         .string()
         .min(1, { message: "Room number must be at least 1 character long!" }),
