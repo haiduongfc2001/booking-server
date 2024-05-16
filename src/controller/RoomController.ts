@@ -4,7 +4,7 @@ import ErrorHandler from "../utils/ErrorHandler";
 import { Room } from "../model/Room";
 import { Hotel } from "../model/Hotel";
 import { DEFAULT_MINIO } from "../config/constant.config";
-import { minioClient } from "../config/minio.config";
+import { minioConfig } from "../config/minio.config";
 import generateRandomString from "../utils/RandomString";
 import { RoomImage } from "../model/RoomImage";
 import getFileType from "../utils/GetFileType";
@@ -99,12 +99,9 @@ class RoomController {
 						16
 					)}.${typeFile}`;
 					const objectName = `${folder}/${newName}`;
-					await minioClient.putObject(
-						DEFAULT_MINIO.BUCKET,
-						objectName,
-						file.buffer,
-						metaData
-					);
+					await minioConfig
+						.getClient()
+						.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
 
 					// Create a new RoomImage object with room_id, fileUrl, caption, and is_primary
 					const newRoomImage = new RoomImage({

@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { HotelImageRepo } from "../repository/HotelImageRepo";
 import { HotelImage } from "../model/HotelImage";
 import generateRandomString from "../utils/RandomString";
-import { minioClient } from "../config/minio.config";
+import { minioConfig } from "../config/minio.config";
 import { Hotel } from "../model/Hotel";
 import { DEFAULT_MINIO } from "../config/constant.config";
 import ErrorHandler from "../utils/ErrorHandler";
@@ -45,12 +45,9 @@ class HotelImageController {
 				const newName = `${Date.now()}_${generateRandomString(16)}.${typeFile}`;
 				const objectName = `${folder}/${newName}`;
 
-				await minioClient.putObject(
-					DEFAULT_MINIO.BUCKET,
-					objectName,
-					file.buffer,
-					metaData
-				);
+				await minioConfig
+					.getClient()
+					.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
 
 				const caption = req.body?.captions[index];
 				const is_primary = req.body?.is_primarys[index];
@@ -141,11 +138,13 @@ class HotelImageController {
 
 			// List objects (images) from MinIO server corresponding to the hotel_id
 			const objectsList: any[] = [];
-			const objectsStream = minioClient.listObjectsV2(
-				DEFAULT_MINIO.BUCKET,
-				`${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}`,
-				true
-			);
+			const objectsStream = minioConfig
+				.getClient()
+				.listObjectsV2(
+					DEFAULT_MINIO.BUCKET,
+					`${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}`,
+					true
+				);
 
 			// Collect objects (images) into objectsList
 			objectsStream.on("data", (obj) => objectsList.push(obj.name));
@@ -157,10 +156,9 @@ class HotelImageController {
 
 			// After collecting objects, remove them from MinIO server
 			objectsStream.on("end", () => {
-				minioClient.removeObjects(
-					DEFAULT_MINIO.BUCKET,
-					objectsList,
-					function (e) {
+				minioConfig
+					.getClient()
+					.removeObjects(DEFAULT_MINIO.BUCKET, objectsList, function (e) {
 						if (e) {
 							console.error("Unable to remove Objects ", e);
 							return res.status(500).json({
@@ -174,8 +172,7 @@ class HotelImageController {
 							status: 200,
 							message: "Successfully deleted images by hotel_id",
 						});
-					}
-				);
+					});
 			});
 		} catch (error) {
 			return ErrorHandler.handleServerError(res, error);
@@ -208,7 +205,7 @@ class HotelImageController {
 			if (Array.isArray(deleteImages) && deleteImages.length > 0) {
 				// List objects (images) from MinIO server corresponding to the hotel_id
 				const objectsList: string[] = []; // Specify the type as string[]
-				// const objectsStream = minioClient.listObjectsV2(DEFAULT_MINIO.BUCKET, `${folder}`, true);
+				// const objectsStream = minioConfig.getClient().listObjectsV2(DEFAULT_MINIO.BUCKET, `${folder}`, true);
 
 				// Collect objects to be deleted
 				for await (const id of deleteImages) {
@@ -220,7 +217,9 @@ class HotelImageController {
 				}
 
 				// Remove objects from MinIO server
-				await minioClient.removeObjects(DEFAULT_MINIO.BUCKET, objectsList);
+				await minioConfig
+					.getClient()
+					.removeObjects(DEFAULT_MINIO.BUCKET, objectsList);
 
 				// Delete images from the database
 				const hotelImageRepo = new HotelImageRepo();
@@ -242,12 +241,9 @@ class HotelImageController {
 						16
 					)}.${typeFile}`;
 					const objectName = `${folder}/${newName}`;
-					await minioClient.putObject(
-						DEFAULT_MINIO.BUCKET,
-						objectName,
-						file.buffer,
-						metaData
-					);
+					await minioConfig
+						.getClient()
+						.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
 
 					const caption = req.body?.captions[index];
 					const is_primary = req.body?.is_primarys[index];
@@ -396,10 +392,12 @@ class HotelImageController {
 			}
 
 			// Remove the object from MinIO storage
-			await minioClient.removeObject(
-				DEFAULT_MINIO.BUCKET,
-				`${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${hotel_image.url}`
-			);
+			await minioConfig
+				.getClient()
+				.removeObject(
+					DEFAULT_MINIO.BUCKET,
+					`${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${hotel_image.url}`
+				);
 
 			// Delete the hotel image record from the database
 			const hotelImageRepo = new HotelImageRepo();

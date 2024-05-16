@@ -1,5 +1,5 @@
 import { DEFAULT_MINIO } from "../config/constant.config";
-import { minioClient } from "../config/minio.config";
+import { minioConfig } from "../config/minio.config";
 import { RoomImage } from "../model/RoomImage";
 
 interface IRoomImageRepo {
@@ -29,18 +29,20 @@ export class RoomImageRepo implements IRoomImageRepo {
       const urlsWithPresignedUrls = await Promise.all(
         roomImages.map(async (image) => {
           const presignedUrl = await new Promise<string>((resolve, reject) => {
-            minioClient.presignedGetObject(
-              DEFAULT_MINIO.BUCKET,
-              `${folder}/${image.url}`,
-              24 * 60 * 60,
-              (err, presignedUrl) => {
-                if (err) {
-                  reject(err);
-                } else {
-                  resolve(presignedUrl);
+            minioConfig
+              .getClient()
+              .presignedGetObject(
+                DEFAULT_MINIO.BUCKET,
+                `${folder}/${image.url}`,
+                24 * 60 * 60,
+                (err, presignedUrl) => {
+                  if (err) {
+                    reject(err);
+                  } else {
+                    resolve(presignedUrl);
+                  }
                 }
-              }
-            );
+              );
           });
           return {
             id: image.id,

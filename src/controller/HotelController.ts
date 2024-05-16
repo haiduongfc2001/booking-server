@@ -7,8 +7,8 @@ import { RoomRepo } from "../repository/RoomRepo";
 import { HotelImage } from "../model/HotelImage";
 import { dbConfig } from "../config/database.config";
 import { QueryTypes } from "sequelize";
-import { minioClient } from "../config/minio.config";
 import { DEFAULT_MINIO } from "../config/constant.config";
+import { minioConfig } from "../config/minio.config";
 
 class HotelController {
   async createHotel(req: Request, res: Response) {
@@ -197,9 +197,7 @@ class HotelController {
         });
       }
 
-      const staffs = await new StaffRepo().retrieveAllStaffsByHotelId(
-        hotel_id
-      );
+      const staffs = await new StaffRepo().retrieveAllStaffsByHotelId(hotel_id);
 
       return res.status(200).json({
         status: 200,
@@ -343,15 +341,17 @@ class HotelController {
             // Generate presigned URL for hotel avatar
             const presignedUrl = await new Promise<string>(
               (resolve, reject) => {
-                minioClient.presignedGetObject(
-                  DEFAULT_MINIO.BUCKET,
-                  `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.hotel_id}/${hotel.hotel_avatar}`,
-                  24 * 60 * 60,
-                  function (err, presignedUrl) {
-                    if (err) reject(err);
-                    else resolve(presignedUrl);
-                  }
-                );
+                minioConfig
+                  .getClient()
+                  .presignedGetObject(
+                    DEFAULT_MINIO.BUCKET,
+                    `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.hotel_id}/${hotel.hotel_avatar}`,
+                    24 * 60 * 60,
+                    function (err, presignedUrl) {
+                      if (err) reject(err);
+                      else resolve(presignedUrl);
+                    }
+                  );
               }
             );
 
@@ -403,8 +403,6 @@ class HotelController {
         page,
         size,
       } = req.body;
-
-
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
     }

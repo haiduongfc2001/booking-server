@@ -1,5 +1,5 @@
 import { DEFAULT_MINIO } from "../config/constant.config";
-import { minioClient } from "../config/minio.config";
+import { minioConfig } from "../config/minio.config";
 import { Room } from "../model/Room";
 import { RoomImage } from "../model/RoomImage";
 
@@ -32,15 +32,17 @@ export class RoomRepo implements IRoomRepo {
     imageUrl: string
   ): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      minioClient.presignedGetObject(
-        DEFAULT_MINIO.BUCKET,
-        `${DEFAULT_MINIO.HOTEL_PATH}/${room.hotel_id}/${DEFAULT_MINIO.ROOM_PATH}/${room.id}/${imageUrl}`,
-        24 * 60 * 60,
-        (err, presignedUrl) => {
-          if (err) reject(err);
-          else resolve(presignedUrl);
-        }
-      );
+      minioConfig
+        .getClient()
+        .presignedGetObject(
+          DEFAULT_MINIO.BUCKET,
+          `${DEFAULT_MINIO.HOTEL_PATH}/${room.hotel_id}/${DEFAULT_MINIO.ROOM_PATH}/${room.id}/${imageUrl}`,
+          24 * 60 * 60,
+          (err, presignedUrl) => {
+            if (err) reject(err);
+            else resolve(presignedUrl);
+          }
+        );
     });
   }
 

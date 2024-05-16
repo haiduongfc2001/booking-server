@@ -4,7 +4,7 @@ import ErrorHandler from "../utils/ErrorHandler";
 import { RoomImage } from "../model/RoomImage";
 import { Room } from "../model/Room";
 import { DEFAULT_MINIO } from "../config/constant.config";
-import { minioClient } from "../config/minio.config";
+import { minioConfig } from "../config/minio.config";
 import generateRandomString from "../utils/RandomString";
 import { Op } from "sequelize";
 import getFileType from "../utils/GetFileType";
@@ -60,12 +60,9 @@ class RoomImageController {
 			const newName = `${Date.now()}_${generateRandomString(16)}.${typeFile}`;
 			const objectName = `${folder}/${newName}`;
 
-			await minioClient.putObject(
-				DEFAULT_MINIO.BUCKET,
-				objectName,
-				file.buffer,
-				metaData
-			);
+			await minioConfig
+				.getClient()
+				.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
 
 			// Create a new RoomImage object with room_id, fileUrl, caption, and is_primary
 			const newRoomImage = new RoomImage({
@@ -142,12 +139,9 @@ class RoomImageController {
 				const newName = `${Date.now()}_${generateRandomString(16)}.${typeFile}`;
 				const objectName = `${folder}/${newName}`;
 
-				await minioClient.putObject(
-					DEFAULT_MINIO.BUCKET,
-					objectName,
-					file.buffer,
-					metaData
-				);
+				await minioConfig
+					.getClient()
+					.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
 
 				const caption = req.body?.captions[index];
 				const is_primary = req.body?.is_primarys[index];
@@ -277,7 +271,9 @@ class RoomImageController {
 					}
 				}
 
-				await minioClient.removeObjects(DEFAULT_MINIO.BUCKET, objectsList);
+				await minioConfig
+					.getClient()
+					.removeObjects(DEFAULT_MINIO.BUCKET, objectsList);
 
 				const roomImageRepo = new RoomImageRepo();
 				await roomImageRepo.deleteImages(deleteImages);
@@ -300,12 +296,9 @@ class RoomImageController {
 					)}.${typeFile}`;
 					const objectName = `${folder}/${newName}`;
 
-					await minioClient.putObject(
-						DEFAULT_MINIO.BUCKET,
-						objectName,
-						file.buffer,
-						metaData
-					);
+					await minioConfig
+						.getClient()
+						.putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
 
 					const caption = req.body?.captions[index];
 					const is_primary = req.body?.is_primarys[index];
@@ -403,7 +396,9 @@ class RoomImageController {
 			const modifiedUrl = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}/${roomImage.url}`;
 
 			// Remove the object from MinIO storage
-			await minioClient.removeObject(DEFAULT_MINIO.BUCKET, modifiedUrl);
+			await minioConfig
+				.getClient()
+				.removeObject(DEFAULT_MINIO.BUCKET, modifiedUrl);
 
 			// Delete the room image record from the database
 			const roomImageRepo = new RoomImageRepo();
