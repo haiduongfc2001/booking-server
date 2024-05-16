@@ -55,7 +55,7 @@ export class Promotion extends Model {
   discount_type!: string;
 
   @Column({
-    type: DataType.DECIMAL(10, 2),
+    type: DataType.INTEGER,
     allowNull: false,
     validate: {
       customValidator(value: number) {

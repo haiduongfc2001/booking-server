@@ -1,23 +1,38 @@
-# Sử dụng hình ảnh node:latest làm hình ảnh cơ sở
-FROM node:latest
+# Stage 1: Build
+FROM node:alpine AS build
 
-# Đặt thư mục làm việc trong container
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# Sao chép tệp package.json và yarn.lock vào thư mục làm việc
 COPY package.json yarn.lock ./
 
-# Cài đặt dependencies sử dụng yarn
+RUN yarn global add nodemon
 RUN yarn install
 
-# Sao chép toàn bộ mã nguồn vào thư mục làm việc
-COPY . .
+COPY . /app
 
-# Biên dịch mã nguồn TypeScript
-RUN yarn build
+# Stage 2: Development
+FROM build as dev
 
-# Expose port 5000
-EXPOSE 5000
+EXPOSE 3000
 
-# Chạy ứng dụng khi container được khởi động
-CMD ["node", "build/index.js"]
+CMD ["yarn", "dev"]
+
+
+# **Stage 3: Production (node:slim)**
+# FROM node:slim as final
+
+# ENV NODE_ENV production
+
+# USER node
+
+# WORKDIR /app
+
+# COPY package.json yarn.lock ./
+
+# RUN yarn install --production --frozen-lockfile
+
+# COPY --from=build /app/build ./build
+
+# EXPOSE 5000
+
+# CMD ["node", "build/index.js"]
