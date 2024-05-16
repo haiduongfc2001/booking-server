@@ -15,6 +15,7 @@ import { Customer } from "./Customer";
 export class Booking extends Model {
   public static TABLE_NAME = "booking" as string;
   public static BOOKING_ID = "id" as string;
+  public static BOOKING_CODE = "code" as string;
   public static CUSTOMER_ID = "customer_id" as string;
   public static BOOKING_CHECK_IN = "check_in" as string;
   public static BOOKING_CHECK_OUT = "check_out" as string;
@@ -29,6 +30,13 @@ export class Booking extends Model {
     field: Booking.BOOKING_ID,
   })
   id!: number;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    field: Booking.BOOKING_CODE,
+  })
+  code!: string;
 
   @ForeignKey(() => Customer)
   @Column({
