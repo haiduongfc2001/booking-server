@@ -7,7 +7,6 @@ import {
   Model,
   Table,
 } from "sequelize-typescript";
-import { Room } from "./Room";
 import { Customer } from "./Customer";
 
 @Table({
@@ -17,11 +16,10 @@ export class Booking extends Model {
   public static TABLE_NAME = "booking" as string;
   public static BOOKING_ID = "id" as string;
   public static CUSTOMER_ID = "customer_id" as string;
-  public static ROOM_ID = "room_id" as string;
-  public static BOOKING_CHECK_IN_DATE = "check_in_date" as string;
-  public static BOOKING_CHECK_OUT_DATE = "check_out_date" as string;
-  public static BOOKING_QUANTITY = "quantity" as string;
-  public static BOOKING_TOTAL_AMOUNT = "total_amount" as string;
+  public static BOOKING_CHECK_IN = "check_in" as string;
+  public static BOOKING_CHECK_OUT = "check_out" as string;
+  public static BOOKING_TOTAL_ROOM_PRICE = "total_room_price" as string;
+  public static BOOKING_TAX_AND_FEE = "tax_and_fee" as string;
   public static BOOKING_STATUS = "status" as const;
 
   @Column({
@@ -43,44 +41,33 @@ export class Booking extends Model {
   @BelongsTo(() => Customer)
   customer!: Customer;
 
-  @ForeignKey(() => Room)
   @Column({
-    type: DataType.INTEGER,
+    type: DataType.DATE,
     allowNull: false,
-    field: Booking.ROOM_ID,
+    field: Booking.BOOKING_CHECK_IN,
   })
-  room_id!: number;
-
-  @BelongsTo(() => Room)
-  hotel!: Room;
+  check_in!: Date;
 
   @Column({
     type: DataType.DATE,
     allowNull: false,
-    field: Booking.BOOKING_CHECK_IN_DATE,
+    field: Booking.BOOKING_CHECK_OUT,
   })
-  check_in_date!: Date;
-
-  @Column({
-    type: DataType.DATE,
-    allowNull: false,
-    field: Booking.BOOKING_CHECK_OUT_DATE,
-  })
-  check_out_date!: Date;
-
-  @Column({
-    type: DataType.INTEGER,
-    allowNull: false,
-    field: Booking.BOOKING_QUANTITY,
-  })
-  quantity!: number;
+  check_out!: Date;
 
   @Column({
     type: DataType.DECIMAL(10, 2),
     allowNull: false,
-    field: Booking.BOOKING_TOTAL_AMOUNT,
+    field: Booking.BOOKING_TOTAL_ROOM_PRICE,
   })
-  total_amount!: number;
+  total_room_price!: number;
+
+  @Column({
+    type: DataType.DECIMAL(10, 2),
+    allowNull: false,
+    field: Booking.BOOKING_TAX_AND_FEE,
+  })
+  tax_and_fee!: number;
 
   @Default("pending")
   @Column({
