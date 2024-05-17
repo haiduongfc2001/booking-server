@@ -10,11 +10,35 @@ export const ROLE = {
 	MANAGER: "manager",
 	RECEPTIONIST: "receptionist",
 	ADMIN: "admin",
-}
+};
 
-export enum ROLE_TYPE {
-	CUSTOMER = "customer",
-	RECEPTIONIST = "receptionist",
-	MANAGER = "manager",
-	ADMIN = "admin",
-}
+export const BED_TYPES = {
+	SINGLE: "SINGLE",
+	DOUBLE: "DOUBLE",
+	QUEEN: "QUEEN",
+	KING: "KING",
+	TWIN: "TWIN",
+	FULL: "FULL",
+	CALIFORNIA_KING: "CALIFORNIA KING",
+	SOFA_BED: "SOFA BED",
+	BUNK_BED: "BUNK BED",
+	ROLL_AWAY: "ROLL AWAY",
+	MURPHY_BED: "MURPHY BED",
+};
+
+export const TABLE_NAME = {
+	SERVICE: "service",
+	CUSTOMER: "customer",
+	HOTEL: "hotel",
+	HOTEL_IMAGE: "hotel_image",
+	STAFF: "staff",
+	ROOM: "room",
+	ROOM_IMAGE: "room_image",
+	PROMOTION: "promotion",
+	PROVINCE: "province",
+	DISTRICT: "district",
+	WARD: "ward",
+	BOOKING: "booking",
+	ROOM_BOOKING: "room_booking",
+};
+

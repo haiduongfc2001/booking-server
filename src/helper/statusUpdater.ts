@@ -1,3 +1,4 @@
+import { BOOKING_STATUS, ROOM_STATUS } from "../config/enum.config";
 import { Booking } from "../model/Booking";
 import { Room } from "../model/Room";
 import { RoomBooking } from "../model/RoomBooking";
@@ -12,14 +13,14 @@ export const updateStatuses = async (): Promise<void> => {
         [Op.lt]: now,
       },
       status: {
-        [Op.ne]: "checked_out",
+        [Op.ne]: BOOKING_STATUS.CHECKED_OUT,
       },
     },
   });
 
   await Promise.all(
     bookingsToCheckOut.map(async (booking) => {
-      booking.status = "checked_out";
+      booking.status = BOOKING_STATUS.CHECKED_OUT;
       await booking.save();
 
       const roomBookings = await RoomBooking.findAll({
@@ -32,7 +33,7 @@ export const updateStatuses = async (): Promise<void> => {
         roomBookings.map(async (roomBooking) => {
           const room = await Room.findByPk(roomBooking.room_id);
           if (room) {
-            room.status = "available";
+            room.status = ROOM_STATUS.AVAILABLE;
             await room.save();
           }
         })
@@ -48,10 +49,10 @@ export const updateStatuses = async (): Promise<void> => {
       const room = await Room.findByPk(roomBooking.room_id);
 
       if (room && booking) {
-        if (["canceled", "checked_out"].includes(booking.status)) {
-          room.status = "available";
+        if ([BOOKING_STATUS.CANCELED, BOOKING_STATUS.CHECKED_OUT].includes(booking.status)) {
+          room.status = ROOM_STATUS.AVAILABLE;
         } else {
-          room.status = "unavailable";
+          room.status = ROOM_STATUS.UNAVAILABLE;
         }
         await room.save();
       }

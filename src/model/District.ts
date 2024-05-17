@@ -7,21 +7,15 @@ import {
 	BelongsTo,
 } from "sequelize-typescript";
 import { Province } from "./Province";
+import { TABLE_NAME } from "../config/constant.config";
 
 @Table({
-	tableName: District.TABLE_NAME,
+	tableName: TABLE_NAME.DISTRICT,
 })
 export class District extends Model {
-	public static TABLE_NAME = "district" as string;
-	public static DISTRICT_ID = "id" as string;
-	public static DISTRICT_NAME = "name" as string;
-	public static DISTRICT_LEVEL = "level" as string;
-	public static PROVINCE_ID = "province_id" as string;
-
 	@Column({
 		type: DataType.STRING(10),
 		primaryKey: true,
-		field: District.DISTRICT_ID,
 	})
 	id!: string;
 
@@ -29,14 +23,12 @@ export class District extends Model {
 		type: DataType.STRING(100),
 		allowNull: false,
 		// unique: true,
-		field: District.DISTRICT_NAME,
 	})
 	name!: string;
 
 	@Column({
 		type: DataType.STRING(255),
 		allowNull: false,
-		field: District.DISTRICT_LEVEL,
 	})
 	level!: string;
 
@@ -44,10 +36,9 @@ export class District extends Model {
 	@Column({
 		type: DataType.STRING(10),
 		allowNull: false,
-		field: District.PROVINCE_ID,
 	})
 	province_id!: string;
 
-	@BelongsTo(() => Province, "province_id")
+	@BelongsTo(() => Province)
 	province!: Province;
 }
