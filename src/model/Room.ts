@@ -12,6 +12,7 @@ import { Hotel } from "./Hotel";
 import { Bed } from "./Bed";
 import { ROOM_STATUS } from "../config/enum.config";
 import { TABLE_NAME } from "../config/constant.config";
+import { RoomBooking } from "./RoomBooking";
 
 @Table({
   tableName: TABLE_NAME.ROOM,
@@ -88,11 +89,14 @@ export class Room extends Model {
 
   @Default(ROOM_STATUS.AVAILABLE)
   @Column({
-    type: DataType.ENUM(...Object.values(ROOM_STATUS)),
+    type: DataType.ENUM(ROOM_STATUS.AVAILABLE, ROOM_STATUS.UNAVAILABLE),
     allowNull: false,
   })
   status!: ROOM_STATUS;
 
   @HasMany(() => Bed)
   beds!: Bed[];
+
+  @HasMany(() => RoomBooking)
+  roomBookings!: RoomBooking[];
 }

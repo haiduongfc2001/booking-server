@@ -41,7 +41,7 @@ export class Promotion extends Model {
   code!: string;
 
   @Column({
-    type: DataType.ENUM(...Object.values(DISCOUNT_TYPE)),
+    type: DataType.ENUM(DISCOUNT_TYPE.PERCENTAGE, DISCOUNT_TYPE.FIXED_AMOUNT),
     allowNull: false,
   })
   discount_type!: DISCOUNT_TYPE;

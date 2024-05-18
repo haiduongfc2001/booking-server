@@ -42,3 +42,8 @@ export const TABLE_NAME = {
 	ROOM_BOOKING: "room_booking",
 	BED: "bed",
 };
+
+export const PAGINATION = {
+	INITIAL_PAGE: 1,
+	PAGE_SIZE: 10,
+}

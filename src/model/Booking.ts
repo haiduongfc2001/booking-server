@@ -4,12 +4,14 @@ import {
   DataType,
   Default,
   ForeignKey,
+  HasMany,
   Model,
   Table,
 } from "sequelize-typescript";
 import { Customer } from "./Customer";
 import { BOOKING_STATUS } from "../config/enum.config";
 import { TABLE_NAME } from "../config/constant.config";
+import { RoomBooking } from "./RoomBooking";
 
 @Table({
   tableName: TABLE_NAME.BOOKING,
@@ -64,8 +66,17 @@ export class Booking extends Model {
 
   @Default(BOOKING_STATUS.PENDING)
   @Column({
-    type: DataType.ENUM(...Object.values(BOOKING_STATUS)),
+    type: DataType.ENUM(
+      BOOKING_STATUS.PENDING,
+      BOOKING_STATUS.CONFIRMED,
+      BOOKING_STATUS.CHECKED_IN,
+      BOOKING_STATUS.CHECKED_OUT,
+      BOOKING_STATUS.CANCELED
+    ),
     allowNull: false,
   })
   status!: BOOKING_STATUS;
+
+  @HasMany(() => RoomBooking)
+  roomBookings!: RoomBooking[];
 }

@@ -32,7 +32,19 @@ export class Bed extends Model {
   room!: Room;
 
   @Column({
-    type: DataType.ENUM(...Object.values(BED_TYPE)),
+    type: DataType.ENUM(
+      BED_TYPE.SINGLE,
+      BED_TYPE.DOUBLE,
+      BED_TYPE.QUEEN,
+      BED_TYPE.KING,
+      BED_TYPE.TWIN,
+      BED_TYPE.FULL,
+      BED_TYPE.CALIFORNIA_KING,
+      BED_TYPE.SOFA_BED,
+      BED_TYPE.BUNK_BED,
+      BED_TYPE.ROLL_AWAY,
+      BED_TYPE.MURPHY_BED
+    ),
     allowNull: false,
   })
   type!: BED_TYPE;

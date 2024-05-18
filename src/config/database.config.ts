@@ -86,10 +86,14 @@ class Database {
     });
 
     try {
-      await this.sequelize.authenticate();
-      console.log(
-        "✅ PostgreSQL Connection has been established successfully."
-      );
+      await this.sequelize
+        .authenticate()
+        .then(() => {
+          console.log("✅ PostgreSQL Connection has been established successfully.");
+        })
+        .catch((err: Error) => {
+          console.error("❌ Unable to connect to the database:", err);
+        });
     } catch (error) {
       console.error("❌ Unable to connect to the PostgreSQL database:", error);
     }

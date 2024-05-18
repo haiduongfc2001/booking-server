@@ -22,7 +22,7 @@ export const createCustomerSchema = z.object({
           value === GENDER.FEMALE ||
           value === GENDER.OTHER,
         {
-          message: "Gender must be male, female or other",
+          message: `Gender must be ${GENDER.MALE}, ${GENDER.FEMALE} or ${GENDER.OTHER}`,
         }
       ),
     // phone: z.string().length(10, { message: "Phone must be 10 characters" }),
@@ -54,7 +54,7 @@ export const updateCustomerSchema = z.object({
           (value) =>
             GENDER.MALE || value === GENDER.FEMALE || value === GENDER.OTHER,
           {
-            message: "Gender must be male, female or other",
+            message: `Gender must be ${GENDER.MALE}, ${GENDER.FEMALE} or ${GENDER.OTHER}`,
           }
         ),
       // phone: z.string().length(10, { message: "Phone must be 10 characters" }),

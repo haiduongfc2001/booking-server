@@ -20,7 +20,7 @@ export const createStaffSchema = z.object({
         (value) =>
           GENDER.MALE || value === GENDER.FEMALE || value === GENDER.OTHER,
         {
-          message: "Gender must be male, female or other",
+          message: `Gender must be ${GENDER.MALE}, ${GENDER.FEMALE} or ${GENDER.OTHER}`,
         }
       ),
     // phone: z.string().length(10, { message: "Phone must be 10 characters" }),
@@ -35,7 +35,7 @@ export const createStaffSchema = z.object({
         (value) =>
           value === STAFF_ROLE.MANAGER || value === STAFF_ROLE.RECEPTIONIST,
         {
-          message: "Role name must be manager or receptionist!",
+          message: `Role name must be ${STAFF_ROLE.MANAGER} or ${STAFF_ROLE.RECEPTIONIST}!`,
         }
       ),
     // avatar: z.string(),
@@ -65,7 +65,7 @@ export const updateStaffSchema = z.object({
             value === GENDER.FEMALE ||
             value === GENDER.OTHER,
           {
-            message: "Gender must be male, female or other",
+            message: `Gender must be ${GENDER.MALE}, ${GENDER.FEMALE} or ${GENDER.OTHER}`,
           }
         ),
       phone: z.string().length(10, { message: "Phone must be 10 characters" }),
@@ -80,7 +80,7 @@ export const updateStaffSchema = z.object({
           (value) =>
             value === STAFF_ROLE.MANAGER || value === STAFF_ROLE.RECEPTIONIST,
           {
-            message: "Role name must be manager or receptionist!",
+            message: `Role name must be ${STAFF_ROLE.MANAGER} or ${STAFF_ROLE.RECEPTIONIST}!`,
           }
         ),
       // avatar: z.string(),

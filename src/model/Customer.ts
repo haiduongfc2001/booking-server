@@ -41,7 +41,7 @@ export class Customer extends Model {
 	password!: string;
 
 	@Column({
-		type: DataType.ENUM(...Object.values(GENDER)),
+		type: DataType.ENUM(GENDER.MALE, GENDER.FEMALE, GENDER.OTHER),
 		allowNull: false,
 	})
 	gender!: GENDER;

@@ -43,7 +43,7 @@ export class Staff extends Model {
   full_name!: string;
 
   @Column({
-    type: DataType.ENUM(...Object.values(GENDER)),
+    type: DataType.ENUM(GENDER.MALE, GENDER.FEMALE, GENDER.OTHER),
     allowNull: false,
   })
   gender!: GENDER;
@@ -71,7 +71,7 @@ export class Staff extends Model {
   hotel!: Hotel;
 
   @Column({
-    type: DataType.ENUM(...Object.values(STAFF_ROLE)),
+    type: DataType.ENUM(STAFF_ROLE.MANAGER, STAFF_ROLE.RECEPTIONIST),
     allowNull: false,
   })
   role!: STAFF_ROLE;
