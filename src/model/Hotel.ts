@@ -19,25 +19,25 @@ export class Hotel extends Model {
 	name!: string;
 
 	@Column({
-		type: DataType.STRING(255),
+		type: DataType.STRING,
 		allowNull: false,
 	})
 	address!: string;
 
 	@Column({
-		type: DataType.STRING(255),
+		type: DataType.STRING,
 		allowNull: false,
 	})
 	location!: string;
 
 	@Column({
-		type: DataType.STRING(255),
+		type: DataType.STRING,
 		allowNull: false,
 	})
 	description!: string;
 
 	@Column({
-		type: DataType.STRING(255),
+		type: DataType.STRING,
 		allowNull: false,
 	})
 	contact!: string;

@@ -12,7 +12,7 @@ export const ROLE = {
 	ADMIN: "admin",
 };
 
-export const BED_TYPES = {
+export const BED_TYPE = {
 	SINGLE: "SINGLE",
 	DOUBLE: "DOUBLE",
 	QUEEN: "QUEEN",
@@ -40,5 +40,6 @@ export const TABLE_NAME = {
 	WARD: "ward",
 	BOOKING: "booking",
 	ROOM_BOOKING: "room_booking",
+	BED: "bed",
 };
 

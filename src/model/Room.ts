@@ -4,10 +4,12 @@ import {
   DataType,
   Default,
   ForeignKey,
+  HasMany,
   Model,
   Table,
 } from "sequelize-typescript";
 import { Hotel } from "./Hotel";
+import { Bed } from "./Bed";
 import { ROOM_STATUS } from "../config/enum.config";
 import { TABLE_NAME } from "../config/constant.config";
 
@@ -74,10 +76,23 @@ export class Room extends Model {
   })
   description!: string;
 
+  @Column({
+    type: DataType.ARRAY(DataType.STRING),
+  })
+  views!: string[];
+
+  @Column({
+    type: DataType.INTEGER,
+  })
+  area!: number;
+
   @Default(ROOM_STATUS.AVAILABLE)
   @Column({
     type: DataType.ENUM(...Object.values(ROOM_STATUS)),
     allowNull: false,
   })
   status!: ROOM_STATUS;
+
+  @HasMany(() => Bed)
+  beds!: Bed[];
 }

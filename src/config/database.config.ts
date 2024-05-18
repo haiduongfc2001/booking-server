@@ -13,6 +13,7 @@ import { Ward } from "../model/Ward";
 import { Promotion } from "../model/Promotion";
 import { Booking } from "../model/Booking";
 import { RoomBooking } from "../model/RoomBooking";
+import { Bed } from "../model/Bed";
 
 dotenv.config();
 
@@ -78,6 +79,7 @@ class Database {
         Ward,
         Booking,
         RoomBooking,
+        Bed,
       ],
       define: config.define,
       logging: false,

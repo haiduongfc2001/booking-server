@@ -24,20 +24,20 @@ export class Staff extends Model {
 
   @IsEmail
   @Column({
-    type: DataType.STRING(255),
+    type: DataType.STRING,
     allowNull: false,
     unique: true,
   })
   email!: string;
 
   @Column({
-    type: DataType.STRING(255),
+    type: DataType.STRING,
     allowNull: false,
   })
   password!: string;
 
   @Column({
-    type: DataType.STRING(255),
+    type: DataType.STRING,
     allowNull: false,
   })
   full_name!: string;
@@ -49,14 +49,14 @@ export class Staff extends Model {
   gender!: GENDER;
 
   @Column({
-    type: DataType.STRING(255),
+    type: DataType.STRING,
     allowNull: false,
     // unique: true,
   })
   phone!: string;
 
   @Column({
-    type: DataType.STRING(255),
+    type: DataType.STRING,
   })
   avatar!: string;
 
@@ -77,7 +77,7 @@ export class Staff extends Model {
   role!: STAFF_ROLE;
 
   @Column({
-    type: DataType.STRING(255),
+    type: DataType.STRING,
   })
   token!: string;
 }

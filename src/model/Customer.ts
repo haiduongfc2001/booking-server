@@ -21,21 +21,21 @@ export class Customer extends Model {
 	id!: number;
 
 	@Column({
-		type: DataType.STRING(255),
+		type: DataType.STRING,
 		allowNull: false,
 	})
 	full_name!: string;
 
 	@IsEmail
 	@Column({
-		type: DataType.STRING(255),
+		type: DataType.STRING,
 		allowNull: false,
 		unique: true,
 	})
 	email!: string;
 
 	@Column({
-		type: DataType.STRING(255),
+		type: DataType.STRING,
 		allowNull: false,
 	})
 	password!: string;
@@ -47,38 +47,32 @@ export class Customer extends Model {
 	gender!: GENDER;
 
 	@Column({
-		type: DataType.STRING(255),
-		allowNull: true,
+		type: DataType.STRING,
 	})
 	phone!: string;
 
 	@Column({
-		type: DataType.STRING(255),
-		allowNull: true,
+		type: DataType.STRING,
 	})
 	dob!: string;
 
 	@Column({
-		type: DataType.STRING(255),
-		allowNull: true,
+		type: DataType.STRING,
 	})
 	avatar!: string;
 
 	@Column({
-		type: DataType.STRING(255),
-		allowNull: true,
+		type: DataType.STRING,
 	})
 	address!: string;
 
 	@Column({
-		type: DataType.STRING(255),
-		allowNull: true,
+		type: DataType.STRING,
 	})
 	location!: string;
 
 	@Column({
-		type: DataType.STRING(255),
-		allowNull: true,
+		type: DataType.STRING,
 	})
 	token!: string;
 

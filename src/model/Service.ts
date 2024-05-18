@@ -18,7 +18,7 @@ export class Service extends Model {
   name!: string;
 
   @Column({
-    type: DataType.STRING(255),
+    type: DataType.STRING,
   })
   description!: string;
 }

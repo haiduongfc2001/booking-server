@@ -33,3 +33,17 @@ export enum STAFF_ROLE {
   MANAGER = "manager",
   RECEPTIONIST = "receptionist",
 }
+
+export enum BED_TYPE {
+  SINGLE = "SINGLE",
+  DOUBLE = "DOUBLE",
+  QUEEN = "QUEEN",
+  KING = "KING",
+  TWIN = "TWIN",
+  FULL = "FULL",
+  CALIFORNIA_KING = "CALIFORNIA KING",
+  SOFA_BED = "SOFA BED",
+  BUNK_BED = "BUNK BED",
+  ROLL_AWAY = "ROLL AWAY",
+  MURPHY_BED = "MURPHY BED",
+}

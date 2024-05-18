@@ -27,7 +27,7 @@ export class District extends Model {
 	name!: string;
 
 	@Column({
-		type: DataType.STRING(255),
+		type: DataType.STRING,
 		allowNull: false,
 	})
 	level!: string;
