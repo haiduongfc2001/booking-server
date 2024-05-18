@@ -1,37 +1,37 @@
 export enum ROLE_TYPE {
-  CUSTOMER = "customer",
-  RECEPTIONIST = "receptionist",
-  MANAGER = "manager",
-  ADMIN = "admin",
+  CUSTOMER = "CUSTOMER",
+  RECEPTIONIST = "RECEPTIONIST",
+  MANAGER = "MANAGER",
+  ADMIN = "ADMIN",
 }
 
 export enum ROOM_STATUS {
-  AVAILABLE = "available",
-  UNAVAILABLE = "unavailable",
+  AVAILABLE = "AVAILABLE",
+  UNAVAILABLE = "UNAVAILABLE",
 }
 
 export enum BOOKING_STATUS {
-  PENDING = "pending",
-  CONFIRMED = "confirmed",
-  CHECKED_IN = "checked_in",
-  CHECKED_OUT = "checked_out",
-  CANCELED = "canceled",
+  PENDING = "PENDING",
+  CONFIRMED = "CONFIRMED",
+  CHECKED_IN = "CHECKED_IN",
+  CHECKED_OUT = "CHECKED_OUT",
+  CANCELED = "CANCELED",
 }
 
 export enum GENDER {
-  MALE = "male",
-  FEMALE = "female",
-  OTHER = "other",
+  MALE = "MALE",
+  FEMALE = "FEMALE",
+  OTHER = "OTHER",
 }
 
 export enum DISCOUNT_TYPE {
-  PERCENTAGE = "percentage",
-  FIXED_AMOUNT = "fixed_amount",
+  PERCENTAGE = "PERCENTAGE",
+  FIXED_AMOUNT = "FIXED_AMOUNT",
 }
 
 export enum STAFF_ROLE {
-  MANAGER = "manager",
-  RECEPTIONIST = "receptionist",
+  MANAGER = "MANAGER",
+  RECEPTIONIST = "RECEPTIONIST",
 }
 
 export enum BED_TYPE {
@@ -41,9 +41,9 @@ export enum BED_TYPE {
   KING = "KING",
   TWIN = "TWIN",
   FULL = "FULL",
-  CALIFORNIA_KING = "CALIFORNIA KING",
-  SOFA_BED = "SOFA BED",
-  BUNK_BED = "BUNK BED",
-  ROLL_AWAY = "ROLL AWAY",
-  MURPHY_BED = "MURPHY BED",
+  CALIFORNIA_KING = "CALIFORNIA_KING",
+  SOFA_BED = "SOFA_BED",
+  BUNK_BED = "BUNK_BED",
+  ROLL_AWAY = "ROLL_AWAY",
+  MURPHY_BED = "MURPHY_BED",
 }

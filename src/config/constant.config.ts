@@ -6,10 +6,10 @@ export const DEFAULT_MINIO = {
 };
 
 export const ROLE = {
-	CUSTOMER: "customer",
-	MANAGER: "manager",
-	RECEPTIONIST: "receptionist",
-	ADMIN: "admin",
+	CUSTOMER: "CUSTOMER",
+	MANAGER: "MANAGER",
+	RECEPTIONIST: "RECEPTIONIST",
+	ADMIN: "ADMIN",
 };
 
 export const BED_TYPE = {
@@ -19,11 +19,11 @@ export const BED_TYPE = {
 	KING: "KING",
 	TWIN: "TWIN",
 	FULL: "FULL",
-	CALIFORNIA_KING: "CALIFORNIA KING",
-	SOFA_BED: "SOFA BED",
-	BUNK_BED: "BUNK BED",
-	ROLL_AWAY: "ROLL AWAY",
-	MURPHY_BED: "MURPHY BED",
+	CALIFORNIA_KING: "CALIFORNIA_KING",
+	SOFA_BED: "SOFA_BED",
+	BUNK_BED: "BUNK_BED",
+	ROLL_AWAY: "ROLL_AWAY",
+	MURPHY_BED: "MURPHY_BED",
 };
 
 export const TABLE_NAME = {
@@ -42,4 +42,3 @@ export const TABLE_NAME = {
 	ROOM_BOOKING: "room_booking",
 	BED: "bed",
 };
-

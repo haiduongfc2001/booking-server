@@ -39,9 +39,8 @@ export class Bed extends Model {
 
   @Column({
     type: DataType.STRING,
-    allowNull: false,
   })
-  name!: string;
+  description!: string;
 
   @Column({
     type: DataType.INTEGER,
