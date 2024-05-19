@@ -41,6 +41,7 @@ export const TABLE_NAME = {
 	BOOKING: "booking",
 	ROOM_BOOKING: "room_booking",
 	BED: "bed",
+	ROOM_TYPE: "room_type",
 };
 
 export const PAGINATION = {

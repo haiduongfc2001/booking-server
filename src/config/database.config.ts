@@ -14,6 +14,7 @@ import { Promotion } from "../model/Promotion";
 import { Booking } from "../model/Booking";
 import { RoomBooking } from "../model/RoomBooking";
 import { Bed } from "../model/Bed";
+import { RoomType } from "../model/RoomType";
 
 dotenv.config();
 
@@ -80,6 +81,7 @@ class Database {
         Booking,
         RoomBooking,
         Bed,
+        RoomType,
       ],
       define: config.define,
       logging: false,

@@ -69,6 +69,33 @@ const translation: { [key: string]: { [key: string]: string } } = {
     [ROOM_TYPE.DORMITORY]: "Phòng Dormitory",
     [ROOM_TYPE.CONNECTING]: "Phòng Connecting",
   },
+  roomTypeDescription: {
+    [ROOM_TYPE.SINGLE]:
+      "Phòng đơn thích hợp cho một người ở, với giường đơn và các tiện ích cơ bản.",
+    [ROOM_TYPE.DOUBLE]:
+      "Phòng đôi thích hợp cho hai người ở, với giường đôi và các tiện ích hiện đại.",
+    [ROOM_TYPE.TWIN]:
+      "Phòng với hai giường đơn, thích hợp cho bạn bè hoặc đồng nghiệp ở chung.",
+    [ROOM_TYPE.FAMILY]:
+      "Phòng rộng rãi, thích hợp cho gia đình với nhiều giường và không gian rộng.",
+    [ROOM_TYPE.SUITE]:
+      "Phòng sang trọng với không gian rộng, khu vực tiếp khách riêng biệt và các tiện ích cao cấp.",
+    [ROOM_TYPE.QUEEN]:
+      "Phòng với giường Queen, thích hợp cho cặp đôi hoặc du khách cá nhân muốn thoải mái hơn.",
+    [ROOM_TYPE.KING]:
+      "Phòng với giường King rộng rãi, thích hợp cho cặp đôi hoặc du khách muốn không gian lớn hơn.",
+    [ROOM_TYPE.PRESIDENTIAL_SUITE]:
+      "Phòng cao cấp nhất, với không gian rộng lớn, tiện nghi sang trọng và dịch vụ đẳng cấp.",
+    [ROOM_TYPE.DELUXE]:
+      "Phòng cao cấp với không gian rộng và các tiện nghi cao cấp.",
+    [ROOM_TYPE.STANDARD]: "Phòng tiêu chuẩn với đầy đủ tiện nghi cơ bản.",
+    [ROOM_TYPE.STUDIO]:
+      "Phòng kiểu studio với không gian mở và khu vực bếp nhỏ.",
+    [ROOM_TYPE.DORMITORY]:
+      "Phòng ngủ tập thể với giường tầng, thích hợp cho nhóm du lịch hoặc khách tiết kiệm.",
+    [ROOM_TYPE.CONNECTING]:
+      "Phòng kết nối với nhau, thích hợp cho gia đình hoặc nhóm bạn.",
+  },
 };
 
 /**

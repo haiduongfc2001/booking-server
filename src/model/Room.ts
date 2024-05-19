@@ -13,6 +13,7 @@ import { Bed } from "./Bed";
 import { ROOM_STATUS } from "../config/enum.config";
 import { TABLE_NAME } from "../config/constant.config";
 import { RoomBooking } from "./RoomBooking";
+import { RoomType } from "./RoomType";
 
 @Table({
   tableName: TABLE_NAME.ROOM,
@@ -35,6 +36,16 @@ export class Room extends Model {
   @BelongsTo(() => Hotel)
   hotel!: Hotel;
 
+  @ForeignKey(() => RoomType)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
+  room_type_id!: number;
+
+  @BelongsTo(() => RoomType)
+  roomType!: RoomType;
+
   @Column({
     type: DataType.STRING,
     allowNull: false,
@@ -46,12 +57,6 @@ export class Room extends Model {
     allowNull: false,
   })
   number!: string;
-
-  @Column({
-    type: DataType.STRING(100),
-    allowNull: false,
-  })
-  type!: string;
 
   @Column({
     type: DataType.INTEGER,

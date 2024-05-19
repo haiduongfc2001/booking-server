@@ -122,7 +122,7 @@ class HotelController {
           id: room.id,
           name: room.name,
           number: room.number,
-          type: room.type,
+          room_type_id: room.room_type_id,
           price: room.price,
           adult_occupancy: room.adult_occupancy,
           child_occupancy: room.child_occupancy,
@@ -494,7 +494,7 @@ class HotelController {
                 .map((room) => ({
                   id: room.id,
                   name: room.name,
-                  type: room.type,
+                  room_type_id: room.room_type_id,
                   price: room.price,
                   description: room.description,
                   views: room.views,

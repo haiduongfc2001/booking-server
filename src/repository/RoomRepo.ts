@@ -108,7 +108,7 @@ export class RoomRepo implements IRoomRepo {
         hotel_id: newRoom.hotel_id,
         name: newRoom.name,
         number: newRoom.number,
-        type: newRoom.type,
+        room_type_id: newRoom.room_type_id,
         price: newRoom.price,
         adult_occupancy: newRoom.adult_occupancy,
         child_occupancy: newRoom.child_occupancy,
@@ -148,7 +148,7 @@ export class RoomRepo implements IRoomRepo {
 
       existingRoom.name = updatedRoom.name;
       existingRoom.number = updatedRoom.number;
-      existingRoom.type = updatedRoom.type;
+      existingRoom.room_type_id = updatedRoom.room_type_id;
       existingRoom.price = updatedRoom.price;
       existingRoom.adult_occupancy = updatedRoom.adult_occupancy;
       existingRoom.child_occupancy = updatedRoom.child_occupancy;
