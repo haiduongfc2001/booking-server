@@ -1,3 +1,4 @@
+import { STAFF_ROLE } from "../config/enum.config";
 import { Hotel } from "../model/Hotel";
 import { Staff } from "../model/Staff";
 
@@ -117,7 +118,7 @@ export class StaffRepo implements IStaffRepo {
     try {
       const managers = await Staff.findAll({
         where: {
-          role: "manager",
+          role: STAFF_ROLE.MANAGER,
         },
         order: [["id", "asc"]],
       });
@@ -147,7 +148,7 @@ export class StaffRepo implements IStaffRepo {
     try {
       const receptionists = await Staff.findAll({
         where: {
-          role: "receptionist",
+          role: STAFF_ROLE.RECEPTIONIST,
         },
         order: [["id", "asc"]],
       });

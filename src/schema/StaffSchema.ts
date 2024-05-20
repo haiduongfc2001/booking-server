@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { GENDER, STAFF_ROLE } from "../config/enum.config";
 
 export const createStaffSchema = z.object({
   body: z.object({
@@ -16,9 +17,10 @@ export const createStaffSchema = z.object({
     gender: z
       .string()
       .refine(
-        (value) => value === "male" || value === "female" || value === "other",
+        (value) =>
+          GENDER.MALE || value === GENDER.FEMALE || value === GENDER.OTHER,
         {
-          message: "Gender must be male, female or other",
+          message: `Gender must be ${GENDER.MALE}, ${GENDER.FEMALE} or ${GENDER.OTHER}`,
         }
       ),
     // phone: z.string().length(10, { message: "Phone must be 10 characters" }),
@@ -29,9 +31,13 @@ export const createStaffSchema = z.object({
     //     }),
     role: z
       .string()
-      .refine((value) => value === "manager" || value === "receptionist", {
-        message: "Role name must be manager or receptionist!",
-      }),
+      .refine(
+        (value) =>
+          value === STAFF_ROLE.MANAGER || value === STAFF_ROLE.RECEPTIONIST,
+        {
+          message: `Role name must be ${STAFF_ROLE.MANAGER} or ${STAFF_ROLE.RECEPTIONIST}!`,
+        }
+      ),
     // avatar: z.string(),
   }),
 });
@@ -55,9 +61,11 @@ export const updateStaffSchema = z.object({
         .string()
         .refine(
           (value) =>
-            value === "male" || value === "female" || value === "other",
+            value === GENDER.MALE ||
+            value === GENDER.FEMALE ||
+            value === GENDER.OTHER,
           {
-            message: "Gender must be male, female or other",
+            message: `Gender must be ${GENDER.MALE}, ${GENDER.FEMALE} or ${GENDER.OTHER}`,
           }
         ),
       phone: z.string().length(10, { message: "Phone must be 10 characters" }),
@@ -68,9 +76,13 @@ export const updateStaffSchema = z.object({
       //     }),
       role: z
         .string()
-        .refine((value) => value === "manager" || value === "receptionist", {
-          message: "Role name must be manager or receptionist!",
-        }),
+        .refine(
+          (value) =>
+            value === STAFF_ROLE.MANAGER || value === STAFF_ROLE.RECEPTIONIST,
+          {
+            message: `Role name must be ${STAFF_ROLE.MANAGER} or ${STAFF_ROLE.RECEPTIONIST}!`,
+          }
+        ),
       // avatar: z.string(),
     })
     .partial(),

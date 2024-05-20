@@ -7,23 +7,16 @@ import {
   BelongsTo,
 } from "sequelize-typescript";
 import { Hotel } from "./Hotel";
+import { TABLE_NAME } from "../config/constant.config";
 
 @Table({
-  tableName: HotelImage.TABLE_NAME,
+  tableName: TABLE_NAME.HOTEL_IMAGE,
 })
 export class HotelImage extends Model {
-  public static TABLE_NAME = "hotel_image" as string;
-  public static HOTEL_IMAGE_ID = "id" as string;
-  public static HOTEL_ID = "hotel_id" as string;
-  public static HOTEL_IMAGE_URL = "url" as string;
-  public static HOTEL_IMAGE_CAPTION = "caption" as string;
-  public static HOTEL_IMAGE_IS_PRIMARY = "is_primary" as string;
-
   @Column({
     type: DataType.INTEGER,
     primaryKey: true,
     autoIncrement: true,
-    field: HotelImage.HOTEL_IMAGE_ID,
   })
   id!: number;
 
@@ -31,7 +24,6 @@ export class HotelImage extends Model {
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
-    field: HotelImage.HOTEL_ID,
   })
   hotel_id!: number;
 
@@ -41,14 +33,12 @@ export class HotelImage extends Model {
   @Column({
     type: DataType.TEXT,
     allowNull: false,
-    field: HotelImage.HOTEL_IMAGE_URL,
   })
   url!: string;
 
   @Column({
     type: DataType.STRING,
     defaultValue: "",
-    field: HotelImage.HOTEL_IMAGE_CAPTION,
   })
   caption?: string;
 
@@ -56,7 +46,6 @@ export class HotelImage extends Model {
     type: DataType.BOOLEAN,
     allowNull: false,
     defaultValue: false,
-    field: HotelImage.HOTEL_IMAGE_IS_PRIMARY,
   })
   is_primary!: boolean;
 }

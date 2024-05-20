@@ -5,25 +5,19 @@ import {
   DataType,
   ForeignKey,
   BelongsTo,
+  Default,
 } from "sequelize-typescript";
 import { Room } from "./Room";
+import { TABLE_NAME } from "../config/constant.config";
 
 @Table({
-  tableName: RoomImage.TABLE_NAME,
+  tableName: TABLE_NAME.ROOM_IMAGE,
 })
 export class RoomImage extends Model {
-  public static TABLE_NAME = "room_image" as string;
-  public static ROOM_IMAGE_ID = "id" as string;
-  public static ROOM_ID = "room_id" as string;
-  public static ROOM_IMAGE_URL = "url" as string;
-  public static ROOM_IMAGE_CAPTION = "caption" as string;
-  public static ROOM_IMAGE_IS_PRIMARY = "is_primary" as string;
-
   @Column({
     type: DataType.INTEGER,
     primaryKey: true,
     autoIncrement: true,
-    field: RoomImage.ROOM_IMAGE_ID,
   })
   id!: number;
 
@@ -31,7 +25,6 @@ export class RoomImage extends Model {
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
-    field: RoomImage.ROOM_ID,
   })
   room_id!: number;
 
@@ -41,22 +34,19 @@ export class RoomImage extends Model {
   @Column({
     type: DataType.TEXT,
     allowNull: false,
-    field: RoomImage.ROOM_IMAGE_URL,
   })
   url!: string;
 
+  @Default("")
   @Column({
     type: DataType.STRING,
-    defaultValue: "",
-    field: RoomImage.ROOM_IMAGE_CAPTION,
   })
   caption?: string;
 
+  @Default(false)
   @Column({
     type: DataType.BOOLEAN,
     allowNull: false,
-    defaultValue: false,
-    field: RoomImage.ROOM_IMAGE_IS_PRIMARY,
   })
   is_primary!: boolean;
 }

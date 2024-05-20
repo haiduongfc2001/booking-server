@@ -3,6 +3,7 @@ import HotelController from "../controller/HotelController";
 import validate from "../helper/validate";
 import { createHotelSchema, updateHotelSchema } from "../schema/HotelSchema";
 import { authFullRole } from "../middleware/Auth.middleware";
+import { updateStatuses } from "../middleware/UpdateStatus.middleware";
 
 class HotelRoutes extends BaseRoutes {
   public routes(): void {
@@ -49,6 +50,7 @@ class HotelRoutes extends BaseRoutes {
     this.router.get(
       "/getHotelSearchResults",
       authFullRole,
+      // updateStatuses,
       HotelController.getHotelSearchResults
     );
     this.router.post(

@@ -6,6 +6,7 @@ import securePassword from "../utils/SecurePassword";
 import sendVerifyMail from "../utils/SendVerifyMail";
 import bcrypt from "bcrypt";
 import { generateCustomerToken } from "../utils/GenerateToken";
+import { where } from "sequelize";
 
 class CustomerController {
 	async createCustomer(req: Request, res: Response) {
@@ -249,6 +250,14 @@ class CustomerController {
 
 			// Generate JWT with appropriate expiry (consider using refresh tokens)
 			const token = generateCustomerToken(customer.id, customer.email);
+
+			// Cập nhật token của khách hàng
+			await Customer.update(
+				{ token },
+				{
+					where: { email },
+				}
+			);
 
 			// Login successful
 			return res.status(200).json({

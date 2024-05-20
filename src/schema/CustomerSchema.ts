@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { GENDER } from "../config/enum.config";
 
 export const createCustomerSchema = z.object({
   body: z.object({
@@ -16,9 +17,12 @@ export const createCustomerSchema = z.object({
     gender: z
       .string()
       .refine(
-        (value) => value === "male" || value === "female" || value === "other",
+        (value) =>
+          value === GENDER.MALE ||
+          value === GENDER.FEMALE ||
+          value === GENDER.OTHER,
         {
-          message: "Gender must be male, female or other",
+          message: `Gender must be ${GENDER.MALE}, ${GENDER.FEMALE} or ${GENDER.OTHER}`,
         }
       ),
     // phone: z.string().length(10, { message: "Phone must be 10 characters" }),
@@ -48,9 +52,9 @@ export const updateCustomerSchema = z.object({
         .string()
         .refine(
           (value) =>
-            value === "male" || value === "female" || value === "other",
+            GENDER.MALE || value === GENDER.FEMALE || value === GENDER.OTHER,
           {
-            message: "Gender must be male, female or other",
+            message: `Gender must be ${GENDER.MALE}, ${GENDER.FEMALE} or ${GENDER.OTHER}`,
           }
         ),
       // phone: z.string().length(10, { message: "Phone must be 10 characters" }),

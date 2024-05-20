@@ -8,72 +8,55 @@ import {
   BelongsTo,
 } from "sequelize-typescript";
 import { Hotel } from "./Hotel";
+import { GENDER, STAFF_ROLE } from "../config/enum.config";
+import { TABLE_NAME } from "../config/constant.config";
 
 @Table({
-  tableName: Staff.TABLE_NAME,
+  tableName: TABLE_NAME.STAFF,
 })
 export class Staff extends Model {
-  public static TABLE_NAME = "staff" as string;
-  public static STAFF_ID = "id" as string;
-  public static STAFF_EMAIL = "email" as string;
-  public static STAFF_PASSWORD = "password" as string;
-  public static STAFF_FULL_NAME = "full_name" as string;
-  public static STAFF_GENDER = "gender" as const;
-  public static STAFF_PHONE = "phone" as string;
-  public static STAFF_AVATAR = "avatar" as string;
-  public static HOTEL_ID = "hotel_id" as string;
-  public static STAFF_ROLE = "role" as const;
-  public static STAFF_TOKEN = "token" as string;
-
   @Column({
     type: DataType.INTEGER,
     primaryKey: true,
     autoIncrement: true,
-    field: Staff.STAFF_ID,
   })
   id!: number;
 
   @IsEmail
   @Column({
-    type: DataType.STRING(255),
+    type: DataType.STRING,
     allowNull: false,
     unique: true,
-    field: Staff.STAFF_EMAIL,
   })
   email!: string;
 
   @Column({
-    type: DataType.STRING(255),
+    type: DataType.STRING,
     allowNull: false,
-    field: Staff.STAFF_PASSWORD,
   })
   password!: string;
 
   @Column({
-    type: DataType.STRING(255),
+    type: DataType.STRING,
     allowNull: false,
-    field: Staff.STAFF_FULL_NAME,
   })
   full_name!: string;
 
   @Column({
-    type: DataType.ENUM("male", "female", "other"),
+    type: DataType.ENUM(GENDER.MALE, GENDER.FEMALE, GENDER.OTHER),
     allowNull: false,
-    field: Staff.STAFF_GENDER,
   })
-  gender!: string;
+  gender!: GENDER;
 
   @Column({
-    type: DataType.STRING(255),
+    type: DataType.STRING,
     allowNull: false,
     // unique: true,
-    field: Staff.STAFF_PHONE,
   })
   phone!: string;
 
   @Column({
-    type: DataType.STRING(255),
-    field: Staff.STAFF_AVATAR,
+    type: DataType.STRING,
   })
   avatar!: string;
 
@@ -81,7 +64,6 @@ export class Staff extends Model {
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
-    field: Staff.HOTEL_ID,
   })
   hotel_id!: number;
 
@@ -89,15 +71,13 @@ export class Staff extends Model {
   hotel!: Hotel;
 
   @Column({
-    type: DataType.ENUM("manager", "receptionist"),
+    type: DataType.ENUM(STAFF_ROLE.MANAGER, STAFF_ROLE.RECEPTIONIST),
     allowNull: false,
-    field: Staff.STAFF_ROLE,
   })
-  role!: string;
+  role!: STAFF_ROLE;
 
   @Column({
-    type: DataType.STRING(255),
-    field: Staff.STAFF_TOKEN,
+    type: DataType.STRING,
   })
   token!: string;
 }

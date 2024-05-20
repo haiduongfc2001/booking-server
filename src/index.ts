@@ -59,7 +59,11 @@ class App {
 
   private async startServer(): Promise<void> {
     const port = Number(process.env.PORT) || 5000;
-    await dbConfig.sequelize?.sync();
+    await dbConfig.sequelize?.sync({
+      // force: true,
+      alter: true,
+    });
+    console.log("✅ All models were synchronized successfully.");
     this.app.listen(port, () => {
       console.log(`✅ Server started successfully on port ${port}!`);
     });

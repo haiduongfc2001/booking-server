@@ -6,9 +6,12 @@ import { StaffRepo } from "../repository/StaffRepo";
 import { RoomRepo } from "../repository/RoomRepo";
 import { HotelImage } from "../model/HotelImage";
 import { dbConfig } from "../config/database.config";
-import { QueryTypes } from "sequelize";
-import { DEFAULT_MINIO } from "../config/constant.config";
+import { Op, QueryTypes } from "sequelize";
+import { DEFAULT_MINIO, PAGINATION } from "../config/constant.config";
 import { minioConfig } from "../config/minio.config";
+import { Room } from "../model/Room";
+import { Booking } from "../model/Booking";
+import { RoomBooking } from "../model/RoomBooking";
 
 class HotelController {
   async createHotel(req: Request, res: Response) {
@@ -119,7 +122,7 @@ class HotelController {
           id: room.id,
           name: room.name,
           number: room.number,
-          type: room.type,
+          room_type_id: room.room_type_id,
           price: room.price,
           adult_occupancy: room.adult_occupancy,
           child_occupancy: room.child_occupancy,
@@ -300,8 +303,8 @@ class HotelController {
           ) AS hotel_avatar,
 
           MIN(CASE
-                  WHEN p.discount_type = 'percentage' THEN r.price * (1 - p.discount_value / 100)
-                  WHEN p.discount_type = 'fixed_amount' THEN r.price - p.discount_value
+                  WHEN p.discount_type = 'PERCENTAGE' THEN r.price * (1 - p.discount_value / 100)
+                  WHEN p.discount_type = 'FIXED_AMOUNT' THEN r.price - p.discount_value
                   ELSE r.price
               END) AS min_room_price,
 
@@ -311,8 +314,8 @@ class HotelController {
                   SELECT
                       r.price,
                       ROW_NUMBER() OVER (ORDER BY CASE
-                                                    WHEN MIN(p.discount_type) = 'percentage' THEN r.price * (1 - p.discount_value / 100)
-                                                    WHEN MIN(p.discount_type) = 'fixed_amount' THEN r.price - p.discount_value
+                                                    WHEN MIN(p.discount_type) = 'PERCENTAGE' THEN r.price * (1 - p.discount_value / 100)
+                                                    WHEN MIN(p.discount_type) = 'FIXED_AMOUNT' THEN r.price - p.discount_value
                                                     ELSE r.price
                                                 END) AS rn
                   FROM room r
@@ -379,31 +382,140 @@ class HotelController {
     try {
       // const payload = {
       //   location: "Hà Nội",
-      //   checkInDate: "2024-05-06",
-      //   checkOutDate: "2024-05-07",
-      //   numberOfRooms: 1,
-      //   numberOfAdults: 1,
-      //   numberOfChildren: 1,
+      //   checkInDate: "2022-05-06",
+      //   checkOutDate: "2022-05-07",
+      //   numRooms: 2,
+      //   numAdults: 3,
+      //   numChildren: 2,
       //   filters: {
       //     childrenAges: [7, 10],
-      //     priceRange: [0, 5000000],
-      //     selectedAmenities: ["Nhà hàng"],
-      //     selectedRoomType: ["Phòng đôi", "Suite"],
+      //     priceRange: [0, 4500000],
+      //     selectedHotelAmenities: ["Bể bơi", "Bãi để xe"],
+      //     selectedRoomAmenities: ["Điều hòa", Tivi],
+      //     paymentOptions: ["Hủy miễn phí", "Thanh toán liền"],
       //     minRating: "8.0",
       //   },
       // };
+
+      // Đầu tiền là phải xét đến việc tìm kiếm theo khu vực (location), ở đây là Hà Nội.
+      // Sau khi tìm được những khách sạn ở Hà Nội rồi thì tìm trong các phòng của các khách sạn đó
+      // xem trong khoảng thời gian checkInData và checkOutDate có những phòng nào có sẵn.
+      // Tiếp theo, trong những phòng có sẵn trong khoảng thời gian đó thì sẽ xét xem những phòng
+      // nào thỏa mãn số lượng người lớn, số lượng trẻ em.
+      // Ví dụ khách hàng cần tìm kiếm với yêu cầu có 3 người lớn và 2 trẻ em
 
       const {
         location,
         checkInDate,
         checkOutDate,
-        numberOfRooms,
-        numberOfAdults,
-        childrenAges,
-        filters,
-        page,
-        size,
+        // numRooms,
+        numAdults,
+        numChildren,
+        // childrenAges,
+        // filters,
+        page = PAGINATION.INITIAL_PAGE,
+        size = PAGINATION.PAGE_SIZE,
       } = req.body;
+
+      const offset = (page - 1) * size;
+
+      // Format dates for comparison
+      const formattedCheckInDate = new Date(checkInDate);
+      const formattedCheckOutDate = new Date(checkOutDate);
+
+      // Find all hotels matching the location
+      const hotels = await Hotel.findAll({
+        where: {
+          address: { [Op.iLike]: `%${location}` },
+        },
+        include: [
+          {
+            model: Room,
+            where: {
+              adult_occupancy: { [Op.gte]: numAdults },
+              child_occupancy: { [Op.gte]: numChildren },
+            },
+            include: [
+              {
+                model: RoomBooking,
+                required: false,
+                include: [
+                  {
+                    model: Booking,
+                    where: {
+                      [Op.or]: [
+                        {
+                          check_in: {
+                            [Op.between]: [
+                              formattedCheckInDate,
+                              formattedCheckOutDate,
+                            ],
+                          },
+                        },
+                        {
+                          check_out: {
+                            [Op.between]: [
+                              formattedCheckInDate,
+                              formattedCheckOutDate,
+                            ],
+                          },
+                        },
+                        {
+                          [Op.and]: [
+                            { check_in: { [Op.lte]: formattedCheckInDate } },
+                            { check_out: { [Op.gte]: formattedCheckOutDate } },
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        limit: size,
+        offset: offset,
+      });
+
+      // Filter out rooms that are already booked
+      const availableHotels = hotels
+        .map((hotel) => {
+          const availableRooms = hotel.rooms.filter((room) => {
+            return room.roomBookings.length === 0;
+          });
+
+          if (availableRooms.length > 0) {
+            return {
+              id: hotel.id,
+              name: hotel.name,
+              address: hotel.address,
+              rooms: availableRooms
+                .map((room) => ({
+                  id: room.id,
+                  name: room.name,
+                  room_type_id: room.room_type_id,
+                  price: room.price,
+                  description: room.description,
+                  views: room.views,
+                  area: room.area,
+                }))
+                .sort((a, b) => a.price - b.price),
+            };
+          }
+
+          return null;
+        })
+        .filter((hotel) => hotel !== null);
+
+      return res.status(200).json({
+        status: 200,
+        message: "Successfully fetched hotel search results data!",
+        data: {
+          total: availableHotels.length,
+          items: availableHotels,
+        },
+      });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
     }

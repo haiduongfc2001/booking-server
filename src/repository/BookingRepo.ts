@@ -21,11 +21,11 @@ export class BookingRepo implements IBookingRepo {
     const customer = await Customer.findByPk(customer_id);
     return customer
       ? {
-          id: customer.id,
-          full_name: customer.full_name,
-          email: customer.email,
-          phone: customer.phone,
-        }
+        id: customer.id,
+        full_name: customer.full_name,
+        email: customer.email,
+        phone: customer.phone,
+      }
       : null;
   }
 

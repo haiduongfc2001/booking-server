@@ -7,36 +7,27 @@ import {
   BelongsTo,
 } from "sequelize-typescript";
 import { District } from "./District";
+import { TABLE_NAME } from "../config/constant.config";
 
 @Table({
-  tableName: Ward.TABLE_NAME,
+  tableName: TABLE_NAME.WARD,
 })
 export class Ward extends Model {
-  public static TABLE_NAME = "ward" as string;
-  public static WARD_ID = "id" as string;
-  public static WARD_NAME = "name" as string;
-  public static WARD_LEVEL = "level" as string;
-  public static DISTRICT_ID = "district_id" as string;
-
   @Column({
     type: DataType.STRING(10),
     primaryKey: true,
-    field: Ward.WARD_ID,
   })
   id!: string;
 
   @Column({
     type: DataType.STRING(100),
     allowNull: false,
-    // unique: true,
-    field: Ward.WARD_NAME,
   })
   name!: string;
 
   @Column({
-    type: DataType.STRING(255),
+    type: DataType.STRING,
     allowNull: false,
-    field: Ward.WARD_LEVEL,
   })
   level!: string;
 
@@ -44,7 +35,6 @@ export class Ward extends Model {
   @Column({
     type: DataType.STRING(10),
     allowNull: false,
-    field: Ward.DISTRICT_ID,
   })
   district_id!: string;
 

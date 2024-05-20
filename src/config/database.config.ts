@@ -13,6 +13,8 @@ import { Ward } from "../model/Ward";
 import { Promotion } from "../model/Promotion";
 import { Booking } from "../model/Booking";
 import { RoomBooking } from "../model/RoomBooking";
+import { Bed } from "../model/Bed";
+import { RoomType } from "../model/RoomType";
 
 dotenv.config();
 
@@ -78,16 +80,22 @@ class Database {
         Ward,
         Booking,
         RoomBooking,
+        Bed,
+        RoomType,
       ],
       define: config.define,
       logging: false,
     });
 
     try {
-      await this.sequelize.authenticate();
-      console.log(
-        "✅ PostgreSQL Connection has been established successfully."
-      );
+      await this.sequelize
+        .authenticate()
+        .then(() => {
+          console.log("✅ PostgreSQL Connection has been established successfully.");
+        })
+        .catch((err: Error) => {
+          console.error("❌ Unable to connect to the database:", err);
+        });
     } catch (error) {
       console.error("❌ Unable to connect to the PostgreSQL database:", error);
     }
