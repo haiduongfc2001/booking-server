@@ -408,11 +408,17 @@ class HotelController {
         location,
         checkInDate,
         checkOutDate,
-        // numRooms,
+        numRooms,
         numAdults,
         numChildren,
-        // childrenAges,
-        // filters,
+        //   filters: {
+        //     childrenAges: [7, 10],
+        //     priceRange: [0, 4500000],
+        //     selectedHotelAmenities: ["Bể bơi", "Bãi để xe"],
+        //     selectedRoomAmenities: ["Điều hòa", Tivi],
+        //     paymentOptions: ["Hủy miễn phí", "Thanh toán liền"],
+        //     minRating: "8.0",
+        //   },
         page = PAGINATION.INITIAL_PAGE,
         size = PAGINATION.PAGE_SIZE,
       } = req.body;
@@ -426,11 +432,12 @@ class HotelController {
       // Find all hotels matching the location
       const hotels = await Hotel.findAll({
         where: {
-          address: { [Op.iLike]: `%${location}` },
+          address: { [Op.iLike]: `%${location}%` },
         },
         include: [
           {
             model: Room,
+            required: true, // Only include hotels with rooms that meet the criteria
             where: {
               adult_occupancy: { [Op.gte]: numAdults },
               child_occupancy: { [Op.gte]: numChildren },
@@ -478,30 +485,54 @@ class HotelController {
         offset: offset,
       });
 
-      // Filter out rooms that are already booked
+      // Filter out hotels without enough available rooms of the same type
       const availableHotels = hotels
         .map((hotel) => {
           const availableRooms = hotel.rooms.filter((room) => {
-            return room.roomBookings.length === 0;
+            const hasBookingConflict = room.roomBookings.some((booking) => {
+              const checkIn = new Date(booking.booking.check_in);
+              const checkOut = new Date(booking.booking.check_out);
+              return (
+                checkIn <= formattedCheckOutDate &&
+                checkOut >= formattedCheckInDate
+              );
+            });
+
+            return !hasBookingConflict;
           });
 
-          if (availableRooms.length > 0) {
-            return {
-              id: hotel.id,
-              name: hotel.name,
-              address: hotel.address,
-              rooms: availableRooms
-                .map((room) => ({
-                  id: room.id,
-                  name: room.name,
-                  room_type_id: room.room_type_id,
-                  price: room.price,
-                  description: room.description,
-                  views: room.views,
-                  area: room.area,
-                }))
-                .sort((a, b) => a.price - b.price),
-            };
+          // Group available rooms by room_type_id
+          const roomsByType: { [key: number]: Room[] } = availableRooms.reduce(
+            (acc, room) => {
+              if (!acc[room.room_type_id]) {
+                acc[room.room_type_id] = [];
+              }
+              acc[room.room_type_id].push(room);
+              return acc;
+            },
+            {} as { [key: number]: Room[] }
+          );
+
+          // Find if any group has enough rooms
+          for (const roomTypeId in roomsByType) {
+            if (roomsByType[roomTypeId].length >= numRooms) {
+              return {
+                id: hotel.id,
+                name: hotel.name,
+                address: hotel.address,
+                rooms: roomsByType[roomTypeId]
+                  .map((room) => ({
+                    id: room.id,
+                    name: room.name,
+                    room_type_id: room.room_type_id,
+                    price: room.price,
+                    description: room.description,
+                    views: room.views,
+                    area: room.area,
+                  }))
+                  .sort((a, b) => a.price - b.price),
+              };
+            }
           }
 
           return null;
