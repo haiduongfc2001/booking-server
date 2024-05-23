@@ -26,6 +26,11 @@ class ZaloPayRouter {
       authFullRole,
       PaymentController.zaloPayOrderStatus
     );
+    this.router.post(
+      "/getBankList",
+      authFullRole,
+      PaymentController.getBankListZaloPay
+    );
   }
 }
 
