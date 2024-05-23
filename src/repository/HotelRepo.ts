@@ -79,8 +79,12 @@ export class HotelRepo implements IHotelRepo {
     try {
       await Hotel.create({
         name: newHotel.name,
-        address: newHotel.address,
-        location: newHotel.location,
+        street: newHotel.street,
+        ward: newHotel.ward,
+        district: newHotel.district,
+        province: newHotel.province,
+        latitude: newHotel.latitude,
+        longitude: newHotel.longitude,
         description: newHotel.description,
         contact: newHotel.contact,
       });

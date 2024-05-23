@@ -16,12 +16,26 @@ import { RoomBooking } from "../model/RoomBooking";
 class HotelController {
   async createHotel(req: Request, res: Response) {
     try {
-      const { name, address, location, description, contact } = req.body;
+      const {
+        name,
+        street,
+        ward,
+        district,
+        province,
+        latitude,
+        longitude,
+        description,
+        contact,
+      } = req.body;
 
       const newHotel = new Hotel({
         name,
-        address,
-        location,
+        street,
+        ward,
+        district,
+        province,
+        latitude,
+        longitude,
         description,
         contact,
       });
@@ -260,8 +274,12 @@ class HotelController {
 
       const fieldsToUpdate = [
         "name",
-        "address",
-        "location",
+        "street",
+        "ward",
+        "district",
+        "province",
+        "latitude",
+        "longitude",
         "description",
         "contact",
       ];
@@ -292,7 +310,7 @@ class HotelController {
         SELECT
           h.id AS hotel_id,
           h.name AS hotel_name,
-          h.address AS hotel_address,
+          h.province AS hotel_province,
 
           (
               SELECT hi.url
@@ -333,7 +351,7 @@ class HotelController {
         LEFT JOIN promotion p ON r.id = p.room_id
 
         GROUP BY
-            h.id, h.name, h.address, p.discount_value;
+            h.id, h.name, h.province, p.discount_value;
       `;
 
         const hotels = await sequelize.query(query, {
@@ -432,7 +450,7 @@ class HotelController {
       // Find all hotels matching the location
       const hotels = await Hotel.findAll({
         where: {
-          address: { [Op.iLike]: `%${location}%` },
+          province: { [Op.iLike]: `%${location}%` },
         },
         include: [
           {
@@ -519,7 +537,7 @@ class HotelController {
               return {
                 id: hotel.id,
                 name: hotel.name,
-                address: hotel.address,
+                address: `${hotel.street}, ${hotel.ward}, ${hotel.district}, ${hotel.province}`,
                 rooms: roomsByType[roomTypeId]
                   .map((room) => ({
                     id: room.id,

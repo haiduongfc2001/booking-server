@@ -5,12 +5,18 @@ export const createHotelSchema = z.object({
     name: z
       .string()
       .min(1, { message: "Hotel name must be greater than 1 characters!" }),
-    address: z
+    street: z
       .string()
-      .min(1, { message: "Address must be greater than 4 characters!" }),
-    location: z
+      .min(1, { message: "Street must be greater than 1 characters!" }),
+    ward: z
       .string()
-      .min(1, { message: "Hotel name must be greater than 1 characters!" }),
+      .min(1, { message: "Ward must be greater than 1 characters!" }),
+    district: z
+      .string()
+      .min(1, { message: "District must be greater than 1 characters!" }),
+    province: z
+      .string()
+      .min(1, { message: "Province must be greater than 1 characters!" }),
     description: z
       .string()
       .min(1, { message: "Hotel name must be greater than 1 characters!" }),
@@ -25,12 +31,24 @@ export const updateHotelSchema = z.object({
       name: z
         .string()
         .min(1, { message: "Hotel name must be greater than 1 characters!" }),
-      address: z
+      street: z
         .string()
-        .min(1, { message: "Address must be greater than 4 characters!" }),
-      location: z
+        .min(1, { message: "Street must be greater than 1 characters!" }),
+      ward: z
         .string()
-        .min(1, { message: "Hotel name must be greater than 1 characters!" }),
+        .min(1, { message: "Ward must be greater than 1 characters!" }),
+      district: z
+        .string()
+        .min(1, { message: "District must be greater than 1 characters!" }),
+      province: z
+        .string()
+        .min(1, { message: "Province must be greater than 1 characters!" }),
+      latitude: z
+        .string()
+        .min(1, { message: "Latitude must be greater than 1 characters!" }),
+      longitude: z
+        .string()
+        .min(1, { message: "Longitude must be greater than 1 characters!" }),
       description: z
         .string()
         .min(1, { message: "Hotel name must be greater than 1 characters!" }),
