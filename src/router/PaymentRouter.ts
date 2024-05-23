@@ -1,34 +1,18 @@
-import BaseRoutes from "./base/BaseRouter";
-import { authFullRole } from "../middleware/Auth.middleware";
-import PaymentController from "../controller/PaymentController";
+import { Router } from "express";
+import VNPayRouter from "./VNPayRouter";
+import ZaloPayRouter from "./ZaloPayRouter";
 
-class PaymentRoutes extends BaseRoutes {
-  public routes(): void {
-    this.router.post(
-      "/vnpay/createPaymentUrl",
-      authFullRole,
-      PaymentController.createVNPayPaymentUrl
-    );
-    this.router.post(
-      "/zalopay/createPaymentUrl",
-      authFullRole,
-      PaymentController.createZaloPayPaymentUrl
-    );
-    this.router.post(
-      "/zalopay/callback",
-      authFullRole,
-      PaymentController.zaloPayCallback
-    );
-    this.router.get(
-      "/zalopay/orderStatus/:app_trans_id",
-      authFullRole,
-      PaymentController.zaloPayOrderStatus
-    );
-    this.router.post(
-      "/vnpay/vnpayIPN",
-      authFullRole,
-      PaymentController.vnpayIPN
-    );
+class PaymentRoutes {
+  public router: Router;
+
+  constructor() {
+    this.router = Router();
+    this.initializeRoutes();
+  }
+
+  private initializeRoutes() {
+    this.router.use("/vnpay", VNPayRouter);
+    this.router.use("/zalopay", ZaloPayRouter);
   }
 }
 

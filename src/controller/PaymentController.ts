@@ -317,6 +317,72 @@ class PaymentController {
       return ErrorHandler.handleServerError(res, error);
     }
   }
+
+  async returnUrl(req: Request, res: Response) {
+    try {
+      const { VNP_HASH_SECRET } = vnpayConfig;
+      const { vnp_SecureHash, vnp_SecureHashType, ...vnp_Params } =
+        req.query as Record<string, string | number>;
+
+      // Validate and parse vnp_Amount
+      if (typeof vnp_Params?.vnp_Amount !== "number") {
+        const res = numberRegex.test(vnp_Params?.vnp_Amount ?? "");
+        if (!res) {
+          throw new Error("Invalid amount");
+        }
+        vnp_Params.vnp_Amount = Number(vnp_Params.vnp_Amount);
+      }
+
+      const outputResults = {
+        isVerified: true,
+        isSuccess: vnp_Params.vnp_ResponseCode === "00",
+        message: getResponseByStatusCode(
+          vnp_Params.vnp_ResponseCode?.toString() ?? "",
+          VnpLocale.VN
+        ),
+      };
+
+      const searchParams = new URLSearchParams();
+      Object.entries(vnp_Params)
+        .sort(([key1], [key2]) =>
+          key1.toString().localeCompare(key2.toString())
+        )
+        .forEach(([key, value]) => {
+          // Skip empty value
+          if (value === "" || value === undefined || value === null) {
+            return;
+          }
+
+          searchParams.append(key, value.toString());
+        });
+
+      const queryString = searchParams.toString();
+
+      const signed = hash(
+        HashAlgorithm.SHA512,
+        VNP_HASH_SECRET,
+        Buffer.from(queryString, BUFFER_ENCODE)
+      );
+
+      if (vnp_SecureHash !== signed) {
+        Object.assign(outputResults, {
+          isVerified: false,
+          message: "Wrong checksum",
+        });
+      }
+
+      const result = {
+        ...vnp_Params,
+        ...outputResults,
+        vnp_Amount: vnp_Params.vnp_Amount / 100,
+      };
+
+      // Send the result as JSON response
+      return res.status(200).json(result);
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
 }
 
 export default new PaymentController();
