@@ -12,6 +12,7 @@ import RoomImageRouter from "./router/RoomImageRouter";
 import AddressRouter from "./router/AddressRouter";
 import BookingRouter from "./router/BookingRouter";
 import PaymentRouter from "./router/PaymentRouter";
+import PromotionRouter from "./router/PromotionRouter";
 dotenv.config();
 
 class App {
@@ -55,6 +56,7 @@ class App {
     apiRouter.use("/address", AddressRouter);
     apiRouter.use("/booking", BookingRouter);
     apiRouter.use("/payment", PaymentRouter);
+    apiRouter.use("/promotion", PromotionRouter);
 
     this.app.use("/api/v1", apiRouter);
   }
