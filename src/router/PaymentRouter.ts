@@ -5,9 +5,24 @@ import PaymentController from "../controller/PaymentController";
 class PaymentRoutes extends BaseRoutes {
   public routes(): void {
     this.router.post(
-      "/createPaymentUrl",
+      "/vnpay/createPaymentUrl",
       authFullRole,
-      PaymentController.createPaymentUrl
+      PaymentController.createVNPayPaymentUrl
+    );
+    this.router.post(
+      "/zalopay/createPaymentUrl",
+      authFullRole,
+      PaymentController.createZaloPayPaymentUrl
+    );
+    this.router.post(
+      "/zalopay/callback",
+      authFullRole,
+      PaymentController.zaloPayCallback
+    );
+    this.router.get(
+      "/zalopay/orderStatus/:app_trans_id",
+      authFullRole,
+      PaymentController.zaloPayOrderStatus
     );
   }
 }
