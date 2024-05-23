@@ -14,9 +14,9 @@ export function resolveUrlString(host: string, path: string): string {
 }
 
 export function hash(
+  algorithm: HashAlgorithm,
   secret: string,
   data: BinaryLike,
-  algorithm: HashAlgorithm
 ): string {
   return crypto.createHmac(algorithm, secret).update(data).digest("hex");
 }
