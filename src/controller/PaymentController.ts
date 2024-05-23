@@ -2,23 +2,37 @@ import { Request, Response } from "express";
 import ErrorHandler from "../utils/ErrorHandler";
 import querystring from "qs";
 import dayjs from "dayjs";
-import { hash, resolveUrlString } from "../utils/VNPayCommon";
-import { HashAlgorithm } from "../config/enum.config";
+import {
+  getResponseByStatusCode,
+  hash,
+  resolveUrlString,
+} from "../utils/VNPayCommon";
+import { HashAlgorithm, VnpLocale } from "../config/enum.config";
 import {
   PAYMENT_ENDPOINT,
   VNPAY_GATEWAY_SANDBOX_HOST,
 } from "../config/api-endpoint.constant";
 import vnpayConfig from "../config/vnpay.config";
-import { zaloPayConfig } from "../config/zalopay.config";
+import zaloPayConfig from "../config/zalopay.config";
 import axios from "axios";
 import qs from "qs";
+import { BUFFER_ENCODE } from "../config/constant.config";
 
-interface PaymentRequest {
+const numberRegex = /^[0-9]+$/;
+
+interface VNPayPaymentRequest {
   amount: number;
   bankCode?: string; // Optional property
   orderDescription: string;
   orderType: string;
   language?: string; // Optional property
+}
+
+interface ZaloPayPaymentRequest {
+  appUser: string;
+  amount: number;
+  bankCode?: string; // Optional property
+  description?: string;
 }
 
 interface resultCallback {
@@ -53,7 +67,7 @@ class PaymentController {
         orderDescription,
         orderType,
         language = "vn",
-      } = req.body as PaymentRequest;
+      } = req.body as VNPayPaymentRequest;
 
       const vnp_Params: Record<string, string | number> = {
         vnp_Version: VNP_VERSION,
@@ -89,7 +103,7 @@ class PaymentController {
       const signed = hash(
         HashAlgorithm.SHA512,
         VNP_HASH_SECRET,
-        Buffer.from(redirectUrl.search.slice(1), "utf-8")
+        Buffer.from(redirectUrl.search.slice(1), BUFFER_ENCODE)
       );
 
       vnp_Params["vnp_SecureHash"] = signed;
@@ -106,28 +120,38 @@ class PaymentController {
 
   async createZaloPayPaymentUrl(req: Request, res: Response) {
     try {
-      const embed_data = {
-        redirecturl: "http://localhost:5000/api/v1",
-      };
       const items = [{}];
       const transID = Math.floor(Math.random() * 1000000);
+
+      const {
+        appUser = "",
+        amount,
+        description = `DHD Boooking - Payment for the order #${transID}`,
+        bankCode = "",
+      } = req.body as ZaloPayPaymentRequest;
+
+      const { APP_ID, KEY1, ENDPOINT, REDIRECT_URL, CALLBACK_URL } =
+        zaloPayConfig;
+
+      const embed_data = {
+        redirecturl: REDIRECT_URL,
+      };
       const order = {
-        app_id: zaloPayConfig.app_id,
+        app_id: APP_ID,
         app_trans_id: `${dayjs().format("YYMMDD")}_${transID}`,
-        app_user: "user123",
+        app_user: appUser,
         app_time: Date.now(),
         item: JSON.stringify(items),
         embed_data: JSON.stringify(embed_data),
-        amount: 50000,
-        description: `Lazada - Payment for the order #${transID}`,
-        bank_code: "",
+        amount,
+        description,
+        bank_code: bankCode,
         mac: "",
-        callback_url:
-          "https://79b0-14-177-235-116.ngrok-free.app/api/v1/payment/zalopay/callback",
+        callback_url: CALLBACK_URL,
       };
 
       const data =
-        zaloPayConfig.app_id +
+        APP_ID +
         "|" +
         order.app_trans_id +
         "|" +
@@ -141,15 +165,16 @@ class PaymentController {
         "|" +
         order.item;
 
-      order.mac = hash(HashAlgorithm.SHA256, zaloPayConfig.key1, data);
+      order.mac = hash(HashAlgorithm.SHA256, KEY1, data);
 
-      const response = await axios.post(zaloPayConfig.endpoint, null, {
+      const response = await axios.post(`${ENDPOINT}/create`, null, {
         params: order,
       });
 
-      return res.status(201).json({...response.data, app_trans_id: order.app_trans_id});
+      return res
+        .status(201)
+        .json({ ...response.data, app_trans_id: order.app_trans_id });
     } catch (error) {
-      console.log(error);
       return res.status(400).json(error);
     }
   }
@@ -164,8 +189,7 @@ class PaymentController {
       let dataStr = req.body.data;
       let reqMac = req.body.mac;
 
-      let mac = hash(HashAlgorithm.SHA256, zaloPayConfig.key2, dataStr);
-      console.log("mac =", mac);
+      let mac = hash(HashAlgorithm.SHA256, zaloPayConfig.KEY2, dataStr);
 
       // kiểm tra callback hợp lệ (đến từ ZaloPay server)
       if (reqMac !== mac) {
@@ -190,26 +214,25 @@ class PaymentController {
     }
 
     // thông báo kết quả cho ZaloPay server
-    console.log(result);
     return res.json(result);
   }
 
   async zaloPayOrderStatus(req: Request, res: Response) {
     const app_trans_id = req.params.app_trans_id;
+    const { APP_ID, KEY1, ENDPOINT } = zaloPayConfig;
 
     let postData = {
-      app_id: zaloPayConfig.app_id,
+      app_id: APP_ID,
       app_trans_id: app_trans_id,
       mac: "",
     };
 
-    let data =
-      postData.app_id + "|" + postData.app_trans_id + "|" + zaloPayConfig.key1; // appid|app_trans_id|key1
-    postData.mac = hash(HashAlgorithm.SHA256, zaloPayConfig.key1, data);
+    let data = postData.app_id + "|" + postData.app_trans_id + "|" + KEY1; // appid|app_trans_id|key1
+    postData.mac = hash(HashAlgorithm.SHA256, KEY1, data);
 
     let postConfig = {
       method: "post",
-      url: "https://sb-openapi.zalopay.vn/v2/query",
+      url: `${ENDPOINT}/query`,
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
@@ -218,11 +241,80 @@ class PaymentController {
 
     try {
       const response = await axios(postConfig);
-      console.log(JSON.stringify(response.data));
       return res.status(200).json(response.data);
     } catch (error: any) {
       console.error(error);
       return res.status(500).json({ error: error.message });
+    }
+  }
+
+  async vnpayIPN(req: Request, res: Response) {
+    try {
+      const { VNP_HASH_SECRET } = vnpayConfig;
+      const { vnp_SecureHash, vnp_SecureHashType, ...vnp_Params } =
+        req.query as Record<string, string | number>;
+
+      // Validate and parse vnp_Amount
+      if (typeof vnp_Params?.vnp_Amount !== "number") {
+        const res = numberRegex.test(vnp_Params?.vnp_Amount ?? "");
+        if (!res) {
+          throw new Error("Invalid amount");
+        }
+        vnp_Params.vnp_Amount = Number(vnp_Params.vnp_Amount);
+      }
+
+      const outputResults = {
+        isVerified: true,
+        isSuccess: vnp_Params.vnp_ResponseCode === "00",
+        message: getResponseByStatusCode(
+          vnp_Params.vnp_ResponseCode?.toString() ?? "",
+          VnpLocale.VN
+        ),
+      };
+
+      const searchParams = new URLSearchParams();
+      Object.entries(vnp_Params)
+        .sort(([key1], [key2]) =>
+          key1.toString().localeCompare(key2.toString())
+        )
+        .forEach(([key, value]) => {
+          // Skip empty value
+          if (value === "" || value === undefined || value === null) {
+            return;
+          }
+
+          searchParams.append(key, value.toString());
+        });
+
+      const queryString = searchParams.toString();
+      console.log("Query String for Hashing: ", queryString);
+
+      const signed = hash(
+        HashAlgorithm.SHA512,
+        VNP_HASH_SECRET,
+        Buffer.from(queryString, BUFFER_ENCODE)
+      );
+
+      console.log("Computed Hash: ", signed);
+      console.log("Received vnp_SecureHash: ", vnp_SecureHash);
+
+      if (vnp_SecureHash !== signed) {
+        Object.assign(outputResults, {
+          isVerified: false,
+          message: "Wrong checksum",
+        });
+      }
+
+      const result = {
+        ...vnp_Params,
+        ...outputResults,
+        vnp_Amount: vnp_Params.vnp_Amount / 100,
+      };
+
+      // Send the result as JSON response
+      return res.status(200).json(result);
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
     }
   }
 }

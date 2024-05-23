@@ -24,6 +24,11 @@ class PaymentRoutes extends BaseRoutes {
       authFullRole,
       PaymentController.zaloPayOrderStatus
     );
+    this.router.post(
+      "/vnpay/vnpayIPN",
+      authFullRole,
+      PaymentController.vnpayIPN
+    );
   }
 }
 
