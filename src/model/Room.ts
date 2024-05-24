@@ -77,6 +77,12 @@ export class Room extends Model {
   child_occupancy!: number;
 
   @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+  })
+  max_occupancy!: number;
+
+  @Column({
     type: DataType.TEXT,
     allowNull: false,
   })

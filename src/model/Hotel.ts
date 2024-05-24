@@ -1,6 +1,7 @@
 import { Model, Table, Column, DataType, HasMany } from "sequelize-typescript";
 import { TABLE_NAME } from "../config/constant.config";
 import { Room } from "./Room";
+import { Policy } from "./Policy";
 
 @Table({
   tableName: TABLE_NAME.HOTEL,
@@ -67,4 +68,7 @@ export class Hotel extends Model {
 
   @HasMany(() => Room)
   rooms!: Room[];
+
+  @HasMany(() => Policy)
+  policies!: Policy[];
 }
