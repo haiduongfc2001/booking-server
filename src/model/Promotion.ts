@@ -6,9 +6,8 @@ import {
   ForeignKey,
   Model,
   Table,
-  Validate,
 } from "sequelize-typescript";
-import { Room } from "./Room";
+import { RoomType } from "./RoomType";
 import { DISCOUNT_TYPE } from "../config/enum.config";
 import { TABLE_NAME } from "../config/constant.config";
 
@@ -23,15 +22,15 @@ export class Promotion extends Model {
   })
   id!: number;
 
-  @ForeignKey(() => Room)
+  @ForeignKey(() => RoomType)
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
   })
-  room_id!: number;
+  room_type_id!: number;
 
-  @BelongsTo(() => Room)
-  room!: Room;
+  @BelongsTo(() => RoomType)
+  roomType!: RoomType;
 
   @Column({
     type: DataType.STRING,

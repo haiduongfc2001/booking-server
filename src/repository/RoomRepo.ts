@@ -1,7 +1,9 @@
 import { DEFAULT_MINIO } from "../config/constant.config";
 import { minioConfig } from "../config/minio.config";
+import { Hotel } from "../model/Hotel";
 import { Room } from "../model/Room";
 import { RoomImage } from "../model/RoomImage";
+import { RoomType } from "../model/RoomType";
 
 interface IRoomRepo {
   save(room: Room): Promise<void>;
@@ -31,12 +33,24 @@ export class RoomRepo implements IRoomRepo {
     room: Room,
     imageUrl: string
   ): Promise<string> {
+    const hotel_id = await RoomType.findOne({
+      where: {
+        room_type_id: room.room_type_id,
+      },
+    });
+
+    const hotelPath = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}`;
+    const roomTypePath = `/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room.room_type_id}`;
+    const roomPath = `/${DEFAULT_MINIO.ROOM_PATH}/${room.id}/${imageUrl}`;
+
+    const objectPath = hotelPath + roomTypePath + roomPath;
+
     return new Promise<string>((resolve, reject) => {
       minioConfig
         .getClient()
         .presignedGetObject(
           DEFAULT_MINIO.BUCKET,
-          `${DEFAULT_MINIO.HOTEL_PATH}/${room.hotel_id}/${DEFAULT_MINIO.ROOM_PATH}/${room.id}/${imageUrl}`,
+          objectPath,
           24 * 60 * 60,
           (err, presignedUrl) => {
             if (err) reject(err);
@@ -105,7 +119,6 @@ export class RoomRepo implements IRoomRepo {
   async save(newRoom: Room): Promise<void> {
     try {
       await Room.create({
-        hotel_id: newRoom.hotel_id,
         name: newRoom.name,
         number: newRoom.number,
         room_type_id: newRoom.room_type_id,
@@ -135,7 +148,7 @@ export class RoomRepo implements IRoomRepo {
       });
 
       await existingRoom.destroy();
-    } catch (error) { }
+    } catch (error) {}
   }
 
   async update(updatedRoom: Room): Promise<void> {

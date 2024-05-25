@@ -4,7 +4,7 @@ import multer from "multer";
 import validate from "../helper/validate";
 import { createRoomSchema, updateRoomSchema } from "../schema/RoomSchema";
 import { authFullRole } from "../middleware/Auth.middleware";
-import { updateStatuses } from "../middleware/UpdateStatus.middleware";
+import { updateRoomStatus } from "../middleware/UpdateStatus.middleware";
 
 // Set up multer storage
 const storage = multer.memoryStorage();
@@ -15,13 +15,13 @@ class RoomRoutes extends BaseRoutes {
     this.router.get(
       "/room/getAllRooms",
       authFullRole,
-      updateStatuses,
+      updateRoomStatus,
       RoomController.getAllRooms
     );
     this.router.get(
       "/:hotel_id/room/:room_id/getRoomById",
       authFullRole,
-      updateStatuses,
+      updateRoomStatus,
       RoomController.getRoomById
     );
     this.router.post(
@@ -34,7 +34,7 @@ class RoomRoutes extends BaseRoutes {
     this.router.patch(
       "/:hotel_id/room/:room_id/updateRoom",
       authFullRole,
-      updateStatuses,
+      updateRoomStatus,
       // validate(updateRoomSchema),
       upload.array("images", 5),
       RoomController.updateRoom

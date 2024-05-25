@@ -27,6 +27,7 @@ class RoomController {
   async createRoom(req: Request, res: Response) {
     try {
       const hotel_id = parseInt(req.params?.hotel_id);
+      const room_type_id = parseInt(req.params?.room_type_id);
       const {
         name,
         number,
@@ -37,7 +38,6 @@ class RoomController {
         description,
         status,
       } = req.body;
-      const room_number = req.body?.number;
 
       const existingHotel = await Hotel.findByPk(hotel_id);
 
@@ -50,8 +50,8 @@ class RoomController {
 
       const existingRoomNumber = await Room.findOne({
         where: {
-          hotel_id: hotel_id,
-          number: room_number,
+          room_type_id,
+          number,
         },
       });
 
@@ -63,7 +63,7 @@ class RoomController {
       }
 
       const newRoom = new Room({
-        hotel_id,
+        room_type_id,
         name,
         number,
         type,
@@ -78,14 +78,14 @@ class RoomController {
 
       const savedRoom = await Room.findOne({
         where: {
-          hotel_id: newRoom.hotel_id,
+          hotel_id: newRoom.room_type_id,
           number: newRoom.number,
         },
       });
 
       if (req.files && savedRoom) {
         const room_id = savedRoom.id;
-        const hotel_id = savedRoom.hotel_id;
+        const hotel_id = savedRoom.room_type_id;
 
         // Define the folder or path within the bucket
         const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}`;

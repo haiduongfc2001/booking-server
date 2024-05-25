@@ -12,6 +12,7 @@ import { minioConfig } from "../config/minio.config";
 import { Room } from "../model/Room";
 import { Booking } from "../model/Booking";
 import { RoomBooking } from "../model/RoomBooking";
+import { RoomType } from "../model/RoomType";
 
 class HotelController {
   async createHotel(req: Request, res: Response) {
@@ -424,11 +425,11 @@ class HotelController {
 
       const {
         location,
-        checkInDate,
-        checkOutDate,
-        numRooms,
-        numAdults,
-        numChildren,
+        check_in_date,
+        check_out_date,
+        num_rooms,
+        num_adults,
+        num_children,
         //   filters: {
         //     childrenAges: [7, 10],
         //     priceRange: [0, 4500000],
@@ -444,8 +445,8 @@ class HotelController {
       const offset = (page - 1) * size;
 
       // Format dates for comparison
-      const formattedCheckInDate = new Date(checkInDate);
-      const formattedCheckOutDate = new Date(checkOutDate);
+      const formattedCheckInDate = new Date(check_in_date);
+      const formattedCheckOutDate = new Date(check_out_date);
 
       // Find all hotels matching the location
       const hotels = await Hotel.findAll({
@@ -454,45 +455,57 @@ class HotelController {
         },
         include: [
           {
-            model: Room,
-            required: true, // Only include hotels with rooms that meet the criteria
-            where: {
-              adult_occupancy: { [Op.gte]: numAdults },
-              child_occupancy: { [Op.gte]: numChildren },
-            },
+            model: RoomType,
+            required: true, // Only include hotels with room types that meet the criteria
             include: [
               {
-                model: RoomBooking,
-                required: false,
+                model: Room,
+                required: true,
+                where: {
+                  adult_occupancy: { [Op.gte]: num_adults },
+                  child_occupancy: { [Op.gte]: num_children },
+                },
                 include: [
                   {
-                    model: Booking,
-                    where: {
-                      [Op.or]: [
-                        {
-                          check_in: {
-                            [Op.between]: [
-                              formattedCheckInDate,
-                              formattedCheckOutDate,
-                            ],
-                          },
-                        },
-                        {
-                          check_out: {
-                            [Op.between]: [
-                              formattedCheckInDate,
-                              formattedCheckOutDate,
-                            ],
-                          },
-                        },
-                        {
-                          [Op.and]: [
-                            { check_in: { [Op.lte]: formattedCheckInDate } },
-                            { check_out: { [Op.gte]: formattedCheckOutDate } },
+                    model: RoomBooking,
+                    required: false,
+                    include: [
+                      {
+                        model: Booking,
+                        where: {
+                          [Op.or]: [
+                            {
+                              check_in: {
+                                [Op.between]: [
+                                  formattedCheckInDate,
+                                  formattedCheckOutDate,
+                                ],
+                              },
+                            },
+                            {
+                              check_out: {
+                                [Op.between]: [
+                                  formattedCheckInDate,
+                                  formattedCheckOutDate,
+                                ],
+                              },
+                            },
+                            {
+                              [Op.and]: [
+                                {
+                                  check_in: { [Op.lte]: formattedCheckInDate },
+                                },
+                                {
+                                  check_out: {
+                                    [Op.gte]: formattedCheckOutDate,
+                                  },
+                                },
+                              ],
+                            },
                           ],
                         },
-                      ],
-                    },
+                      },
+                    ],
                   },
                 ],
               },
@@ -506,51 +519,62 @@ class HotelController {
       // Filter out hotels without enough available rooms of the same type
       const availableHotels = hotels
         .map((hotel) => {
-          const availableRooms = hotel.rooms.filter((room) => {
-            const hasBookingConflict = room.roomBookings.some((booking) => {
-              const checkIn = new Date(booking.booking.check_in);
-              const checkOut = new Date(booking.booking.check_out);
-              return (
-                checkIn <= formattedCheckOutDate &&
-                checkOut >= formattedCheckInDate
-              );
-            });
+          const availableRoomTypes = hotel.roomTypes
+            .map((roomType) => {
+              const availableRooms = roomType.rooms.filter((room) => {
+                const hasBookingConflict = room.roomBookings.some((booking) => {
+                  const checkIn = new Date(booking.booking.check_in);
+                  const checkOut = new Date(booking.booking.check_out);
+                  return (
+                    checkIn <= formattedCheckOutDate &&
+                    checkOut >= formattedCheckInDate
+                  );
+                });
 
-            return !hasBookingConflict;
-          });
+                return !hasBookingConflict;
+              });
 
-          // Group available rooms by room_type_id
-          const roomsByType: { [key: number]: Room[] } = availableRooms.reduce(
-            (acc, room) => {
-              if (!acc[room.room_type_id]) {
-                acc[room.room_type_id] = [];
+              // Group available rooms by room_type_id
+              const roomsByType = availableRooms.reduce((acc, room) => {
+                if (!acc[room.room_type_id]) {
+                  acc[room.room_type_id] = [];
+                }
+                acc[room.room_type_id].push(room);
+                return acc;
+              }, {} as { [key: number]: Room[] });
+
+              // Find if any group has enough rooms
+              for (const roomTypeId in roomsByType) {
+                if (roomsByType[roomTypeId].length >= num_rooms) {
+                  return {
+                    id: roomType.id,
+                    name: roomType.name,
+                    description: roomType.description,
+                    rooms: roomsByType[roomTypeId]
+                      .map((room) => ({
+                        id: room.id,
+                        name: room.name,
+                        price: room.price,
+                        description: room.description,
+                        views: room.views,
+                        area: room.area,
+                      }))
+                      .sort((a, b) => a.price - b.price),
+                  };
+                }
               }
-              acc[room.room_type_id].push(room);
-              return acc;
-            },
-            {} as { [key: number]: Room[] }
-          );
 
-          // Find if any group has enough rooms
-          for (const roomTypeId in roomsByType) {
-            if (roomsByType[roomTypeId].length >= numRooms) {
-              return {
-                id: hotel.id,
-                name: hotel.name,
-                address: `${hotel.street}, ${hotel.ward}, ${hotel.district}, ${hotel.province}`,
-                rooms: roomsByType[roomTypeId]
-                  .map((room) => ({
-                    id: room.id,
-                    name: room.name,
-                    room_type_id: room.room_type_id,
-                    price: room.price,
-                    description: room.description,
-                    views: room.views,
-                    area: room.area,
-                  }))
-                  .sort((a, b) => a.price - b.price),
-              };
-            }
+              return null;
+            })
+            .filter((roomType) => roomType !== null);
+
+          if (availableRoomTypes.length > 0) {
+            return {
+              id: hotel.id,
+              name: hotel.name,
+              address: `${hotel.street}, ${hotel.ward}, ${hotel.district}, ${hotel.province}`,
+              roomTypes: availableRoomTypes,
+            };
           }
 
           return null;

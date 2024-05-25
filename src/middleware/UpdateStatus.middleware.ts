@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from "express";
-import { updateStatuses as updateStatusHelper } from "../helper/statusUpdater";
+import * as updateStatuses from "../helper/updateStatuses";
 
-export const updateStatuses = async (req: Request, res: Response, next: NextFunction) => {
+export const updateRoomStatus = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await updateStatusHelper();
+    await updateStatuses.updateRoomStatus();
     next();
   } catch (error) {
     console.error("Error updating statuses:", error);

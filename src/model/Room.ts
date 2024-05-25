@@ -8,12 +8,12 @@ import {
   Model,
   Table,
 } from "sequelize-typescript";
-import { Hotel } from "./Hotel";
 import { Bed } from "./Bed";
 import { ROOM_STATUS } from "../config/enum.config";
 import { TABLE_NAME } from "../config/constant.config";
 import { RoomBooking } from "./RoomBooking";
 import { RoomType } from "./RoomType";
+import { RoomImage } from "./RoomImage";
 
 @Table({
   tableName: TABLE_NAME.ROOM,
@@ -25,16 +25,6 @@ export class Room extends Model {
     autoIncrement: true,
   })
   id!: number;
-
-  @ForeignKey(() => Hotel)
-  @Column({
-    type: DataType.INTEGER,
-    allowNull: false,
-  })
-  hotel_id!: number;
-
-  @BelongsTo(() => Hotel)
-  hotel!: Hotel;
 
   @ForeignKey(() => RoomType)
   @Column({
@@ -110,4 +100,7 @@ export class Room extends Model {
 
   @HasMany(() => RoomBooking)
   roomBookings!: RoomBooking[];
+
+  @HasMany(() => RoomImage)
+  roomImages!: RoomImage[];
 }

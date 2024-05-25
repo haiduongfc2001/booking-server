@@ -4,7 +4,7 @@ import { Room } from "../model/Room";
 import { RoomBooking } from "../model/RoomBooking";
 import { Op } from "sequelize";
 
-export const updateStatuses = async (): Promise<void> => {
+export const updateRoomStatus = async (): Promise<void> => {
   const now = new Date();
 
   const bookingsToCheckOut = await Booking.findAll({
