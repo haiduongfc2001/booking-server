@@ -5,6 +5,7 @@ import { RoomImage } from "../model/RoomImage";
 interface IRoomImageRepo {
   getUrlsByRoomId(
     hotel_id: number,
+    room_type_id: number,
     room_id: number
   ): Promise<{ id: number; url: string }[]>;
   deleteImage(room_image_id: number): Promise<void>;
@@ -14,17 +15,18 @@ interface IRoomImageRepo {
 export class RoomImageRepo implements IRoomImageRepo {
   async getUrlsByRoomId(
     hotel_id: number,
+    room_type_id: number,
     room_id: number
   ): Promise<{ id: number; url: string }[]> {
     try {
       const roomImages = await RoomImage.findAll({
         where: {
-          room_id: room_id,
+          room_id,
         },
         attributes: ["id", "url"],
       });
 
-      const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}`;
+      const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}`;
 
       const urlsWithPresignedUrls = await Promise.all(
         roomImages.map(async (image) => {

@@ -33,12 +33,18 @@ export class RoomRepo implements IRoomRepo {
     room: Room,
     imageUrl: string
   ): Promise<string> {
-    const hotel_id = await RoomType.findOne({
+    const roomType = await RoomType.findOne({
       where: {
-        room_type_id: room.room_type_id,
+        id: room.room_type_id,
       },
+      include: [Hotel],
     });
 
+    if (!roomType || !roomType.hotel_id) {
+      throw new Error("Hotel ID not found for the given room type!");
+    }
+
+    const hotel_id = roomType.hotel_id;
     const hotelPath = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}`;
     const roomTypePath = `/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room.room_type_id}`;
     const roomPath = `/${DEFAULT_MINIO.ROOM_PATH}/${room.id}/${imageUrl}`;
@@ -98,10 +104,18 @@ export class RoomRepo implements IRoomRepo {
 
   async retrieveAllRoomsByHotelId(hotel_id: number): Promise<RoomWithImages[]> {
     try {
-      return await this.fetchRooms({
+      const roomTypes = await RoomType.findAll({
         where: { hotel_id },
-        order: [["number", "asc"]],
+        include: [Room],
       });
+
+      const rooms = roomTypes.flatMap((roomType) => roomType.rooms);
+      return Promise.all(
+        rooms.map(async (room) => ({
+          ...room.toJSON(),
+          images: await this.fetchRoomImages(room),
+        }))
+      );
     } catch (error) {
       throw new Error("Failed to retrieve rooms by hotel ID!");
     }
@@ -119,17 +133,17 @@ export class RoomRepo implements IRoomRepo {
   async save(newRoom: Room): Promise<void> {
     try {
       await Room.create({
-        name: newRoom.name,
         number: newRoom.number,
         room_type_id: newRoom.room_type_id,
-        price: newRoom.price,
-        adult_occupancy: newRoom.adult_occupancy,
-        child_occupancy: newRoom.child_occupancy,
         description: newRoom.description,
         status: newRoom.status,
       });
     } catch (error) {
-      throw new Error("Failed to save room!");
+      if (error instanceof Error) {
+        throw new Error(`Failed to save room: ${error.message}`);
+      } else {
+        throw new Error("Failed to save room due to an unknown error");
+      }
     }
   }
 
@@ -141,14 +155,22 @@ export class RoomRepo implements IRoomRepo {
         throw new Error("Room not found!");
       }
 
+      // First, delete associated room images
       await RoomImage.destroy({
         where: {
-          room_id: room_id,
+          room_id,
         },
       });
 
+      // Then, delete the room itself
       await existingRoom.destroy();
-    } catch (error) {}
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`Failed to delete room: ${error.message}`);
+      } else {
+        throw new Error("Failed to delete room due to an unknown error");
+      }
+    }
   }
 
   async update(updatedRoom: Room): Promise<void> {
@@ -159,18 +181,19 @@ export class RoomRepo implements IRoomRepo {
         throw new Error("Room not found!");
       }
 
-      existingRoom.name = updatedRoom.name;
-      existingRoom.number = updatedRoom.number;
-      existingRoom.room_type_id = updatedRoom.room_type_id;
-      existingRoom.price = updatedRoom.price;
-      existingRoom.adult_occupancy = updatedRoom.adult_occupancy;
-      existingRoom.child_occupancy = updatedRoom.child_occupancy;
-      existingRoom.description = updatedRoom.description;
-      existingRoom.status = updatedRoom.status;
-
-      await existingRoom.save();
+      // Update the room with new values
+      await existingRoom.update({
+        room_type_id: updatedRoom.room_type_id,
+        number: updatedRoom.number,
+        description: updatedRoom.description,
+        status: updatedRoom.status,
+      });
     } catch (error) {
-      throw new Error("Failed to update room!");
+      if (error instanceof Error) {
+        throw new Error(`Failed to update room: ${error.message}`);
+      } else {
+        throw new Error("Failed to update room due to an unknown error");
+      }
     }
   }
 }

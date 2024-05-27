@@ -2,8 +2,11 @@ import { Request, Response } from "express";
 import { Booking } from "../model/Booking";
 import { BookingRepo } from "../repository/BookingRepo";
 import ErrorHandler from "../utils/ErrorHandler";
-import { decodeJsonObject } from "../utils/KeyGenerator";
 import calculateCost from "../utils/CalculateCost";
+import { RoomType } from "../model/RoomType";
+import generateRandomString from "../utils/RandomString";
+import dayjs from "dayjs";
+import { toUpperCase } from "../utils/StringConversion";
 
 interface Child {
   age: number;
@@ -57,9 +60,9 @@ class BookingController {
       num_children,
       room_price,
       room_discount,
-      max_occupancy,
-      adult_occupancy,
-      child_occupancy,
+      max_occupant,
+      standard_occupant,
+      max_children,
       surcharge_rates,
     } = req.body;
 
@@ -70,27 +73,27 @@ class BookingController {
       !Array.isArray(num_children) ||
       typeof room_price !== "number" ||
       typeof room_discount !== "number" ||
-      typeof max_occupancy !== "number" ||
-      typeof adult_occupancy !== "number" ||
-      typeof child_occupancy !== "number" ||
+      typeof max_occupant !== "number" ||
+      typeof standard_occupant !== "number" ||
+      typeof max_children !== "number" ||
       typeof surcharge_rates !== "object"
     ) {
       return res.status(400).send("Invalid request data");
     }
 
     const customerRequest = {
-      numRooms: num_rooms,
-      numAdults: num_adults,
-      numChildren: num_children,
+      num_rooms,
+      num_adults,
+      num_children,
     };
 
     const hotelPolicy = {
-      roomPrice: room_price,
-      roomDiscount: room_discount,
-      maxOccupancy: max_occupancy,
-      adultOccupancy: adult_occupancy,
-      childOccupancy: child_occupancy,
-      surchargeRates: surcharge_rates,
+      room_price,
+      room_discount,
+      max_occupant,
+      standard_occupant,
+      max_children,
+      surcharge_rates,
     };
 
     const result = calculateCost(customerRequest, hotelPolicy);

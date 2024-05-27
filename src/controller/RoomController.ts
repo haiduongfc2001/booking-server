@@ -8,6 +8,7 @@ import { minioConfig } from "../config/minio.config";
 import generateRandomString from "../utils/RandomString";
 import { RoomImage } from "../model/RoomImage";
 import getFileType from "../utils/GetFileType";
+import { RoomType } from "../model/RoomType";
 
 class RoomController {
   async getAllRooms(req: Request, res: Response) {
@@ -28,18 +29,14 @@ class RoomController {
     try {
       const hotel_id = parseInt(req.params?.hotel_id);
       const room_type_id = parseInt(req.params?.room_type_id);
-      const {
-        name,
-        number,
-        type,
-        price,
-        adult_occupancy,
-        child_occupancy,
-        description,
-        status,
-      } = req.body;
+      const { number, description, status } = req.body;
 
-      const existingHotel = await Hotel.findByPk(hotel_id);
+      const existingHotel = await RoomType.findOne({
+        where: {
+          id: room_type_id,
+          hotel_id,
+        },
+      });
 
       if (!existingHotel) {
         return res.status(404).json({
@@ -64,12 +61,7 @@ class RoomController {
 
       const newRoom = new Room({
         room_type_id,
-        name,
         number,
-        type,
-        price: Number(price),
-        adult_occupancy: Number(adult_occupancy),
-        child_occupancy: Number(child_occupancy),
         description,
         status,
       });
@@ -78,17 +70,17 @@ class RoomController {
 
       const savedRoom = await Room.findOne({
         where: {
-          hotel_id: newRoom.room_type_id,
+          room_type_id: newRoom.room_type_id,
           number: newRoom.number,
         },
       });
 
       if (req.files && savedRoom) {
         const room_id = savedRoom.id;
-        const hotel_id = savedRoom.room_type_id;
+        const room_type_id = savedRoom.room_type_id;
 
         // Define the folder or path within the bucket
-        const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}`;
+        const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}`;
         let index = 0;
 
         const files = req.files as Express.Multer.File[];
@@ -107,7 +99,7 @@ class RoomController {
 
           // Create a new RoomImage object with room_id, fileUrl, caption, and is_primary
           const newRoomImage = new RoomImage({
-            room_id: room_id,
+            room_id,
             url: newName,
             caption: req.body?.captions[index],
             is_primary: req.body?.is_primarys[index],
@@ -133,12 +125,13 @@ class RoomController {
   async deleteRoom(req: Request, res: Response) {
     try {
       const hotel_id = parseInt(req.params.hotel_id);
+      const room_type_id = parseInt(req.params.room_type_id);
       const room_id = parseInt(req.params.room_id);
 
       const room = await Room.findOne({
         where: {
           id: room_id,
-          hotel_id: hotel_id,
+          room_type_id,
         },
       });
 
@@ -149,6 +142,35 @@ class RoomController {
         });
       }
 
+      const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}`;
+      const deleteImages = await RoomImage.findAll({
+        where: {
+          room_id,
+        },
+      });
+
+      // Delete room images
+      if (deleteImages.length > 0) {
+        const objectsList = await Promise.all(
+          deleteImages.map(async (image) => {
+            const modifiedUrl = `${folder}/${image.url}`;
+            return modifiedUrl;
+          })
+        );
+
+        minioConfig
+          .getClient()
+          .removeObjects(DEFAULT_MINIO.BUCKET, objectsList, function (e) {
+            if (e) {
+              console.error("Unable to remove Objects ", e);
+              return res.status(500).json({
+                status: 500,
+                message: "Unable to remove Objects!",
+              });
+            }
+          });
+      }
+
       await new RoomRepo().delete(room_id);
 
       return res.status(200).json({
@@ -156,19 +178,26 @@ class RoomController {
         message: "Successfully deleted room!",
       });
     } catch (error) {
-      return ErrorHandler.handleServerError(res, error);
+      if (error instanceof Error) {
+        return ErrorHandler.handleServerError(res, error.message);
+      } else {
+        return ErrorHandler.handleServerError(
+          res,
+          "An unknown error occurred."
+        );
+      }
     }
   }
 
   async getRoomById(req: Request, res: Response) {
     try {
-      const hotel_id = parseInt(req.params.hotel_id);
+      const room_type_id = parseInt(req.params.room_type_id);
       const room_id = parseInt(req.params.room_id);
 
       const room = await Room.findOne({
         where: {
           id: room_id,
-          hotel_id: hotel_id,
+          room_type_id,
         },
       });
 
@@ -193,13 +222,13 @@ class RoomController {
 
   async updateRoom(req: Request, res: Response) {
     try {
-      const hotel_id = parseInt(req.params.hotel_id);
+      const room_type_id = parseInt(req.params.room_type_id);
       const room_id = parseInt(req.params.room_id);
 
       const room = await Room.findOne({
         where: {
           id: room_id,
-          hotel_id: hotel_id,
+          room_type_id,
         },
       });
 
@@ -211,9 +240,8 @@ class RoomController {
       }
 
       const fieldsToUpdate = [
+        "room_type_id",
         "number",
-        "type",
-        "price",
         "description",
         "status",
       ];

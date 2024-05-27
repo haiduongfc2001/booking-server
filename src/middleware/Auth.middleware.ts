@@ -16,7 +16,7 @@ const verifyToken = (token: string, secret: Secret): JwtPayload => {
 };
 
 const errorHandler = (err: Error, res: Response) => {
-  let errorMessage = "You do not have access to this resource!";
+  let errorMessage = "Full authentication is required to access this resource!";
   if (err instanceof TokenExpiredError) {
     errorMessage = "Token has expired";
   } else if (err instanceof JsonWebTokenError) {

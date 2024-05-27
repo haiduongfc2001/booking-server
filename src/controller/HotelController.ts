@@ -116,7 +116,7 @@ class HotelController {
 
       const hotelImages = await HotelImage.findAll({
         where: {
-          hotel_id: hotel_id,
+          hotel_id,
         },
         order: [["id", "asc"]],
       });
@@ -135,16 +135,10 @@ class HotelController {
         })),
         roomList: roomListByHotelId.map((room) => ({
           id: room.id,
-          name: room.name,
           number: room.number,
           room_type_id: room.room_type_id,
-          price: room.price,
-          adult_occupancy: room.adult_occupancy,
-          child_occupancy: room.child_occupancy,
           description: room.description,
-          rating_average: room.rating_average,
           status: room.status,
-          images: room.images,
         })),
       };
 
@@ -308,52 +302,47 @@ class HotelController {
 
       if (sequelize) {
         const query = `
-        SELECT
-          h.id AS hotel_id,
-          h.name AS hotel_name,
-          h.province AS hotel_province,
-
-          (
+          SELECT
+            h.id AS hotel_id,
+            h.name AS hotel_name,
+            h.province AS hotel_province,
+            (
               SELECT hi.url
               FROM hotel_image hi
               WHERE hi.hotel_id = h.id
                 AND hi.is_primary = true
               LIMIT 1 
-          ) AS hotel_avatar,
-
-          MIN(CASE
-                  WHEN p.discount_type = 'PERCENTAGE' THEN r.price * (1 - p.discount_value / 100)
-                  WHEN p.discount_type = 'FIXED_AMOUNT' THEN r.price - p.discount_value
-                  ELSE r.price
-              END) AS min_room_price,
-
-          (
-              SELECT r.price
+            ) AS hotel_avatar,
+            MIN(CASE
+              WHEN p.discount_type = 'PERCENTAGE' THEN rt.base_price * (1 - p.discount_value / 100)
+              WHEN p.discount_type = 'FIXED_AMOUNT' THEN rt.base_price - p.discount_value
+              ELSE rt.base_price
+            END) AS min_room_price,
+            (
+              SELECT rt.base_price
               FROM (
-                  SELECT
-                      r.price,
-                      ROW_NUMBER() OVER (ORDER BY CASE
-                                                    WHEN MIN(p.discount_type) = 'PERCENTAGE' THEN r.price * (1 - p.discount_value / 100)
-                                                    WHEN MIN(p.discount_type) = 'FIXED_AMOUNT' THEN r.price - p.discount_value
-                                                    ELSE r.price
-                                                END) AS rn
-                  FROM room r
-                  LEFT JOIN promotion p ON r.id = p.room_id  
-                  WHERE r.hotel_id = h.id  
-                  GROUP BY r.price, r.id, p.discount_value 
+                SELECT
+                  rt.base_price,
+                  ROW_NUMBER() OVER (ORDER BY CASE
+                    WHEN MIN(p.discount_type) = 'PERCENTAGE' THEN rt.base_price * (1 - p.discount_value / 100)
+                    WHEN MIN(p.discount_type) = 'FIXED_AMOUNT' THEN rt.base_price - p.discount_value
+                    ELSE rt.base_price
+                  END) AS rn
+                FROM room_type rt
+                LEFT JOIN promotion p ON rt.id = p.room_type_id  
+                WHERE rt.hotel_id = h.id  
+                GROUP BY rt.base_price, rt.id, p.discount_value 
               ) r
-              WHERE r.rn = 1  
-          ) AS original_room_price
-
-        FROM
+              WHERE rt.rn = 1  
+            ) AS original_room_price
+          FROM
             hotel h
-        JOIN
-            room r ON h.id = r.hotel_id
-        LEFT JOIN promotion p ON r.id = p.room_id
-
-        GROUP BY
+          JOIN
+            room_type rt ON h.id = rt.hotel_id
+          LEFT JOIN promotion p ON rt.id = p.room_type_id
+          GROUP BY
             h.id, h.name, h.province, p.discount_value;
-      `;
+        `;
 
         const hotels = await sequelize.query(query, {
           type: QueryTypes.SELECT,
@@ -443,12 +432,11 @@ class HotelController {
       } = req.body;
 
       const offset = (page - 1) * size;
-
-      // Format dates for comparison
       const formattedCheckInDate = new Date(check_in_date);
       const formattedCheckOutDate = new Date(check_out_date);
 
-      // Find all hotels matching the location
+      console.log("Searching hotels...");
+
       const hotels = await Hotel.findAll({
         where: {
           province: { [Op.iLike]: `%${location}%` },
@@ -456,15 +444,15 @@ class HotelController {
         include: [
           {
             model: RoomType,
-            required: true, // Only include hotels with room types that meet the criteria
+            required: true,
+            where: {
+              standard_occupant: { [Op.gte]: num_adults },
+              max_children: { [Op.gte]: num_children },
+            },
             include: [
               {
                 model: Room,
                 required: true,
-                where: {
-                  adult_occupancy: { [Op.gte]: num_adults },
-                  child_occupancy: { [Op.gte]: num_children },
-                },
                 include: [
                   {
                     model: RoomBooking,
@@ -516,7 +504,8 @@ class HotelController {
         offset: offset,
       });
 
-      // Filter out hotels without enough available rooms of the same type
+      console.log("Hotels found:", hotels.length);
+
       const availableHotels = hotels
         .map((hotel) => {
           const availableRoomTypes = hotel.roomTypes
@@ -534,34 +523,19 @@ class HotelController {
                 return !hasBookingConflict;
               });
 
-              // Group available rooms by room_type_id
-              const roomsByType = availableRooms.reduce((acc, room) => {
-                if (!acc[room.room_type_id]) {
-                  acc[room.room_type_id] = [];
-                }
-                acc[room.room_type_id].push(room);
-                return acc;
-              }, {} as { [key: number]: Room[] });
-
-              // Find if any group has enough rooms
-              for (const roomTypeId in roomsByType) {
-                if (roomsByType[roomTypeId].length >= num_rooms) {
-                  return {
-                    id: roomType.id,
-                    name: roomType.name,
-                    description: roomType.description,
-                    rooms: roomsByType[roomTypeId]
-                      .map((room) => ({
-                        id: room.id,
-                        name: room.name,
-                        price: room.price,
-                        description: room.description,
-                        views: room.views,
-                        area: room.area,
-                      }))
-                      .sort((a, b) => a.price - b.price),
-                  };
-                }
+              if (availableRooms.length >= num_rooms) {
+                return {
+                  id: roomType.id,
+                  name: roomType.name,
+                  description: roomType.description,
+                  numRooms: availableRooms.length,
+                  rooms: availableRooms
+                    .map((room) => ({
+                      id: room.id,
+                      description: room.description,
+                    }))
+                    .sort((a, b) => a.id - b.id),
+                };
               }
 
               return null;
@@ -590,7 +564,14 @@ class HotelController {
         },
       });
     } catch (error) {
-      return ErrorHandler.handleServerError(res, error);
+      if (error instanceof Error) {
+        return ErrorHandler.handleServerError(res, error.message);
+      } else {
+        return ErrorHandler.handleServerError(
+          res,
+          "An unknown error occurred."
+        );
+      }
     }
   }
 }

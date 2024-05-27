@@ -1,5 +1,6 @@
-import { Model, Table, Column, DataType } from "sequelize-typescript";
+import { Model, Table, Column, DataType, HasMany } from "sequelize-typescript";
 import { TABLE_NAME } from "../config/constant.config";
+import { District } from "./District";
 
 @Table({
   tableName: TABLE_NAME.PROVINCE,
@@ -22,4 +23,7 @@ export class Province extends Model {
     allowNull: false,
   })
   level!: string;
+
+  @HasMany(() => District)
+  districts!: District[];
 }

@@ -8,18 +8,18 @@ interface SurchargeRates {
 }
 
 interface CustomerRequest {
-  numRooms: number;
-  numAdults: number;
-  numChildren: number[];
+  num_rooms: number;
+  num_adults: number;
+  num_children: number[];
 }
 
 interface HotelPolicy {
-  roomPrice: number;
-  roomDiscount: number;
-  maxOccupancy: number;
-  adultOccupancy: number;
-  childOccupancy: number;
-  surchargeRates: SurchargeRates;
+  room_price: number;
+  room_discount: number;
+  max_occupant: number;
+  standard_occupant: number;
+  max_children: number;
+  surcharge_rates: SurchargeRates;
 }
 
 interface CalculationResult {
@@ -31,25 +31,25 @@ const calculateCost = (
   customerRequest: CustomerRequest,
   hotelPolicy: HotelPolicy
 ): CalculationResult => {
-  const { numRooms, numAdults, numChildren } = customerRequest;
+  const { num_rooms, num_adults, num_children } = customerRequest;
 
   const {
-    roomPrice,
-    roomDiscount,
-    maxOccupancy,
-    adultOccupancy,
-    childOccupancy,
-    surchargeRates,
+    room_price,
+    room_discount,
+    max_occupant,
+    standard_occupant,
+    max_children,
+    surcharge_rates,
   } = hotelPolicy;
 
-  const sortedChildren = numChildren.sort((a, b) => b - a); // Sort children by age descending
-  const totalRooms = numRooms;
-  const effectiveRoomPrice = roomPrice - roomDiscount;
+  const sortedChildren = num_children.sort((a, b) => b - a); // Sort children by age descending
+  const totalRooms = num_rooms;
+  const effectiveRoomPrice = room_price - room_discount;
 
   let rooms: Room[] = Array(totalRooms)
     .fill({ adults: 0, children: [] })
     .map(() => ({ adults: 0, children: [] }));
-  let adultsRemaining = numAdults;
+  let adultsRemaining = num_adults;
   let childrenRemaining = [...sortedChildren];
 
   // Step 1: Allocate at least one adult to each room
@@ -62,7 +62,7 @@ const calculateCost = (
 
   // Step 2: Allocate remaining adults to rooms
   for (let i = 0; i < totalRooms; i++) {
-    while (rooms[i].adults < adultOccupancy && adultsRemaining > 0) {
+    while (rooms[i].adults < standard_occupant && adultsRemaining > 0) {
       rooms[i].adults++;
       adultsRemaining--;
     }
@@ -71,7 +71,7 @@ const calculateCost = (
   // Step 3: Allocate children to rooms while minimizing surcharges
   for (let i = 0; i < totalRooms; i++) {
     while (
-      rooms[i].children.length < childOccupancy &&
+      rooms[i].children.length < max_children &&
       childrenRemaining.length > 0
     ) {
       rooms[i].children.push(childrenRemaining.shift()!);
@@ -81,9 +81,9 @@ const calculateCost = (
   // Step 4: Further optimize room allocations to reduce surcharges
   for (let i = 0; i < totalRooms - 1; i++) {
     // If a room has more than the maximum allowed guests, try to move them to other rooms
-    while (rooms[i].children.length > childOccupancy) {
+    while (rooms[i].children.length > max_children) {
       for (let j = i + 1; j < totalRooms; j++) {
-        if (rooms[j].children.length < childOccupancy) {
+        if (rooms[j].children.length < max_children) {
           rooms[j].children.push(rooms[i].children.pop()!);
           break;
         }
@@ -98,7 +98,7 @@ const calculateCost = (
 
     // Calculate extra charges for children
     for (const child of room.children) {
-      for (const [ageRange, rate] of Object.entries(surchargeRates)) {
+      for (const [ageRange, rate] of Object.entries(surcharge_rates)) {
         const [minAge, maxAge] = ageRange.split("-").map(Number);
         if (child >= minAge && child <= maxAge) {
           roomCost += effectiveRoomPrice * rate;

@@ -180,7 +180,7 @@ export class StaffRepo implements IStaffRepo {
     try {
       const staffs = await Staff.findAll({
         where: {
-          hotel_id: hotel_id,
+          hotel_id,
         },
         order: [["id", "asc"]],
       });

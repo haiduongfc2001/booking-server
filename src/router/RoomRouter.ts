@@ -19,20 +19,20 @@ class RoomRoutes extends BaseRoutes {
       RoomController.getAllRooms
     );
     this.router.get(
-      "/:hotel_id/room/:room_id/getRoomById",
+      "/:hotel_id/room_type/:room_type_id/:room_id/getRoomById",
       authFullRole,
       updateRoomStatus,
       RoomController.getRoomById
     );
     this.router.post(
-      "/:hotel_id/room/createRoom",
+      "/:hotel_id/room_type/:room_type_id/createRoom",
       authFullRole,
       // validate(createRoomSchema),
       upload.array("images", 5),
       RoomController.createRoom
     );
     this.router.patch(
-      "/:hotel_id/room/:room_id/updateRoom",
+      "/:hotel_id/room_type/:room_type_id/updateRoom",
       authFullRole,
       updateRoomStatus,
       // validate(updateRoomSchema),
@@ -40,7 +40,7 @@ class RoomRoutes extends BaseRoutes {
       RoomController.updateRoom
     );
     this.router.delete(
-      "/:hotel_id/room/:room_id/deleteRoom",
+      "/:hotel_id/room_type/:room_type_id/:room_id/deleteRoom",
       authFullRole,
       RoomController.deleteRoom
     );

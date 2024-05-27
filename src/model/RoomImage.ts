@@ -7,7 +7,7 @@ import {
   BelongsTo,
   Default,
 } from "sequelize-typescript";
-import { Room } from "./Room";
+import { RoomType } from "./RoomType";
 import { TABLE_NAME } from "../config/constant.config";
 
 @Table({
@@ -21,15 +21,15 @@ export class RoomImage extends Model {
   })
   id!: number;
 
-  @ForeignKey(() => Room)
+  @ForeignKey(() => RoomType)
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
   })
   room_id!: number;
 
-  @BelongsTo(() => Room, "room_id")
-  room!: Room;
+  @BelongsTo(() => RoomType)
+  roomType!: RoomType;
 
   @Column({
     type: DataType.TEXT,

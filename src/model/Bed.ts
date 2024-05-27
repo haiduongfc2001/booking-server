@@ -6,9 +6,9 @@ import {
   Model,
   Table,
 } from "sequelize-typescript";
-import { Room } from "./Room";
 import { BED_TYPE } from "../config/enum.config";
 import { TABLE_NAME } from "../config/constant.config";
+import { RoomType } from "./RoomType";
 
 @Table({
   tableName: TABLE_NAME.BED,
@@ -21,15 +21,15 @@ export class Bed extends Model {
   })
   id!: number;
 
-  @ForeignKey(() => Room)
+  @ForeignKey(() => RoomType)
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
   })
-  room_id!: number;
+  room_type_id!: number;
 
-  @BelongsTo(() => Room)
-  room!: Room;
+  @BelongsTo(() => RoomType)
+  roomType!: RoomType;
 
   @Column({
     type: DataType.ENUM(
@@ -57,6 +57,9 @@ export class Bed extends Model {
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
+    validate: {
+      min: 1,
+    },
   })
   quantity!: number;
 }
