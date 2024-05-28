@@ -19,6 +19,11 @@ class BookingRoutes extends BaseRoutes {
       authFullRole,
       BookingController.calculateMinCost
     );
+    this.router.post(
+      "/createBooking",
+      authFullRole,
+      BookingController.createBooking
+    );
   }
 }
 

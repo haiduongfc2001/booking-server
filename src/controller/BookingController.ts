@@ -7,6 +7,10 @@ import { RoomType } from "../model/RoomType";
 import generateRandomString from "../utils/RandomString";
 import dayjs from "dayjs";
 import { toUpperCase } from "../utils/StringConversion";
+import { Policy } from "../model/Policy";
+import { Promotion } from "../model/Promotion";
+import { Op } from "sequelize";
+import { DISCOUNT_TYPE } from "../config/enum.config";
 
 interface Child {
   age: number;
@@ -58,11 +62,13 @@ class BookingController {
       num_rooms,
       num_adults,
       num_children,
-      room_price,
+      children_ages,
+      base_price,
       room_discount,
-      max_occupant,
       standard_occupant,
       max_children,
+      max_occupant,
+      max_extra_bed,
       surcharge_rates,
     } = req.body;
 
@@ -70,12 +76,14 @@ class BookingController {
     if (
       typeof num_rooms !== "number" ||
       typeof num_adults !== "number" ||
-      !Array.isArray(num_children) ||
-      typeof room_price !== "number" ||
+      typeof num_children !== "number" ||
+      !Array.isArray(children_ages) ||
+      typeof base_price !== "number" ||
       typeof room_discount !== "number" ||
-      typeof max_occupant !== "number" ||
       typeof standard_occupant !== "number" ||
       typeof max_children !== "number" ||
+      typeof max_occupant !== "number" ||
+      typeof max_extra_bed !== "number" ||
       typeof surcharge_rates !== "object"
     ) {
       return res.status(400).send("Invalid request data");
@@ -85,19 +93,146 @@ class BookingController {
       num_rooms,
       num_adults,
       num_children,
+      children_ages,
     };
 
     const hotelPolicy = {
-      room_price,
+      base_price,
       room_discount,
-      max_occupant,
       standard_occupant,
       max_children,
+      max_occupant,
+      max_extra_bed,
       surcharge_rates,
     };
 
     const result = calculateCost(customerRequest, hotelPolicy);
     res.json(result);
+  }
+
+  async createBooking(req: Request, res: Response) {
+    try {
+      const {
+        customer_id,
+        check_in,
+        check_out,
+        num_rooms,
+        num_adults,
+        num_children,
+        children_ages = [],
+        hotel_id,
+        room_type_id,
+      } = req.body;
+
+      const roomType = await RoomType.findOne({
+        where: {
+          id: room_type_id,
+          hotel_id,
+        },
+      });
+
+      if (!roomType) {
+        return res.status(404).json({
+          status: 404,
+          message: "Room not found!",
+        });
+      }
+
+      const now = new Date();
+
+      const promotion = await Promotion.findOne({
+        where: {
+          id: room_type_id,
+          [Op.and]: [
+            {
+              start_date: { [Op.lte]: now },
+            },
+            {
+              end_date: { [Op.gte]: now },
+            },
+          ],
+        },
+      });
+
+      let room_discount: number;
+      if (promotion?.discount_type === DISCOUNT_TYPE.FIXED_AMOUNT) {
+        room_discount = promotion.discount_value;
+      } else if (promotion?.discount_type === DISCOUNT_TYPE.PERCENTAGE) {
+        room_discount =
+          roomType.base_price * (Number(promotion.discount_type) / 100);
+      } else {
+        room_discount = 0;
+      }
+
+      const bookingCode = `${dayjs(Date.now()).format(
+        "YYYYMMDDHHmmss"
+      )}_${toUpperCase(generateRandomString(8))}`;
+
+      // const newBooking = await Booking.create({
+      //   code: bookingCode,
+      //   customer_id,
+      //   check_in,
+      //   check_out,
+      //   total_room_price: 0,
+      //   tax_and_fee: 0,
+      //   status: "PENDING",
+      // });
+
+      const customerRequest = {
+        num_rooms,
+        num_adults,
+        num_children,
+        children_ages,
+      };
+
+      const hotelPolicy = {
+        base_price: roomType.base_price,
+        room_discount,
+        standard_occupant: roomType.standard_occupant,
+        max_children: roomType.max_children,
+        max_occupant: roomType.max_occupant,
+        max_extra_bed: roomType.max_extra_bed,
+        surcharge_rates: {
+          "0-6": 0,
+          "7-13": 0.1,
+          "14-17": 0.2,
+          "18": 0.5,
+        },
+      };
+
+      const hotelTaxAndFee = await Policy.findOne({
+        where: {
+          hotel_id,
+          type: "TAX_AND_FEE",
+        },
+      });
+
+      const cost = calculateCost(customerRequest, hotelPolicy);
+      const total_room_price = cost.totalCost;
+      const tax_and_fee =
+        total_room_price * (Number(hotelTaxAndFee?.value) / 100);
+      const room_bookings = cost.rooms;
+
+      return res.status(200).json({
+        status: 200,
+        message: "Booking created successfully!",
+        data: {
+          code: bookingCode,
+          customer_id,
+          check_in,
+          check_out,
+          num_adults,
+          num_children,
+          num_rooms,
+          total_room_price,
+          tax_and_fee,
+          room_bookings,
+          status: "PENDING",
+        },
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
   }
 }
 
