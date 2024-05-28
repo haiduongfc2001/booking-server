@@ -27,6 +27,9 @@ import { DEFAULT_MINIO } from "../config/constant.config";
 import { translate } from "../utils/Translation";
 import { Payment } from "../model/Payment";
 import { PaymentMethod } from "../model/PaymentMethod";
+import { Promotion } from "../model/Promotion";
+import { Op } from "sequelize";
+import { DISCOUNT_TYPE } from "../config/enum.config";
 
 interface Child {
   age: number;
