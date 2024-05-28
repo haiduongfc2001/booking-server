@@ -31,6 +31,16 @@ class ZaloPayRouter {
       authFullRole,
       PaymentController.getBankListZaloPay
     );
+    this.router.post(
+      "/zaloPayRefund/:zp_trans_id",
+      authFullRole,
+      PaymentController.zaloPayRefund
+    );
+    this.router.get(
+      "/zaloPayRefundStatus/:m_refund_id",
+      authFullRole,
+      PaymentController.zaloPayRefundStatus
+    );
   }
 }
 

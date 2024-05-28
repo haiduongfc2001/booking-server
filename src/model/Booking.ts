@@ -85,6 +85,7 @@ export class Booking extends Model {
   })
   status!: BOOKING_STATUS;
 
+  @Default(new Date())
   @Column({
     type: DataType.DATE,
     allowNull: false,

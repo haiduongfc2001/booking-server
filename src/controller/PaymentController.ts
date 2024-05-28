@@ -59,6 +59,11 @@ interface resultCallback {
   return_message: string;
 }
 
+interface ZaloPayRefundRequest {
+  amount: number;
+  description: string;
+}
+
 class PaymentController {
   // VNPay
   async createVNPayPaymentUrl(req: Request, res: Response) {
@@ -660,6 +665,95 @@ class PaymentController {
       return res
         .status(500)
         .json({ message: "Failed to fetch bank list", error: error.message });
+    }
+  }
+
+  async zaloPayRefund(req: Request, res: Response) {
+    try {
+      const { APP_ID, KEY1, ENDPOINT } = zaloPayConfig;
+      const timestamp = Date.now();
+      const uid = `${timestamp}${Math.floor(111 + Math.random() * 999)}`; // unique id
+
+      const { amount, description } = req.body as ZaloPayRefundRequest;
+      const { zp_trans_id } = req.params;
+
+      let params = {
+        app_id: APP_ID,
+        m_refund_id: `${dayjs().format("YYMMDD")}_${APP_ID}_${uid}`,
+        timestamp, // milliseconds
+        zp_trans_id,
+        amount,
+        description,
+        mac: "",
+      };
+
+      // app_id|zp_trans_id|amount|description|timestamp
+      let data =
+        params.app_id +
+        "|" +
+        params.zp_trans_id +
+        "|" +
+        params.amount +
+        "|" +
+        params.description +
+        "|" +
+        params.timestamp;
+      params.mac = hash(HashAlgorithm.SHA256, KEY1, data);
+
+      const response = await axios.post(`${ENDPOINT}/refund`, params, {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+
+      // Check if response data is empty
+      if (!response.data) {
+        throw new Error("Empty response from ZaloPay API");
+      }
+
+      // If response is not empty, return it
+      return res
+        .status(200)
+        .json({ ...response.data, m_refund_id: params.m_refund_id });
+    } catch (error: any) {
+      console.error("Error in ZaloPay refund:", error);
+      return res
+        .status(500)
+        .json({ message: "Failed to process refund", error: error.message });
+    }
+  }
+
+  async zaloPayRefundStatus(req: Request, res: Response) {
+    try {
+      const { APP_ID, KEY1, ENDPOINT } = zaloPayConfig;
+      const { m_refund_id } = req.params;
+      const params = {
+        app_id: APP_ID,
+        timestamp: Date.now(), // miliseconds
+        m_refund_id,
+        mac: "",
+      };
+
+      const data =
+        params.app_id + "|" + params.m_refund_id + "|" + params.timestamp; // app_id|m_refund_id|timestamp
+      params.mac = hash(HashAlgorithm.SHA256, KEY1, data);
+
+      let postConfig = {
+        method: "post",
+        url: `${ENDPOINT}/query_refund`,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        data: params,
+      };
+
+      const response = await axios(postConfig);
+      return res.status(200).json(response.data);
+    } catch (error: any) {
+      console.error("Error in ZaloPay refund:", error);
+      return res
+        .status(500)
+        .json({ message: "Failed to process refund", error: error.message });
     }
   }
 
