@@ -59,7 +59,7 @@ class RoomImageController {
         });
       }
 
-      const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}`;
+      const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}`;
       const metaData = { "Content-Type": file.mimetype };
       const typeFile = getFileType(file.originalname);
       const newName = `${Date.now()}_${generateRandomString(16)}.${typeFile}`;
@@ -132,7 +132,7 @@ class RoomImageController {
       }
 
       // Define the folder or path within the bucket
-      const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}`;
+      const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}`;
       let index = 0;
 
       const files = req.files as Express.Multer.File[];
@@ -263,7 +263,7 @@ class RoomImageController {
         });
       }
 
-      const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}`;
+      const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}`;
 
       // Delete room images
       if (Array.isArray(deleteImages) && deleteImages.length > 0) {
@@ -399,7 +399,7 @@ class RoomImageController {
         });
       }
 
-      const modifiedUrl = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}/${roomImage.url}`;
+      const modifiedUrl = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}/${roomImage.url}`;
 
       // Remove the object from MinIO storage
       await minioConfig

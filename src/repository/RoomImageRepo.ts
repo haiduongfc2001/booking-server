@@ -26,7 +26,7 @@ export class RoomImageRepo implements IRoomImageRepo {
         attributes: ["id", "url"],
       });
 
-      const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}`;
+      const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}`;
 
       const urlsWithPresignedUrls = await Promise.all(
         roomImages.map(async (image) => {

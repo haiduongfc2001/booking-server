@@ -79,4 +79,10 @@ export class Booking extends Model {
 
   @HasMany(() => RoomBooking)
   roomBookings!: RoomBooking[];
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+  })
+  expires_at!: Date;
 }

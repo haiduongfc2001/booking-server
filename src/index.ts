@@ -13,6 +13,12 @@ import AddressRouter from "./router/AddressRouter";
 import BookingRouter from "./router/BookingRouter";
 import PaymentRouter from "./router/PaymentRouter";
 import PromotionRouter from "./router/PromotionRouter";
+import cron from "node-cron";
+import { Booking } from "./model/Booking";
+import { BOOKING_STATUS } from "./config/enum.config";
+import { Op } from "sequelize";
+import { updateRoomStatus } from "./helper/updateStatuses";
+
 dotenv.config();
 
 class App {
@@ -68,6 +74,30 @@ class App {
       alter: true,
     });
     console.log("✅ All models were synchronized successfully.");
+
+    // Set up the cron job
+    cron.schedule("*/1 * * * *", async () => {
+      const now = new Date();
+      await Booking.update(
+        { status: BOOKING_STATUS.CANCELED },
+        {
+          where: {
+            status: BOOKING_STATUS.PENDING,
+            expires_at: {
+              [Op.lt]: now,
+            },
+          },
+        }
+      );
+      console.log(
+        "✅ Checked for expired bookings and updated status accordingly."
+      );
+
+      // Update room status
+      await updateRoomStatus();
+      console.log("✅ Updated room statuses.");
+    });
+
     this.app.listen(port, () => {
       console.log(`✅ Server started successfully on port ${port}!`);
     });

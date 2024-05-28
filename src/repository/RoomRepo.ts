@@ -46,10 +46,9 @@ export class RoomRepo implements IRoomRepo {
 
     const hotel_id = roomType.hotel_id;
     const hotelPath = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}`;
-    const roomTypePath = `/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room.room_type_id}`;
-    const roomPath = `/${DEFAULT_MINIO.ROOM_PATH}/${room.id}/${imageUrl}`;
+    const roomTypePath = `/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room.room_type_id}/${imageUrl}`;
 
-    const objectPath = hotelPath + roomTypePath + roomPath;
+    const objectPath = hotelPath + roomTypePath;
 
     return new Promise<string>((resolve, reject) => {
       minioConfig

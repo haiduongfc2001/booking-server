@@ -49,7 +49,11 @@ export const updateRoomStatus = async (): Promise<void> => {
       const room = await Room.findByPk(roomBooking.room_id);
 
       if (room && booking) {
-        if ([BOOKING_STATUS.CANCELED, BOOKING_STATUS.CHECKED_OUT].includes(booking.status)) {
+        if (
+          [BOOKING_STATUS.CANCELED, BOOKING_STATUS.CHECKED_OUT].includes(
+            booking.status
+          )
+        ) {
           room.status = ROOM_STATUS.AVAILABLE;
         } else {
           room.status = ROOM_STATUS.UNAVAILABLE;

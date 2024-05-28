@@ -3,7 +3,6 @@ export const DEFAULT_MINIO = {
   BUCKET: "europetrip",
   HOTEL_PATH: "hotels",
   ROOM_TYPE_PATH: "room_types",
-  ROOM_PATH: "rooms",
 };
 
 export const ROLE = {

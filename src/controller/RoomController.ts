@@ -80,7 +80,7 @@ class RoomController {
         const room_type_id = savedRoom.room_type_id;
 
         // Define the folder or path within the bucket
-        const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}`;
+        const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}`;
         let index = 0;
 
         const files = req.files as Express.Multer.File[];
@@ -142,7 +142,7 @@ class RoomController {
         });
       }
 
-      const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}/${DEFAULT_MINIO.ROOM_PATH}/${room_id}`;
+      const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}`;
       const deleteImages = await RoomImage.findAll({
         where: {
           room_id,
