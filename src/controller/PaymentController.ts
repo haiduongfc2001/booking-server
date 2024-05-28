@@ -7,9 +7,14 @@ import {
   hash,
   resolveUrlString,
 } from "../utils/VNPayCommon";
-import { HashAlgorithm, VnpLocale } from "../config/enum.config";
+import {
+  HashAlgorithm,
+  RefundTransactionType,
+  VnpLocale,
+} from "../config/enum.config";
 import {
   PAYMENT_ENDPOINT,
+  QUERY_DR_REFUND_ENDPOINT,
   VNPAY_GATEWAY_SANDBOX_HOST,
 } from "../config/api-endpoint.constant";
 import vnpayConfig from "../config/vnpay.config";
@@ -17,6 +22,62 @@ import zaloPayConfig from "../config/zalopay.config";
 import axios from "axios";
 import qs from "qs";
 import { BUFFER_ENCODE } from "../config/constant.config";
+import generateRandomString from "../utils/RandomString";
+import {
+  QUERY_DR_RESPONSE_MAP,
+  REFUND_RESPONSE_MAP,
+  WRONG_CHECKSUM_KEY,
+} from "../config/response-map.constant";
+
+interface BodyRequestQueryDr {
+  vnp_Version: string;
+  vnp_Command: string;
+  vnp_TmnCode: string;
+  vnp_RequestId: string;
+  vnp_TxnRef: string;
+  vnp_TransactionDate: string;
+  vnp_CreateDate: string;
+  vnp_IpAddr: string;
+  vnp_OrderInfo: string;
+  vnp_SecureHash: string;
+  vnp_TransactionNo?: number;
+}
+
+interface QueryDrResponseFromVNPay {
+  vnp_ResponseId: string;
+  vnp_Command: string;
+  vnp_ResponseCode: string;
+  vnp_Message: string;
+  vnp_TmnCode: string;
+  vnp_TxnRef: string;
+  vnp_Amount: number;
+  vnp_BankCode: string;
+  vnp_PayDate: string;
+  vnp_TransactionNo: number;
+  vnp_TransactionType: string;
+  vnp_TransactionStatus: string;
+  vnp_OrderInfo: string;
+  vnp_PromotionCode?: string;
+  vnp_PromotionAmount?: number;
+  vnp_SecureHash: string;
+}
+
+interface RefundResponse {
+  vnp_ResponseId: string;
+  vnp_Command: string;
+  vnp_ResponseCode: string;
+  vnp_Message: string;
+  vnp_TmnCode: string;
+  vnp_TxnRef: string;
+  vnp_Amount: number;
+  vnp_BankCode: string;
+  vnp_PayDate: string;
+  vnp_TransactionNo: number;
+  vnp_TransactionType: string;
+  vnp_TransactionStatus: string;
+  vnp_OrderInfo: string;
+  vnp_SecureHash: string;
+}
 
 const numberRegex = /^[0-9]+$/;
 
@@ -113,6 +174,8 @@ class PaymentController {
       );
 
       vnp_Params["vnp_SecureHash"] = signed;
+
+      console.log("vnp_Params: ", vnp_Params);
 
       const paymentUrl = `${VNP_PAYMENT_URL}?${querystring.stringify(
         vnp_Params,
@@ -523,6 +586,256 @@ class PaymentController {
       return res
         .status(500)
         .json({ message: "Failed to process refund", error: error.message });
+    }
+  }
+
+  async vnPayQueryDr(req: Request, res: Response) {
+    try {
+      const ipAddr =
+        (req.headers["x-forwarded-for"] as string) ||
+        (req.socket.remoteAddress as string);
+
+      const { VNP_VERSION, VNP_TMM_CODE, VNP_HASH_SECRET } = vnpayConfig;
+
+      const date = new Date();
+      const createDate = dayjs(date).format("YYYYMMDDHHmmss");
+      const orderId = dayjs(date).format("HHmmss");
+
+      const vnp_Params: Record<string, string | number> = {
+        // vnp_Version: VNP_VERSION,
+        // vnp_CreateDate: createDate,
+        // vnp_IpAddr: ipAddr,
+        // vnp_OrderInfo: "Query payment results for booking",
+        // vnp_RequestId: generateRandomString(16),
+        // vnp_TransactionDate: "20240524001913",
+        // vnp_TransactionNo: "14427311",
+        // vnp_TxnRef: "001913",
+
+        vnp_Version: "2.1.0",
+        vnp_CreateDate: "20240528230112",
+        vnp_IpAddr: "::1",
+        vnp_OrderInfo: "Query payment results for booking #123",
+        vnp_RequestId: "KUa4ofaPUjJWBpFF",
+        vnp_TransactionDate: "20240528230112",
+        vnp_TransactionNo: "14434010",
+        vnp_TxnRef: "230112",
+      };
+
+      const command = "querydr";
+      const url = new URL(
+        resolveUrlString(VNPAY_GATEWAY_SANDBOX_HOST, QUERY_DR_REFUND_ENDPOINT)
+      );
+
+      const stringToCreateHash =
+        `${vnp_Params.vnp_RequestId}|${vnp_Params.vnp_Version}|${command}` +
+        `|${VNP_TMM_CODE}|${vnp_Params.vnp_TxnRef}|${vnp_Params.vnp_TransactionDate}` +
+        `|${vnp_Params.vnp_CreateDate}|${vnp_Params.vnp_IpAddr}|${vnp_Params.vnp_OrderInfo}`;
+      // `${vnp_Params.vnp_RequestId}|${vnp_Params.vnp_Version}|${command}` +
+      // `|${VNP_TMM_CODE}|${vnp_Params.vnp_TxnRef}|${vnp_Params.vnp_TransactionDate}` +
+      // `|${vnp_Params.vnp_CreateDate}|${vnp_Params.vnp_IpAddr}|${vnp_Params.vnp_OrderInfo}`;
+
+      const requestHashed = hash(
+        HashAlgorithm.SHA512,
+        VNP_HASH_SECRET,
+        Buffer.from(stringToCreateHash, BUFFER_ENCODE)
+      );
+
+      // const body = {
+      //   ...vnp_Params,
+      //   vnp_Command: command,
+      //   vnp_TmnCode: VNP_TMM_CODE,
+      //   vnp_SecureHash: requestHashed,
+      // };
+
+      const body: BodyRequestQueryDr = {
+        // vnp_Version: VNP_VERSION,
+        // vnp_CreateDate: "20240528230112",
+        // vnp_IpAddr: "::1",
+        // vnp_OrderInfo: "Query payment results for booking #123",
+        // vnp_RequestId: "KUa4ofaPUjJWBpFF",
+        // vnp_TransactionDate: "20240528230112",
+        // vnp_TransactionNo: "14434010",
+        // vnp_TxnRef: "230112",
+        // vnp_Command: "querydr",
+        // vnp_TmnCode: "11WCM6C8",
+        // vnp_SecureHash: requestHashed,
+
+        vnp_Version: vnp_Params.vnp_Version as string,
+        vnp_CreateDate: vnp_Params.vnp_CreateDate as string,
+        vnp_IpAddr: vnp_Params.vnp_IpAddr as string,
+        vnp_OrderInfo: vnp_Params.vnp_OrderInfo as string,
+        vnp_RequestId: vnp_Params.vnp_RequestId as string,
+        vnp_TransactionDate: vnp_Params.vnp_TransactionDate as string,
+        vnp_TransactionNo: vnp_Params.vnp_TransactionNo as number,
+        vnp_TxnRef: vnp_Params.vnp_TxnRef as string,
+        vnp_Command: command,
+        vnp_TmnCode: VNP_TMM_CODE,
+        vnp_SecureHash: requestHashed,
+      };
+
+      const postConfig = {
+        method: "post",
+        url: url.toString(),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        data: body,
+      };
+
+      const response = await axios(postConfig);
+
+      const responseData = response.data as QueryDrResponseFromVNPay;
+
+      const message = getResponseByStatusCode(
+        responseData.vnp_ResponseCode?.toString() ?? "",
+        VnpLocale.VN,
+        QUERY_DR_RESPONSE_MAP
+      );
+
+      const outputResults = {
+        isVerified: true,
+        isSuccess: responseData.vnp_ResponseCode === "00",
+        message,
+        ...responseData,
+        vnp_Message: message,
+      };
+
+      let stringToCreateHashOfResponse =
+        `${responseData.vnp_ResponseId}|${responseData.vnp_Command}|${responseData.vnp_ResponseCode}` +
+        `|${responseData.vnp_Message}|${VNP_TMM_CODE}|${responseData.vnp_TxnRef}` +
+        `|${responseData.vnp_Amount}|${responseData.vnp_BankCode}|${responseData.vnp_PayDate}` +
+        `|${responseData.vnp_TransactionNo}|${responseData.vnp_TransactionType}|${responseData.vnp_TransactionStatus}` +
+        `|${responseData.vnp_OrderInfo}|${
+          responseData.vnp_PromotionCode ?? ""
+        }|${responseData.vnp_PromotionAmount ?? ""}`;
+
+      const responseHashed = hash(
+        HashAlgorithm.SHA512,
+        VNP_HASH_SECRET,
+        Buffer.from(stringToCreateHashOfResponse, BUFFER_ENCODE)
+      );
+
+      if (responseHashed !== responseData.vnp_SecureHash) {
+        outputResults.isVerified = false;
+        outputResults.message = getResponseByStatusCode(
+          WRONG_CHECKSUM_KEY,
+          VnpLocale.VN,
+          QUERY_DR_RESPONSE_MAP
+        );
+      }
+
+      return res.status(200).json(outputResults);
+    } catch (error: any) {
+      console.error("Error in vnPayQueryDr:", error);
+      return res
+        .status(500)
+        .json({ message: "Failed to process query", error: error.message });
+    }
+  }
+
+  async vnPayRefund(req: Request, res: Response) {
+    try {
+      const vnp_Command = "refund";
+
+      const { VNP_VERSION, VNP_TMM_CODE, VNP_HASH_SECRET } = vnpayConfig;
+
+      const date = new Date();
+      const createDate = dayjs(date).format("YYYYMMDDHHmmss");
+
+      const dataQuery = {
+        vnp_Amount: 10000,
+        vnp_CreateBy: "merchant",
+        vnp_IpAddr:
+          req.headers["x-forwarded-for"] || req.socket.remoteAddress || "",
+        vnp_OrderInfo: "Refund for order #123456",
+        vnp_RequestId: generateRandomString(16),
+        vnp_TransactionDate: "20240703213346",
+        vnp_TransactionNo: 14321669,
+        vnp_TransactionType: RefundTransactionType.FULL_REFUND,
+        vnp_TxnRef: "123456",
+        vnp_CreateDate: createDate,
+        vnp_Command,
+        vnp_Version: VNP_VERSION,
+        vnp_TmnCode: VNP_TMM_CODE,
+      };
+
+      const url = new URL(
+        resolveUrlString(VNPAY_GATEWAY_SANDBOX_HOST, QUERY_DR_REFUND_ENDPOINT)
+      );
+
+      const stringToSigned =
+        `${dataQuery.vnp_RequestId}|${dataQuery.vnp_Version}|${vnp_Command}|${dataQuery.vnp_TmnCode}|` +
+        `${dataQuery.vnp_TransactionType}|${dataQuery.vnp_TxnRef}|${dataQuery.vnp_Amount}|` +
+        `${dataQuery.vnp_TransactionNo}|${dataQuery.vnp_TransactionDate}|${dataQuery.vnp_CreateBy}|` +
+        `${dataQuery.vnp_CreateDate}|${dataQuery.vnp_IpAddr}|${dataQuery.vnp_OrderInfo}`;
+
+      const signed = hash(
+        HashAlgorithm.SHA512,
+        VNP_HASH_SECRET,
+        Buffer.from(stringToSigned, BUFFER_ENCODE)
+      );
+
+      const body = {
+        ...dataQuery,
+        vnp_SecureHash: signed,
+      };
+
+      const postConfig = {
+        method: "post",
+        url: url.toString(),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        data: body,
+      };
+
+      const response = await axios(postConfig);
+      const responseData = response.data as RefundResponse;
+
+      if (
+        Number(responseData.vnp_ResponseCode) >= 90 &&
+        Number(responseData.vnp_ResponseCode) <= 99
+      ) {
+        return res.status(400).json({
+          ...responseData,
+          vnp_Message: getResponseByStatusCode(
+            responseData.vnp_ResponseCode?.toString(),
+            VnpLocale.VN,
+            QUERY_DR_RESPONSE_MAP
+          ),
+        });
+      }
+
+      const stringToChecksumResponse =
+        `${responseData.vnp_ResponseId}|${vnp_Command}|${responseData.vnp_ResponseCode}|` +
+        `${responseData.vnp_Message}|${responseData.vnp_TmnCode}|${responseData.vnp_TxnRef}|` +
+        `${responseData.vnp_Amount}|${responseData.vnp_BankCode}|${responseData.vnp_PayDate}|` +
+        `${responseData.vnp_TransactionNo}|${responseData.vnp_TransactionType}|` +
+        `${responseData.vnp_TransactionStatus}|${responseData.vnp_OrderInfo}`;
+
+      const signedResponse = hash(
+        HashAlgorithm.SHA512,
+        VNP_HASH_SECRET,
+        Buffer.from(stringToChecksumResponse, BUFFER_ENCODE)
+      );
+
+      if (signedResponse !== responseData.vnp_SecureHash) {
+        throw new Error("Wrong checksum from VNPay response");
+      }
+
+      return res.status(200).json({
+        ...responseData,
+        vnp_Message: getResponseByStatusCode(
+          responseData.vnp_ResponseCode?.toString(),
+          VnpLocale.VN,
+          REFUND_RESPONSE_MAP
+        ),
+      });
+    } catch (error: any) {
+      console.error("Error in vnPayQueryDr:", error);
+      return res
+        .status(500)
+        .json({ message: "Failed to process query", error: error.message });
     }
   }
 }

@@ -18,7 +18,21 @@ class VNPayRouter {
     );
     this.router.post("/vnpayIPN", authFullRole, PaymentController.vnpayIPN);
     this.router.post("/returnUrl", authFullRole, PaymentController.returnUrl);
-    this.router.post("/getBankList", authFullRole, PaymentController.getBankListVNPay);
+    this.router.post(
+      "/getBankList",
+      authFullRole,
+      PaymentController.getBankListVNPay
+    );
+    this.router.post(
+      "/vnPayQueryDr",
+      authFullRole,
+      PaymentController.vnPayQueryDr
+    );
+    this.router.post(
+      "/vnPayRefund",
+      authFullRole,
+      PaymentController.vnPayRefund
+    );
   }
 }
 

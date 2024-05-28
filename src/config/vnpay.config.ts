@@ -10,6 +10,7 @@ interface VNPayConfig {
   VNP_HASH_SECRET: string;
   VNP_PAYMENT_URL: string;
   VNP_RETURN_URL: string;
+  VNP_QUERY_DR_URL: string;
 }
 
 const vnpayConfig: VNPayConfig = {
@@ -23,6 +24,8 @@ const vnpayConfig: VNPayConfig = {
   // VNP_RETURN_URL: "https://booking-customer.vercel.app/",
   VNP_RETURN_URL:
     "https://5a75-2405-4802-1ca8-e970-8885-3c91-e34c-826e.ngrok-free.app/api/v1",
+  VNP_QUERY_DR_URL:
+    "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction",
 };
 
 // Check for required environment variables and throw an error if any are missing
