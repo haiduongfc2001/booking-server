@@ -1,6 +1,6 @@
 import { Router } from "express";
-import PaymentController from "../controller/PaymentController";
-import { authFullRole } from "../middleware/Auth.middleware";
+import { authFullRole } from "../../middleware/Auth.middleware";
+import PaymentController from "../../controller/PaymentController";
 
 class ZaloPayRouter {
   public router: Router;

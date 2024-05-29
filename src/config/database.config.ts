@@ -16,6 +16,8 @@ import { RoomBooking } from "../model/RoomBooking";
 import { Bed } from "../model/Bed";
 import { RoomType } from "../model/RoomType";
 import { Policy } from "../model/Policy";
+import { Payment } from "../model/Payment";
+import { PaymentMethod } from "../model/PaymentMethod";
 
 dotenv.config();
 
@@ -83,7 +85,9 @@ class Database {
         RoomBooking,
         Bed,
         RoomType,
-        Policy
+        Policy,
+        Payment,
+        PaymentMethod,
       ],
       define: config.define,
       logging: false,
@@ -93,7 +97,9 @@ class Database {
       await this.sequelize
         .authenticate()
         .then(() => {
-          console.log("✅ PostgreSQL Connection has been established successfully.");
+          console.log(
+            "✅ PostgreSQL Connection has been established successfully."
+          );
         })
         .catch((err: Error) => {
           console.error("❌ Unable to connect to the database:", err);

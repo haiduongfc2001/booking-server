@@ -1,6 +1,6 @@
 import { Router } from "express";
-import PaymentController from "../controller/PaymentController";
-import { authFullRole } from "../middleware/Auth.middleware";
+import { authFullRole } from "../../middleware/Auth.middleware";
+import PaymentController from "../../controller/PaymentController";
 
 class VNPayRouter {
   public router: Router;
@@ -18,7 +18,11 @@ class VNPayRouter {
     );
     this.router.post("/vnpayIPN", authFullRole, PaymentController.vnpayIPN);
     this.router.post("/returnUrl", authFullRole, PaymentController.returnUrl);
-    this.router.post("/getBankList", authFullRole, PaymentController.getBankListVNPay);
+    this.router.post(
+      "/getBankList",
+      authFullRole,
+      PaymentController.getBankListVNPay
+    );
   }
 }
 

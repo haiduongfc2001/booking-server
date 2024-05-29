@@ -17,6 +17,9 @@ import zaloPayConfig from "../config/zalopay.config";
 import axios from "axios";
 import qs from "qs";
 import { BUFFER_ENCODE } from "../config/constant.config";
+import { Booking } from "../model/Booking";
+import { PaymentMethod } from "../model/PaymentMethod";
+import { Payment } from "../model/Payment";
 
 const numberRegex = /^[0-9]+$/;
 
@@ -429,6 +432,146 @@ class PaymentController {
       return res
         .status(500)
         .json({ message: "Failed to fetch bank list", error: error.message });
+    }
+  }
+
+  // Payment Table
+  async createPayment(req: Request, res: Response) {
+    try {
+      const { booking_id, payment_method_id, amount } = req.body;
+
+      const booking = await Booking.findByPk(booking_id);
+      if (!booking) {
+        return res.status(404).json({
+          status: 404,
+          message: "Booking not found!",
+        });
+      }
+
+      const paymentMethod = await PaymentMethod.findByPk(payment_method_id);
+      if (!paymentMethod) {
+        return res.status(404).json({
+          status: 404,
+          message: "Payment method not found!",
+        });
+      }
+
+      const payment = await Payment.create({
+        booking_id,
+        payment_method_id,
+        amount,
+        payment_date: new Date(),
+      });
+
+      return res.status(201).json({
+        status: 201,
+        message: "Payment created successfully!",
+        data: payment,
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async getPayments(req: Request, res: Response) {
+    try {
+      const payments = await Payment.findAll();
+      return res.status(200).json({
+        status: 200,
+        data: payments,
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async getPaymentById(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const payment = await Payment.findByPk(id);
+      if (!payment) {
+        return res.status(404).json({
+          status: 404,
+          message: "Payment not found!",
+        });
+      }
+      return res.status(200).json({
+        status: 200,
+        data: payment,
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async updatePayment(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { booking_id, payment_method_id, amount } = req.body;
+
+      const payment = await Payment.findByPk(id);
+      if (!payment) {
+        return res.status(404).json({
+          status: 404,
+          message: "Payment not found!",
+        });
+      }
+
+      if (booking_id) {
+        const booking = await Booking.findByPk(booking_id);
+        if (!booking) {
+          return res.status(404).json({
+            status: 404,
+            message: "Booking not found!",
+          });
+        }
+        payment.booking_id = booking_id;
+      }
+
+      if (payment_method_id) {
+        const paymentMethod = await PaymentMethod.findByPk(payment_method_id);
+        if (!paymentMethod) {
+          return res.status(404).json({
+            status: 404,
+            message: "Payment method not found!",
+          });
+        }
+        payment.payment_method_id = payment_method_id;
+      }
+
+      if (amount !== undefined) {
+        payment.amount = amount;
+      }
+
+      await payment.save();
+
+      return res.status(200).json({
+        status: 200,
+        message: "Payment updated successfully!",
+        data: payment,
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async deletePayment(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const payment = await Payment.findByPk(id);
+      if (!payment) {
+        return res.status(404).json({
+          status: 404,
+          message: "Payment not found!",
+        });
+      }
+      await payment.destroy();
+      return res.status(200).json({
+        status: 200,
+        message: "Payment deleted successfully!",
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
     }
   }
 }

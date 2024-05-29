@@ -43,6 +43,8 @@ export const TABLE_NAME = {
   BED: "bed",
   ROOM_TYPE: "room_type",
   POLICY: "policy",
+  PAYMENT: "payment",
+  PAYMENT_METHOD: "payment_method",
 };
 
 export const PAGINATION = {
