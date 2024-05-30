@@ -67,7 +67,13 @@ class RoomImageController {
 
       await minioConfig
         .getClient()
-        .putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
+        .putObject(
+          DEFAULT_MINIO.BUCKET,
+          objectName,
+          file.buffer,
+          file.size,
+          metaData
+        );
 
       // Create a new RoomImage object with room_id, fileUrl, caption, and is_primary
       const newRoomImage = new RoomImage({
@@ -146,7 +152,13 @@ class RoomImageController {
 
         await minioConfig
           .getClient()
-          .putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
+          .putObject(
+            DEFAULT_MINIO.BUCKET,
+            objectName,
+            file.buffer,
+            file.size,
+            metaData
+          );
 
         const caption = req.body?.captions[index];
         const is_primary = req.body?.is_primarys[index];
@@ -303,7 +315,13 @@ class RoomImageController {
 
           await minioConfig
             .getClient()
-            .putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
+            .putObject(
+              DEFAULT_MINIO.BUCKET,
+              objectName,
+              file.buffer,
+              file.size,
+              metaData
+            );
 
           const caption = req.body?.captions[index];
           const is_primary = req.body?.is_primarys[index];

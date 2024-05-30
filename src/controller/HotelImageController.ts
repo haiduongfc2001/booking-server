@@ -40,14 +40,19 @@ class HotelImageController {
       for (const file of files) {
         // Upload the file to MinIO server with specified object name
         const metaData = { "Content-Type": file.mimetype };
-        // `${folder}/${Date.now()}_${generateRandomString(16)}_${file.originalname.replace(/\s/g, '')}`
         const typeFile = getFileType(file.originalname);
         const newName = `${Date.now()}_${generateRandomString(16)}.${typeFile}`;
         const objectName = `${folder}/${newName}`;
 
         await minioConfig
           .getClient()
-          .putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
+          .putObject(
+            DEFAULT_MINIO.BUCKET,
+            objectName,
+            file.buffer,
+            file.size,
+            metaData
+          );
 
         const caption = req.body?.captions[index];
         const is_primary = req.body?.is_primarys[index];
@@ -243,7 +248,13 @@ class HotelImageController {
           const objectName = `${folder}/${newName}`;
           await minioConfig
             .getClient()
-            .putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
+            .putObject(
+              DEFAULT_MINIO.BUCKET,
+              objectName,
+              file.buffer,
+              file.size,
+              metaData
+            );
 
           const caption = req.body?.captions[index];
           const is_primary = req.body?.is_primarys[index];

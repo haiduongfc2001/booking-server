@@ -8,16 +8,13 @@ interface RoomType {
 }
 
 // Function to calculate room discount
-async function calculateRoomDiscount(
-  room_type_id: number,
-  roomType: RoomType
-): Promise<number> {
+async function calculateRoomDiscount(roomType: RoomType): Promise<number> {
   const now = new Date();
 
   // Fetch the active promotion for the room type
   const promotion = await Promotion.findOne({
     where: {
-      room_type_id,
+      room_type_id: roomType.id,
       start_date: { [Op.lte]: now },
       end_date: { [Op.gte]: now },
     },

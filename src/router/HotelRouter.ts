@@ -22,9 +22,9 @@ class HotelRoutes extends BaseRoutes {
       authFullRole,
       HotelController.getHotelById
     );
-    this.router.get(
+    this.router.post(
       "/:hotel_id/getHotelDetail",
-      authFullRole,
+      // authFullRole,
       HotelController.getHotelDetail
     );
     this.router.get(
@@ -44,12 +44,12 @@ class HotelRoutes extends BaseRoutes {
     );
     this.router.get(
       "/getOutstandingHotels",
-      authFullRole,
+      // authFullRole,
       HotelController.getOutstandingHotels
     );
-    this.router.get(
+    this.router.post(
       "/getHotelSearchResults",
-      authFullRole,
+      // authFullRole,
       // updateRoomStatus,
       HotelController.getHotelSearchResults
     );

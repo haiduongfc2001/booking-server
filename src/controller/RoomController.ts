@@ -95,7 +95,13 @@ class RoomController {
           const objectName = `${folder}/${newName}`;
           await minioConfig
             .getClient()
-            .putObject(DEFAULT_MINIO.BUCKET, objectName, file.buffer, metaData);
+            .putObject(
+              DEFAULT_MINIO.BUCKET,
+              objectName,
+              file.buffer,
+              file.size,
+              metaData
+            );
 
           // Create a new RoomImage object with room_id, fileUrl, caption, and is_primary
           const newRoomImage = new RoomImage({

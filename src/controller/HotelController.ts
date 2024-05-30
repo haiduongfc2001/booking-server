@@ -13,6 +13,9 @@ import { Room } from "../model/Room";
 import { Booking } from "../model/Booking";
 import { RoomBooking } from "../model/RoomBooking";
 import { RoomType } from "../model/RoomType";
+import { calculateRoomDiscount } from "../utils/CalculateRoomDiscount";
+import { Promotion } from "../model/Promotion";
+import { getDateOnly } from "../utils/DateConversion";
 
 class HotelController {
   async createHotel(req: Request, res: Response) {
@@ -104,48 +107,157 @@ class HotelController {
   async getHotelDetail(req: Request, res: Response) {
     try {
       const hotel_id = parseInt(req.params?.hotel_id);
+      const {
+        check_in_date,
+        check_out_date,
+        num_adults,
+        num_children,
+        num_rooms,
+        children_ages,
+        filters,
+      } = req.body;
 
-      const existingHotel = await Hotel.findByPk(hotel_id);
+      const hotel = await Hotel.findByPk(hotel_id, {
+        include: [
+          {
+            model: RoomType,
+            include: [
+              {
+                model: Room,
+                include: [
+                  {
+                    model: RoomBooking,
+                    include: [
+                      {
+                        model: Booking,
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+          { model: HotelImage },
+        ],
+      });
 
-      if (!existingHotel) {
+      if (!hotel) {
         return res.status(404).json({
           status: 404,
           message: "Hotel not found!",
         });
       }
 
-      const hotelImages = await HotelImage.findAll({
-        where: {
-          hotel_id,
-        },
-        order: [["id", "asc"]],
-      });
+      const formattedCheckInDate = getDateOnly(check_in_date);
+      const formattedCheckOutDate = getDateOnly(check_out_date);
 
-      const roomListByHotelId = await new RoomRepo().retrieveAllRoomsByHotelId(
-        hotel_id
+      let min_room_price = Infinity;
+      let original_room_price = 0;
+
+      const availableRoomTypes = await Promise.all(
+        hotel.roomTypes.map(async (roomType) => {
+          const room_discount = await calculateRoomDiscount(roomType); // Thêm await ở đây
+
+          const effectivePrice = roomType.base_price - room_discount;
+
+          if (filters?.price_range?.length === 2) {
+            const [minPrice, maxPrice] = filters.price_range;
+            if (effectivePrice < minPrice || effectivePrice > maxPrice) {
+              return null;
+            }
+          }
+
+          const availableRooms = roomType.rooms.filter(
+            (room) =>
+              !room.roomBookings.some((roomBooking) => {
+                const checkIn = new Date(roomBooking.booking.check_in);
+                const checkOut = new Date(roomBooking.booking.check_out);
+                return (
+                  checkIn <= formattedCheckOutDate &&
+                  checkOut >= formattedCheckInDate
+                );
+              })
+          );
+
+          if (availableRooms.length >= num_rooms) {
+            if (effectivePrice < min_room_price) {
+              min_room_price = effectivePrice;
+              original_room_price = roomType.base_price;
+            }
+            return {
+              ...roomType.toJSON(),
+              room_discount,
+              num_rooms: availableRooms.length,
+              rooms: availableRooms
+                .map((room) => room.toJSON())
+                .sort((a, b) => a.id - b.id),
+              effectivePrice,
+            };
+          }
+
+          return null;
+        })
       );
 
-      const hotelInfo = {
-        ...existingHotel.toJSON(),
-        images: hotelImages.map((image) => ({
-          id: image.id,
-          url: image.url,
-          caption: image.caption,
-          is_primary: image.is_primary,
-        })),
-        roomList: roomListByHotelId.map((room) => ({
-          id: room.id,
-          number: room.number,
-          room_type_id: room.room_type_id,
-          description: room.description,
-          status: room.status,
-        })),
-      };
+      const filteredRoomTypes = availableRoomTypes.filter(
+        (roomType) => roomType !== null
+      );
+
+      if (filteredRoomTypes.length > 0) {
+        const hotelImages = await Promise.all(
+          hotel.hotelImages.map(async (image) => {
+            try {
+              const presignedUrl = await new Promise<string>(
+                (resolve, reject) => {
+                  minioConfig
+                    .getClient()
+                    .presignedGetObject(
+                      DEFAULT_MINIO.BUCKET,
+                      `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.id}/${image.url}`,
+                      24 * 60 * 60,
+                      (err, presignedUrl) => {
+                        if (err) reject(err);
+                        else resolve(presignedUrl);
+                      }
+                    );
+                }
+              );
+
+              return {
+                ...image.toJSON(),
+                url: presignedUrl,
+              };
+            } catch (error) {
+              console.error("Error generating presigned URL:", error);
+              return null;
+            }
+          })
+        );
+
+        const { street, ward, district, province } = hotel;
+        return res.status(200).json({
+          status: 200,
+          data: {
+            id: hotel.id,
+            name: hotel.name,
+            street,
+            ward,
+            district,
+            province,
+            address: `${street}, ${ward}, ${district}, ${province}`,
+            description: hotel.description,
+            min_room_price,
+            original_room_price,
+            images: hotelImages.filter((image) => image !== null),
+            room_types: filteredRoomTypes,
+          },
+        });
+      }
 
       return res.status(200).json({
         status: 200,
-        message: `Successfully fetched hotel by id ${hotel_id}!`,
-        data: hotelInfo,
+        message: `No available room types for hotel id ${hotel_id}!`,
+        data: [],
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
@@ -395,8 +507,8 @@ class HotelController {
       //   numRooms: 2,
       //   numAdults: 3,
       //   numChildren: 2,
+      //   childrenAges: [7, 10],
       //   filters: {
-      //     childrenAges: [7, 10],
       //     priceRange: [0, 4500000],
       //     selectedHotelAmenities: ["Bể bơi", "Bãi để xe"],
       //     selectedRoomAmenities: ["Điều hòa", Tivi],
@@ -419,8 +531,9 @@ class HotelController {
         num_rooms,
         num_adults,
         num_children,
+        children_ages = [], // default to empty array if not provided
+        filters,
         //   filters: {
-        //     childrenAges: [7, 10],
         //     priceRange: [0, 4500000],
         //     selectedHotelAmenities: ["Bể bơi", "Bãi để xe"],
         //     selectedRoomAmenities: ["Điều hòa", Tivi],
@@ -432,15 +545,38 @@ class HotelController {
       } = req.body;
 
       const offset = (page - 1) * size;
-      const formattedCheckInDate = new Date(check_in_date);
-      const formattedCheckOutDate = new Date(check_out_date);
+
+      const formattedCheckInDate = getDateOnly(check_in_date);
+      const formattedCheckOutDate = getDateOnly(check_out_date);
+
+      const today = new Date();
+      const todayDateOnly = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
+      );
+
+      // Ensure check-in date is not in the past
+      if (formattedCheckInDate < todayDateOnly) {
+        return res.status(400).json({
+          message: "Check-in date not valid!",
+        });
+      }
+
+      // Ensure check-out date is at least one day after check-in date
+      const nextDayAfterCheckIn = new Date(formattedCheckInDate);
+      nextDayAfterCheckIn.setDate(nextDayAfterCheckIn.getDate() + 1);
+
+      if (formattedCheckOutDate < nextDayAfterCheckIn) {
+        return res.status(400).json({
+          message: "Check-out date not valid!",
+        });
+      }
 
       console.log("Searching hotels...");
 
       const hotels = await Hotel.findAll({
-        where: {
-          province: { [Op.iLike]: `%${location}%` },
-        },
+        where: { province: { [Op.iLike]: `%${location}%` } },
         include: [
           {
             model: RoomType,
@@ -497,8 +633,20 @@ class HotelController {
                   },
                 ],
               },
+              {
+                model: Promotion,
+                required: false,
+                where: {
+                  is_active: true,
+                  [Op.and]: [
+                    { start_date: { [Op.lte]: formattedCheckInDate } },
+                    { end_date: { [Op.gte]: formattedCheckOutDate } },
+                  ],
+                },
+              },
             ],
           },
+          { model: HotelImage, required: true },
         ],
         limit: size,
         offset: offset,
@@ -506,74 +654,394 @@ class HotelController {
 
       console.log("Hotels found:", hotels.length);
 
-      const availableHotels = hotels
-        .map((hotel) => {
-          const availableRoomTypes = hotel.roomTypes
-            .map((roomType) => {
-              const availableRooms = roomType.rooms.filter((room) => {
-                const hasBookingConflict = room.roomBookings.some((booking) => {
-                  const checkIn = new Date(booking.booking.check_in);
-                  const checkOut = new Date(booking.booking.check_out);
-                  return (
-                    checkIn <= formattedCheckOutDate &&
-                    checkOut >= formattedCheckInDate
-                  );
-                });
+      const availableHotels = await Promise.all(
+        hotels.map(async (hotel) => {
+          let min_room_price = Infinity;
+          let original_room_price = 0;
 
-                return !hasBookingConflict;
-              });
+          const availableRoomTypes = await Promise.all(
+            hotel.roomTypes.map(async (roomType) => {
+              const room_discount = await calculateRoomDiscount(roomType);
+              const effectivePrice = roomType.base_price - room_discount;
+
+              if (filters?.price_range?.length === 2) {
+                const [minPrice, maxPrice] = filters.price_range;
+                if (effectivePrice < minPrice || effectivePrice > maxPrice) {
+                  return null;
+                }
+              }
+
+              const availableRooms = roomType.rooms.filter(
+                (room) =>
+                  !room.roomBookings.some((roomBooking) => {
+                    const checkIn = new Date(roomBooking.booking.check_in);
+                    const checkOut = new Date(roomBooking.booking.check_out);
+                    return (
+                      checkIn <= formattedCheckOutDate &&
+                      checkOut >= formattedCheckInDate
+                    );
+                  })
+              );
 
               if (availableRooms.length >= num_rooms) {
+                if (effectivePrice < min_room_price) {
+                  min_room_price = effectivePrice;
+                  original_room_price = roomType.base_price;
+                }
                 return {
-                  id: roomType.id,
-                  name: roomType.name,
-                  description: roomType.description,
-                  numRooms: availableRooms.length,
+                  ...roomType.toJSON(),
+                  room_discount,
+                  num_rooms: availableRooms.length,
                   rooms: availableRooms
-                    .map((room) => ({
-                      id: room.id,
-                      description: room.description,
-                    }))
+                    .map((room) => room.toJSON())
                     .sort((a, b) => a.id - b.id),
+                  effectivePrice,
                 };
               }
 
               return null;
             })
-            .filter((roomType) => roomType !== null);
+          );
 
-          if (availableRoomTypes.length > 0) {
+          const filteredRoomTypes = availableRoomTypes.filter(
+            (roomType) => roomType !== null
+          );
+
+          if (filteredRoomTypes.length > 0) {
+            const hotelImages = await Promise.all(
+              hotel.hotelImages.map(async (image) => {
+                const presignedUrl = await new Promise<string>(
+                  (resolve, reject) => {
+                    minioConfig
+                      .getClient()
+                      .presignedGetObject(
+                        DEFAULT_MINIO.BUCKET,
+                        `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.id}/${image.url}`,
+                        24 * 60 * 60,
+                        (err, presignedUrl) => {
+                          if (err) reject(err);
+                          else resolve(presignedUrl);
+                        }
+                      );
+                  }
+                );
+
+                return {
+                  ...image.toJSON(),
+                  url: presignedUrl,
+                };
+              })
+            );
+
+            const { street, ward, district, province } = hotel;
             return {
               id: hotel.id,
               name: hotel.name,
-              address: `${hotel.street}, ${hotel.ward}, ${hotel.district}, ${hotel.province}`,
-              roomTypes: availableRoomTypes,
+              street,
+              ward,
+              district,
+              province,
+              address: `${street}, ${ward}, ${district}, ${province}`,
+              description: hotel.description,
+              min_room_price,
+              original_room_price,
+              images: hotelImages,
+              room_types: filteredRoomTypes,
             };
           }
 
           return null;
         })
-        .filter((hotel) => hotel !== null);
+      );
+
+      const filteredHotels = availableHotels.filter((hotel) => hotel !== null);
 
       return res.status(200).json({
         status: 200,
         message: "Successfully fetched hotel search results data!",
         data: {
-          total: availableHotels.length,
-          items: availableHotels,
+          total: filteredHotels.length,
+          items: filteredHotels,
         },
       });
     } catch (error) {
-      if (error instanceof Error) {
-        return ErrorHandler.handleServerError(res, error.message);
-      } else {
-        return ErrorHandler.handleServerError(
-          res,
-          "An unknown error occurred."
-        );
-      }
+      return ErrorHandler.handleServerError(
+        res,
+        error instanceof Error ? error.message : "An unknown error occurred."
+      );
     }
   }
 }
 
 export default new HotelController();
+
+// async getHotelSearchResults(req: Request, res: Response) {
+//   try {
+//     const {
+//       location,
+//       check_in_date,
+//       check_out_date,
+//       num_rooms,
+//       num_adults,
+//       num_children,
+//       children_ages = [],
+//       filters,
+//       //   filters: {
+//       //     priceRange: [0, 4500000],
+//       //     selectedHotelAmenities: ["Bể bơi", "Bãi để xe"],
+//       //     selectedRoomAmenities: ["Điều hòa", Tivi],
+//       //     paymentOptions: ["Hủy miễn phí", "Thanh toán liền"],
+//       //     minRating: "8.0",
+//       //   },
+//       page = PAGINATION.INITIAL_PAGE,
+//       size = PAGINATION.PAGE_SIZE,
+//     } = req.body;
+
+//     const offset = (page - 1) * size;
+//     const formattedCheckInDate = new Date(check_in_date);
+//     const formattedCheckOutDate = new Date(check_out_date);
+
+//     // Ensure check-in date is not in the past
+//     if (formattedCheckInDate < new Date()) {
+//       return res.status(400).json({
+//         message: "Check-in date not valid!",
+//       });
+//     }
+
+//     // Ensure check-out date is at least one day after check-in date
+//     if (
+//       formattedCheckOutDate <
+//       new Date(formattedCheckInDate.getTime() + 24 * 60 * 60 * 1000)
+//     ) {
+//       return res.status(400).json({
+//         message: "Check-out date not valid!",
+//       });
+//     }
+
+//     console.log("Searching hotels...");
+
+//     const hotels = await Hotel.findAll({
+//       where: {
+//         province: { [Op.iLike]: `%${location}%` },
+//       },
+//       include: [
+//         {
+//           model: RoomType,
+//           required: true,
+//           where: {
+//             standard_occupant: { [Op.gte]: num_adults },
+//             max_children: { [Op.gte]: num_children },
+//           },
+//           include: [
+//             {
+//               model: Room,
+//               required: true,
+//               include: [
+//                 {
+//                   model: RoomBooking,
+//                   required: false,
+//                   include: [
+//                     {
+//                       model: Booking,
+//                       where: {
+//                         [Op.or]: [
+//                           {
+//                             check_in: {
+//                               [Op.between]: [
+//                                 formattedCheckInDate,
+//                                 formattedCheckOutDate,
+//                               ],
+//                             },
+//                           },
+//                           {
+//                             check_out: {
+//                               [Op.between]: [
+//                                 formattedCheckInDate,
+//                                 formattedCheckOutDate,
+//                               ],
+//                             },
+//                           },
+//                           {
+//                             [Op.and]: [
+//                               {
+//                                 check_in: { [Op.lte]: formattedCheckInDate },
+//                               },
+//                               {
+//                                 check_out: {
+//                                   [Op.gte]: formattedCheckOutDate,
+//                                 },
+//                               },
+//                             ],
+//                           },
+//                         ],
+//                       },
+//                     },
+//                   ],
+//                 },
+//               ],
+//             },
+//             {
+//               model: Promotion,
+//               required: false,
+//               where: {
+//                 is_active: true,
+//                 [Op.and]: [
+//                   { start_date: { [Op.lte]: formattedCheckInDate } },
+//                   { end_date: { [Op.gte]: formattedCheckOutDate } },
+//                 ],
+//               },
+//             },
+//           ],
+//         },
+//         {
+//           model: HotelImage,
+//           required: true,
+//         },
+//       ],
+//       limit: size,
+//       offset: offset,
+//     });
+
+//     console.log("Hotels found:", hotels.length);
+
+//     let min_room_price = Infinity;
+//     let original_room_price = 0;
+
+//     const availableHotels = await Promise.all(
+//       hotels.map(async (hotel) => {
+//         const availableRoomTypes = await Promise.all(
+//           hotel.roomTypes.map(async (roomType) => {
+//             // Calculate the effective price considering the room discount
+//             const room_discount = await calculateRoomDiscount(roomType);
+//             const effectivePrice = roomType.base_price - room_discount;
+
+//             // Check if the effective price is within the price range
+//             if (filters?.price_range?.length === 2) {
+//               const [minPrice, maxPrice] = filters.price_range;
+//               if (
+//                 effectivePrice < minPrice ||
+//                 effectivePrice > maxPrice ||
+//                 (minPrice === UNLIMITED_PRICE && effectivePrice < minPrice)
+//               ) {
+//                 return null;
+//               }
+//             }
+
+//             // Filter rooms based on availability
+//             const availableRooms = roomType.rooms.filter((room) => {
+//               return !room.roomBookings.some((roomBooking) => {
+//                 const checkIn = new Date(roomBooking.booking.check_in);
+//                 const checkOut = new Date(roomBooking.booking.check_out);
+//                 return (
+//                   checkIn <= formattedCheckOutDate &&
+//                   checkOut >= formattedCheckInDate
+//                 );
+//               });
+//             });
+
+//             // Check if there are enough available rooms
+//             if (availableRooms.length >= num_rooms) {
+//               if (effectivePrice < min_room_price) {
+//                 min_room_price = effectivePrice;
+//                 original_room_price = roomType.base_price;
+//               }
+
+//               return {
+//                 id: roomType.id,
+//                 name: roomType.name,
+//                 description: roomType.description,
+//                 standard_occupant: roomType.standard_occupant,
+//                 max_children: roomType.max_children,
+//                 max_occupant: roomType.max_occupant,
+//                 base_price: roomType.base_price,
+//                 room_discount,
+//                 numRooms: availableRooms.length,
+//                 rooms: availableRooms
+//                   .map((room) => ({
+//                     id: room.id,
+//                     number: room.number,
+//                     description: room.description,
+//                   }))
+//                   .sort((a, b) => a.id - b.id),
+//                 effectivePrice,
+//               };
+//             }
+
+//             return null;
+//           })
+//         );
+
+//         const filteredRoomTypes = availableRoomTypes.filter(
+//           (roomType) => roomType !== null
+//         );
+
+//         if (filteredRoomTypes.length > 0) {
+//           const hotelImages = await Promise.all(
+//             hotel.hotelImages.map(async (image: any) => {
+//               // Generate presigned URL for hotel image
+//               const presignedUrl = await new Promise<string>(
+//                 (resolve, reject) => {
+//                   minioConfig
+//                     .getClient()
+//                     .presignedGetObject(
+//                       DEFAULT_MINIO.BUCKET,
+//                       `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.id}/${image.url}`,
+//                       24 * 60 * 60,
+//                       (err, presignedUrl) => {
+//                         if (err) reject(err);
+//                         else resolve(presignedUrl);
+//                       }
+//                     );
+//                 }
+//               );
+
+//               // Return image object with presigned URL
+//               return {
+//                 id: image.id,
+//                 url: presignedUrl,
+//                 caption: image.caption,
+//                 is_primary: image.is_primary,
+//               };
+//             })
+//           );
+
+//           return {
+//             id: hotel.id,
+//             name: hotel.name,
+//             street: hotel.street,
+//             ward: hotel.ward,
+//             district: hotel.district,
+//             province: hotel.province,
+//             address: `${hotel.street}, ${hotel.ward}, ${hotel.district}, ${hotel.province}`,
+//             images: hotelImages,
+//             min_room_price,
+//             original_room_price,
+//             roomTypes: filteredRoomTypes,
+//           };
+//         }
+
+//         return null;
+//       })
+//     );
+
+//     const filteredHotels = availableHotels.filter((hotel) => hotel !== null);
+
+//     return res.status(200).json({
+//       status: 200,
+//       message: "Successfully fetched hotel search results data!",
+//       data: {
+//         total: filteredHotels.length,
+//         items: filteredHotels,
+//       },
+//     });
+//   } catch (error) {
+//     if (error instanceof Error) {
+//       return ErrorHandler.handleServerError(res, error.message);
+//     } else {
+//       return ErrorHandler.handleServerError(
+//         res,
+//         "An unknown error occurred."
+//       );
+//     }
+//   }
+// }

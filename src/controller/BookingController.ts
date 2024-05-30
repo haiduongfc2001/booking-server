@@ -145,7 +145,7 @@ class BookingController {
         });
       }
 
-      const room_discount = await calculateRoomDiscount(room_type_id, roomType);
+      const room_discount = await calculateRoomDiscount(roomType);
 
       const bookingCode = `${dayjs(Date.now()).format(
         "YYYYMMDDHHmmss"

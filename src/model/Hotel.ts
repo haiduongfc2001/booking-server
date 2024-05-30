@@ -74,5 +74,5 @@ export class Hotel extends Model {
   policies!: Policy[];
 
   @HasMany(() => HotelImage)
-  hotel_images!: HotelImage[];
+  hotelImages!: HotelImage[];
 }

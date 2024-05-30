@@ -53,3 +53,5 @@ export const PAGINATION = {
 };
 
 export const BUFFER_ENCODE: BufferEncoding = "utf-8";
+
+export const UNLIMITED_PRICE: number = 5000000;
