@@ -51,11 +51,11 @@ async function getAvailableHotel(
   const availableRoomTypes = await Promise.all(
     hotel.roomTypes.map(async (roomType) => {
       const room_discount = await calculateRoomDiscount(roomType);
-      const effectivePrice = roomType.base_price - room_discount;
+      const effective_price = roomType.base_price - room_discount;
 
       if (filters?.price_range?.length === 2) {
         const [minPrice, maxPrice] = filters.price_range;
-        if (effectivePrice < minPrice || effectivePrice > maxPrice) {
+        if (effective_price < minPrice || effective_price > maxPrice) {
           return null;
         }
       }
@@ -80,7 +80,7 @@ async function getAvailableHotel(
           rooms: availableRooms
             .map((room) => room.toJSON())
             .sort((a, b) => a.id - b.id),
-          effectivePrice,
+          effective_price,
         };
       }
 

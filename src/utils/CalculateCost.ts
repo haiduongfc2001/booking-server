@@ -2,7 +2,7 @@ interface Room {
   adults: number;
   children: number[];
   cost?: number;
-  surcharges?: number;
+  surcharges: number;
 }
 
 interface SurchargeRates {
@@ -11,6 +11,7 @@ interface SurchargeRates {
 
 interface CustomerRequest {
   num_rooms: number;
+  num_nights: number;
   num_adults: number;
   num_children: number;
   children_ages: number[];
@@ -24,12 +25,18 @@ interface HotelPolicy {
   max_occupant: number;
   max_extra_bed: number;
   surcharge_rates: SurchargeRates;
+  service_fee: number;
+  tax: number;
 }
 
 interface CalculationResult {
-  totalCost: number;
-  basePrice: number;
-  roomDiscount: number;
+  room_price_per_night: number;
+  total_room_price: number;
+  total_service_fee: number;
+  total_tax: number;
+  final_price: number;
+  base_price: number;
+  room_discount: number;
   rooms: Room[];
 }
 
@@ -37,8 +44,7 @@ const calculateCost = (
   customerRequest: CustomerRequest,
   hotelPolicy: HotelPolicy
 ): CalculationResult => {
-  const { num_rooms, num_adults, num_children, children_ages } =
-    customerRequest;
+  const { num_rooms, num_adults, num_nights, children_ages } = customerRequest;
 
   const {
     base_price,
@@ -46,8 +52,9 @@ const calculateCost = (
     standard_occupant,
     max_children,
     max_occupant,
-    max_extra_bed,
     surcharge_rates,
+    service_fee,
+    tax,
   } = hotelPolicy;
 
   const sortedChildren = children_ages.sort((a, b) => b - a); // Sort children by age descending
@@ -56,7 +63,7 @@ const calculateCost = (
 
   let rooms: Room[] = Array(totalRooms)
     .fill(null)
-    .map(() => ({ adults: 0, children: [] }));
+    .map(() => ({ adults: 0, children: [], surcharges: 0 }));
   let adultsRemaining = num_adults;
   let childrenRemaining = [...sortedChildren];
 
@@ -113,7 +120,7 @@ const calculateCost = (
   }
 
   // Step 5: Calculate costs and surcharges for each room
-  let totalCost = 0;
+  let totalCostPerNight = 0;
   for (const room of rooms) {
     let roomCost = effectiveRoomPrice;
     let surcharges = 0;
@@ -147,15 +154,25 @@ const calculateCost = (
       }
     }
 
+    room.cost = roomCost;
     room.surcharges = surcharges;
-    totalCost += roomCost;
+    totalCostPerNight += roomCost;
   }
+
+  const total_room_price = totalCostPerNight * num_nights;
+  const total_service_fee = Math.floor(total_room_price * (service_fee / 100));
+  const total_tax = Math.floor(total_room_price * (tax / 100));
+  const final_price = total_room_price + total_service_fee + total_tax;
 
   console.log("Room allocations:", rooms); // Log room allocations
   return {
-    totalCost,
-    basePrice: base_price,
-    roomDiscount: room_discount,
+    room_price_per_night: totalCostPerNight,
+    total_room_price,
+    total_service_fee,
+    total_tax,
+    final_price,
+    base_price,
+    room_discount,
     rooms,
   };
 };

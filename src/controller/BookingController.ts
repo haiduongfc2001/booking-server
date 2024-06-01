@@ -8,16 +8,18 @@ import generateRandomString from "../utils/RandomString";
 import dayjs from "dayjs";
 import { toUpperCase } from "../utils/StringConversion";
 import { Policy } from "../model/Policy";
-import { Promotion } from "../model/Promotion";
-import { Op } from "sequelize";
-import {
-  BOOKING_STATUS,
-  DISCOUNT_TYPE,
-  ROOM_STATUS,
-} from "../config/enum.config";
+import { BOOKING_STATUS, ROOM_STATUS } from "../config/enum.config";
 import { calculateRoomDiscount } from "../utils/CalculateRoomDiscount";
 import { RoomBooking } from "../model/RoomBooking";
 import { Room } from "../model/Room";
+import calculateNumberOfNights from "../utils/CalculateNumNights";
+import { Hotel } from "../model/Hotel";
+import { Bed } from "../model/Bed";
+import { Customer } from "../model/Customer";
+import { HotelImage } from "../model/HotelImage";
+import { RoomImage } from "../model/RoomImage";
+import { minioConfig } from "../config/minio.config";
+import { DEFAULT_MINIO } from "../config/constant.config";
 
 interface Child {
   age: number;
@@ -66,6 +68,8 @@ class BookingController {
 
   async calculateMinCost(req: Request, res: Response) {
     const {
+      check_in,
+      check_out,
       num_rooms,
       num_adults,
       num_children,
@@ -77,6 +81,8 @@ class BookingController {
       max_occupant,
       max_extra_bed,
       surcharge_rates,
+      service_fee,
+      tax,
     } = req.body;
 
     // Validate input
@@ -91,14 +97,19 @@ class BookingController {
       typeof max_children !== "number" ||
       typeof max_occupant !== "number" ||
       typeof max_extra_bed !== "number" ||
-      typeof surcharge_rates !== "object"
+      typeof surcharge_rates !== "object" ||
+      typeof service_fee !== "number" ||
+      typeof tax !== "number"
     ) {
       return res.status(400).send("Invalid request data");
     }
 
+    const num_nights = calculateNumberOfNights(check_in, check_out);
+
     const customerRequest = {
       num_rooms,
       num_adults,
+      num_nights,
       num_children,
       children_ages,
     };
@@ -111,6 +122,8 @@ class BookingController {
       max_occupant,
       max_extra_bed,
       surcharge_rates,
+      service_fee,
+      tax,
     };
 
     const result = calculateCost(customerRequest, hotelPolicy);
@@ -131,19 +144,39 @@ class BookingController {
         room_type_id,
       } = req.body;
 
-      const roomType = await RoomType.findOne({
-        where: {
-          id: room_type_id,
-          hotel_id,
-        },
+      const customer = await Customer.findByPk(customer_id);
+
+      if (!customer) {
+        return res.status(404).json({
+          status: 404,
+          message: "Customer not found!",
+        });
+      }
+
+      const hotel = await Hotel.findByPk(hotel_id, {
+        include: [
+          {
+            model: RoomType,
+            where: { id: room_type_id },
+            include: [Bed, RoomImage],
+          },
+          {
+            model: HotelImage,
+          },
+          {
+            model: Policy,
+          },
+        ],
       });
 
-      if (!roomType) {
+      if (!hotel || !hotel.roomTypes || hotel.roomTypes.length === 0) {
         return res.status(404).json({
           status: 404,
           message: "Room not found!",
         });
       }
+
+      const roomType = hotel.roomTypes[0]; // Assuming you are getting only one RoomType
 
       const room_discount = await calculateRoomDiscount(roomType);
 
@@ -151,9 +184,12 @@ class BookingController {
         "YYYYMMDDHHmmss"
       )}_${toUpperCase(generateRandomString(8))}`;
 
+      const num_nights = calculateNumberOfNights(check_in, check_out);
+
       const customerRequest = {
         num_rooms,
         num_adults,
+        num_nights,
         num_children,
         children_ages,
       };
@@ -190,16 +226,9 @@ class BookingController {
       const cost = calculateCost(customerRequest, {
         ...hotelPolicy,
         surcharge_rates: hotelSurChargeRates,
+        service_fee: hotelServiceFee,
+        tax: hotelTax,
       });
-      const total_room_price = cost.totalCost;
-      const service_fee = Math.round(
-        cost.basePrice * num_rooms * (hotelServiceFee / 100)
-      );
-      const tax = Math.round(
-        (total_room_price + service_fee) * (hotelTax / 100)
-      );
-
-      const final_price = total_room_price + service_fee + tax;
 
       const createdAt = new Date();
       const expiresAt = new Date(createdAt.getTime() + 15 * 60 * 1000);
@@ -226,8 +255,8 @@ class BookingController {
         customer_id,
         check_in,
         check_out,
-        total_room_price,
-        tax_and_fee: service_fee + tax,
+        total_room_price: cost.total_room_price,
+        tax_and_fee: cost.total_service_fee + cost.total_tax,
         status: BOOKING_STATUS.PENDING,
         expires_at: expiresAt,
       });
@@ -245,9 +274,9 @@ class BookingController {
             num_adults: roomData.adults,
             num_children: roomData.children.length,
             children_ages: roomData.children,
-            base_price: cost.basePrice,
+            base_price: cost.base_price,
             surcharge: roomData.surcharges,
-            discount: cost.roomDiscount,
+            discount: cost.room_discount,
             status: ROOM_STATUS.UNAVAILABLE, // Mark room as unavailable
           });
 
@@ -259,29 +288,105 @@ class BookingController {
         })
       );
 
+      let hotelImages = [];
+      if (hotel.hotelImages && hotel.hotelImages.length > 0) {
+        hotelImages = await Promise.all(
+          hotel.hotelImages.map(async (image) => {
+            try {
+              const presignedUrl = await new Promise<string>(
+                (resolve, reject) => {
+                  minioConfig
+                    .getClient()
+                    .presignedGetObject(
+                      DEFAULT_MINIO.BUCKET,
+                      `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.id}/${image.url}`,
+                      24 * 60 * 60,
+                      (err, presignedUrl) => {
+                        if (err) reject(err);
+                        else resolve(presignedUrl);
+                      }
+                    );
+                }
+              );
+
+              return {
+                ...image.toJSON(),
+                url: presignedUrl,
+              };
+            } catch (error) {
+              console.error("Error generating presigned URL:", error);
+              return null;
+            }
+          })
+        );
+      }
+
+      let roomTypeImages = [];
+      if (roomType.roomImages && roomType.roomImages.length > 0) {
+        roomTypeImages = await Promise.all(
+          roomType.roomImages.map(async (image) => {
+            try {
+              const presignedUrl = await new Promise<string>(
+                (resolve, reject) => {
+                  minioConfig
+                    .getClient()
+                    .presignedGetObject(
+                      DEFAULT_MINIO.BUCKET,
+                      `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${roomType.id}/${image.url}`,
+                      24 * 60 * 60,
+                      (err, presignedUrl) => {
+                        if (err) reject(err);
+                        else resolve(presignedUrl);
+                      }
+                    );
+                }
+              );
+
+              return {
+                ...image.toJSON(),
+                url: presignedUrl,
+              };
+            } catch (error) {
+              console.error("Error generating presigned URL:", error);
+              return null;
+            }
+          })
+        );
+      }
+
+      const { total_room_price, total_service_fee, total_tax, final_price } =
+        cost;
+
       return res.status(200).json({
-        status: 200,
+        status: 201,
         message: "Booking created successfully!",
         data: {
+          hotel: {
+            ...hotel.toJSON(),
+            hotelImages,
+            roomTypes: { ...roomType.toJSON(), roomImages: roomTypeImages },
+            address: `${hotel.street}, ${hotel.ward}, ${hotel.district}, ${hotel.province}`,
+          },
+          cost,
           code: bookingCode,
-          customer_id,
+          customer,
           check_in,
           check_out,
           num_adults,
           num_children,
           num_rooms,
           total_room_price,
-          service_fee,
-          tax,
+          total_service_fee,
+          total_tax,
           final_price,
           room_bookings: selectedRooms.map((room, index) => ({
             room_id: room.id,
             num_adults: cost.rooms[index].adults,
             num_children: cost.rooms[index].children.length,
             children_ages: cost.rooms[index].children,
-            base_price: cost.basePrice,
+            base_price: cost.base_price,
             surcharge: cost.rooms[index].surcharges,
-            discount: cost.roomDiscount,
+            discount: cost.room_discount,
           })),
           status: BOOKING_STATUS.PENDING,
         },

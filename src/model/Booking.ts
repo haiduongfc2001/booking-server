@@ -77,12 +77,12 @@ export class Booking extends Model {
   })
   status!: BOOKING_STATUS;
 
-  @HasMany(() => RoomBooking)
-  roomBookings!: RoomBooking[];
-
   @Column({
     type: DataType.DATE,
     allowNull: false,
   })
   expires_at!: Date;
+
+  @HasMany(() => RoomBooking)
+  roomBookings!: RoomBooking[];
 }

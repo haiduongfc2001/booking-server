@@ -14,7 +14,7 @@ export const generateCustomerToken = (
 ): string => {
   const payload: UserPayload = { id, email, role: ROLE.CUSTOMER };
   const secret = process.env.JWT_SECRET as string;
-  const token = jwt.sign(payload, secret, { expiresIn });
+  const token = jwt.sign(payload, secret, {});
   return token;
 };
 

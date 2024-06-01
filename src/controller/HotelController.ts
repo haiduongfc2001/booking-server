@@ -16,6 +16,11 @@ import { RoomType } from "../model/RoomType";
 import { calculateRoomDiscount } from "../utils/CalculateRoomDiscount";
 import { Promotion } from "../model/Promotion";
 import { getDateOnly } from "../utils/DateConversion";
+import calculateCost from "../utils/CalculateCost";
+import { Policy } from "../model/Policy";
+import { RoomImage } from "../model/RoomImage";
+import { Bed } from "../model/Bed";
+import calculateNumberOfNights from "../utils/CalculateNumNights";
 
 class HotelController {
   async createHotel(req: Request, res: Response) {
@@ -108,12 +113,12 @@ class HotelController {
     try {
       const hotel_id = parseInt(req.params?.hotel_id);
       const {
-        check_in_date,
-        check_out_date,
+        check_in,
+        check_out,
         num_adults,
         num_children,
         num_rooms,
-        children_ages,
+        children_ages = [],
         filters,
       } = req.body;
 
@@ -135,9 +140,11 @@ class HotelController {
                   },
                 ],
               },
+              { model: Bed },
             ],
           },
           { model: HotelImage },
+          { model: Policy },
         ],
       });
 
@@ -148,21 +155,52 @@ class HotelController {
         });
       }
 
-      const formattedCheckInDate = getDateOnly(check_in_date);
-      const formattedCheckOutDate = getDateOnly(check_out_date);
+      let tax: number = 0;
+      let service_fee: number = 0;
+      let surcharge_rates: { [key: string]: any } = {};
+
+      hotel.policies.forEach((policy) => {
+        if (policy.type === "TAX") {
+          tax = Number(policy.value);
+        } else if (policy.type === "SERVICE_FEE") {
+          service_fee = Number(policy.value);
+        } else if (policy.type === "SURCHARGE_RATES") {
+          surcharge_rates = JSON.parse(policy.value);
+        }
+      });
+
+      const num_nights = calculateNumberOfNights(check_in, check_out);
+
+      const customerRequest = {
+        num_rooms,
+        num_nights,
+        num_adults,
+        num_children,
+        children_ages,
+      };
+
+      const formattedCheckInDate = getDateOnly(check_in);
+      const formattedCheckOutDate = getDateOnly(check_out);
 
       let min_room_price = Infinity;
       let original_room_price = 0;
 
       const availableRoomTypes = await Promise.all(
         hotel.roomTypes.map(async (roomType) => {
-          const room_discount = await calculateRoomDiscount(roomType); // Thêm await ở đây
+          const room_discount = await calculateRoomDiscount(roomType);
+          const effective_price = roomType.base_price - room_discount;
 
-          const effectivePrice = roomType.base_price - room_discount;
+          const {
+            base_price,
+            standard_occupant,
+            max_children,
+            max_occupant,
+            max_extra_bed,
+          } = roomType;
 
           if (filters?.price_range?.length === 2) {
             const [minPrice, maxPrice] = filters.price_range;
-            if (effectivePrice < minPrice || effectivePrice > maxPrice) {
+            if (effective_price < minPrice || effective_price > maxPrice) {
               return null;
             }
           }
@@ -180,18 +218,71 @@ class HotelController {
           );
 
           if (availableRooms.length >= num_rooms) {
-            if (effectivePrice < min_room_price) {
-              min_room_price = effectivePrice;
+            if (effective_price < min_room_price) {
+              min_room_price = effective_price;
               original_room_price = roomType.base_price;
             }
+
+            let roomTypeImages = [];
+            if (roomType.roomImages && roomType.roomImages.length > 0) {
+              roomTypeImages = await Promise.all(
+                roomType.roomImages.map(async (image) => {
+                  try {
+                    const presignedUrl = await new Promise<string>(
+                      (resolve, reject) => {
+                        minioConfig
+                          .getClient()
+                          .presignedGetObject(
+                            DEFAULT_MINIO.BUCKET,
+                            `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${roomType.id}/${image.url}`,
+                            24 * 60 * 60,
+                            (err, presignedUrl) => {
+                              if (err) reject(err);
+                              else resolve(presignedUrl);
+                            }
+                          );
+                      }
+                    );
+
+                    return {
+                      ...image.toJSON(),
+                      url: presignedUrl,
+                    };
+                  } catch (error) {
+                    console.error("Error generating presigned URL:", error);
+                    return null;
+                  }
+                })
+              );
+            }
+
+            const hotelPolicy = {
+              base_price,
+              room_discount,
+              standard_occupant,
+              max_children,
+              max_occupant,
+              max_extra_bed,
+              surcharge_rates,
+              tax,
+              service_fee,
+            };
+
+            const cost = calculateCost(customerRequest, hotelPolicy);
+
+            const beds: any[] = roomType.beds;
+
             return {
               ...roomType.toJSON(),
               room_discount,
               num_rooms: availableRooms.length,
+              effective_price,
+              cost,
               rooms: availableRooms
                 .map((room) => room.toJSON())
                 .sort((a, b) => a.id - b.id),
-              effectivePrice,
+              images: roomTypeImages,
+              beds,
             };
           }
 
@@ -202,6 +293,9 @@ class HotelController {
       const filteredRoomTypes = availableRoomTypes.filter(
         (roomType) => roomType !== null
       );
+
+      // Sort the filtered room types by final_price from low to high
+      filteredRoomTypes.sort((a, b) => a.final_price - b.final_price);
 
       if (filteredRoomTypes.length > 0) {
         const hotelImages = await Promise.all(
@@ -502,8 +596,8 @@ class HotelController {
     try {
       // const payload = {
       //   location: "Hà Nội",
-      //   checkInDate: "2022-05-06",
-      //   checkOutDate: "2022-05-07",
+      //   checkIn: "2022-05-06",
+      //   checkOut: "2022-05-07",
       //   numRooms: 2,
       //   numAdults: 3,
       //   numChildren: 2,
@@ -519,15 +613,15 @@ class HotelController {
 
       // Đầu tiền là phải xét đến việc tìm kiếm theo khu vực (location), ở đây là Hà Nội.
       // Sau khi tìm được những khách sạn ở Hà Nội rồi thì tìm trong các phòng của các khách sạn đó
-      // xem trong khoảng thời gian checkInData và checkOutDate có những phòng nào có sẵn.
+      // xem trong khoảng thời gian checkInData và checkOut có những phòng nào có sẵn.
       // Tiếp theo, trong những phòng có sẵn trong khoảng thời gian đó thì sẽ xét xem những phòng
       // nào thỏa mãn số lượng người lớn, số lượng trẻ em.
       // Ví dụ khách hàng cần tìm kiếm với yêu cầu có 3 người lớn và 2 trẻ em
 
       const {
         location,
-        check_in_date,
-        check_out_date,
+        check_in,
+        check_out,
         num_rooms,
         num_adults,
         num_children,
@@ -546,8 +640,8 @@ class HotelController {
 
       const offset = (page - 1) * size;
 
-      const formattedCheckInDate = getDateOnly(check_in_date);
-      const formattedCheckOutDate = getDateOnly(check_out_date);
+      const formattedCheckInDate = getDateOnly(check_in);
+      const formattedCheckOutDate = getDateOnly(check_out);
 
       const today = new Date();
       const todayDateOnly = new Date(
@@ -662,11 +756,11 @@ class HotelController {
           const availableRoomTypes = await Promise.all(
             hotel.roomTypes.map(async (roomType) => {
               const room_discount = await calculateRoomDiscount(roomType);
-              const effectivePrice = roomType.base_price - room_discount;
+              const effective_price = roomType.base_price - room_discount;
 
               if (filters?.price_range?.length === 2) {
                 const [minPrice, maxPrice] = filters.price_range;
-                if (effectivePrice < minPrice || effectivePrice > maxPrice) {
+                if (effective_price < minPrice || effective_price > maxPrice) {
                   return null;
                 }
               }
@@ -684,8 +778,8 @@ class HotelController {
               );
 
               if (availableRooms.length >= num_rooms) {
-                if (effectivePrice < min_room_price) {
-                  min_room_price = effectivePrice;
+                if (effective_price < min_room_price) {
+                  min_room_price = effective_price;
                   original_room_price = roomType.base_price;
                 }
                 return {
@@ -695,7 +789,7 @@ class HotelController {
                   rooms: availableRooms
                     .map((room) => room.toJSON())
                     .sort((a, b) => a.id - b.id),
-                  effectivePrice,
+                  effective_price,
                 };
               }
 
@@ -705,6 +799,11 @@ class HotelController {
 
           const filteredRoomTypes = availableRoomTypes.filter(
             (roomType) => roomType !== null
+          );
+
+          // Sort the filtered room types by effective_price from low to high
+          filteredRoomTypes.sort(
+            (a, b) => a.effective_price - b.effective_price
           );
 
           if (filteredRoomTypes.length > 0) {
@@ -779,8 +878,8 @@ export default new HotelController();
 //   try {
 //     const {
 //       location,
-//       check_in_date,
-//       check_out_date,
+//       check_in,
+//       check_out,
 //       num_rooms,
 //       num_adults,
 //       num_children,
@@ -798,8 +897,8 @@ export default new HotelController();
 //     } = req.body;
 
 //     const offset = (page - 1) * size;
-//     const formattedCheckInDate = new Date(check_in_date);
-//     const formattedCheckOutDate = new Date(check_out_date);
+//     const formattedCheckInDate = new Date(check_in);
+//     const formattedCheckOutDate = new Date(check_out);
 
 //     // Ensure check-in date is not in the past
 //     if (formattedCheckInDate < new Date()) {
@@ -913,15 +1012,15 @@ export default new HotelController();
 //           hotel.roomTypes.map(async (roomType) => {
 //             // Calculate the effective price considering the room discount
 //             const room_discount = await calculateRoomDiscount(roomType);
-//             const effectivePrice = roomType.base_price - room_discount;
+//             const effective_price = roomType.base_price - room_discount;
 
 //             // Check if the effective price is within the price range
 //             if (filters?.price_range?.length === 2) {
 //               const [minPrice, maxPrice] = filters.price_range;
 //               if (
-//                 effectivePrice < minPrice ||
-//                 effectivePrice > maxPrice ||
-//                 (minPrice === UNLIMITED_PRICE && effectivePrice < minPrice)
+//                 effective_price < minPrice ||
+//                 effective_price > maxPrice ||
+//                 (minPrice === UNLIMITED_PRICE && effective_price < minPrice)
 //               ) {
 //                 return null;
 //               }
@@ -941,8 +1040,8 @@ export default new HotelController();
 
 //             // Check if there are enough available rooms
 //             if (availableRooms.length >= num_rooms) {
-//               if (effectivePrice < min_room_price) {
-//                 min_room_price = effectivePrice;
+//               if (effective_price < min_room_price) {
+//                 min_room_price = effective_price;
 //                 original_room_price = roomType.base_price;
 //               }
 
@@ -963,7 +1062,7 @@ export default new HotelController();
 //                     description: room.description,
 //                   }))
 //                   .sort((a, b) => a.id - b.id),
-//                 effectivePrice,
+//                 effective_price,
 //               };
 //             }
 
