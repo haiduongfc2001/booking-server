@@ -2,13 +2,17 @@ import {
   BelongsTo,
   Column,
   DataType,
+  Default,
   ForeignKey,
+  HasMany,
   Model,
   Table,
 } from "sequelize-typescript";
 import { Booking } from "./Booking";
 import { PaymentMethod } from "./PaymentMethod";
 import { TABLE_NAME } from "../config/constant.config";
+import { Refund } from "./Refund";
+import { PAYMENT_STATUS } from "../config/enum.config";
 
 @Table({
   tableName: TABLE_NAME.PAYMENT,
@@ -48,8 +52,44 @@ export class Payment extends Model {
   amount!: number;
 
   @Column({
-    type: DataType.DATE,
+    type: DataType.STRING,
     allowNull: false,
   })
-  payment_date!: Date;
+  description!: string;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+    defaultValue: DataType.NOW,
+  })
+  transaction_date!: Date;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  trans_reference!: string;
+
+  @Column({
+    type: DataType.JSONB,
+    allowNull: true,
+  })
+  provider_metadata!: object;
+
+  @Default(PAYMENT_STATUS.PENDING)
+  @Column({
+    type: DataType.ENUM(
+      PAYMENT_STATUS.PENDING,
+      PAYMENT_STATUS.COMPLETED,
+      PAYMENT_STATUS.FAILED,
+      PAYMENT_STATUS.CANCELLED,
+      PAYMENT_STATUS.REFUNDED,
+      PAYMENT_STATUS.EXPIRED
+    ),
+    allowNull: false,
+  })
+  status!: PAYMENT_STATUS;
+
+  @HasMany(() => Refund)
+  refunds!: Refund[];
 }

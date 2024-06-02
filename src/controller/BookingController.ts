@@ -20,6 +20,7 @@ import { HotelImage } from "../model/HotelImage";
 import { RoomImage } from "../model/RoomImage";
 import { minioConfig } from "../config/minio.config";
 import { DEFAULT_MINIO } from "../config/constant.config";
+import { translate } from "../utils/Translation";
 
 interface Child {
   age: number;
@@ -45,8 +46,32 @@ class BookingController {
     try {
       const booking_id = parseInt(req.params.booking_id);
 
-      const booking = await Booking.findByPk(booking_id);
+      // Fetch the booking with associated data
+      const booking = await Booking.findByPk(booking_id, {
+        include: [
+          {
+            model: RoomBooking,
+            include: [
+              {
+                model: Room,
+                include: [
+                  {
+                    model: RoomType,
+                    include: [
+                      { model: Hotel, include: [{ model: HotelImage }] },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            model: Customer,
+          },
+        ],
+      });
 
+      // If booking is not found, return 404
       if (!booking) {
         return res.status(404).json({
           status: 404,
@@ -54,7 +79,67 @@ class BookingController {
         });
       }
 
-      const bookingInfo = await new BookingRepo().retrieveById(booking_id);
+      // Create presigned URLs for hotel images
+      const updatedRoomBookings = await Promise.all(
+        booking.roomBookings.map(async (roomBooking) => {
+          const updatedRoom = {
+            ...roomBooking.room.toJSON(),
+            roomType: {
+              ...roomBooking.room.roomType.toJSON(),
+              hotel: {
+                ...roomBooking.room.roomType.hotel.toJSON(),
+                hotelImages: await Promise.all(
+                  roomBooking.room.roomType.hotel.hotelImages.map(
+                    async (image) => {
+                      const presignedUrl = await new Promise<string>(
+                        (resolve, reject) => {
+                          minioConfig
+                            .getClient()
+                            .presignedGetObject(
+                              DEFAULT_MINIO.BUCKET,
+                              `${DEFAULT_MINIO.HOTEL_PATH}/${roomBooking.room.roomType.hotel.id}/${image.url}`,
+                              24 * 60 * 60,
+                              (err, presignedUrl) => {
+                                if (err) reject(err);
+                                else resolve(presignedUrl);
+                              }
+                            );
+                        }
+                      );
+
+                      return {
+                        ...image.toJSON(),
+                        url: presignedUrl,
+                      };
+                    }
+                  )
+                ),
+              },
+            },
+          };
+
+          return {
+            ...roomBooking.toJSON(),
+            room: updatedRoom,
+          };
+        })
+      );
+
+      // Add additional calculated fields
+      const bookingInfo = {
+        ...booking.toJSON(),
+        roomBookings: updatedRoomBookings,
+        translateStatus: translate("bookingStatus", booking.status),
+        totalAdults: booking.roomBookings.reduce(
+          (sum, roomBooking) => sum + roomBooking.num_adults,
+          0
+        ),
+        totalChildren: booking.roomBookings.reduce(
+          (sum, roomBooking) => sum + roomBooking.num_children,
+          0
+        ),
+        totalPrice: booking.total_room_price + booking.tax_and_fee,
+      };
 
       return res.status(200).json({
         status: 200,
@@ -142,6 +227,7 @@ class BookingController {
         children_ages = [],
         hotel_id,
         room_type_id,
+        note = "",
       } = req.body;
 
       const customer = await Customer.findByPk(customer_id);
@@ -211,6 +297,8 @@ class BookingController {
 
       let hotelTax: number = 0;
       let hotelServiceFee: number = 0;
+      let hotelCheckInTime: string = "00:00";
+      let hotelCheckOutTime: string = "00:00";
       let hotelSurChargeRates: { [key: string]: any } = {};
 
       hotelPolicies.forEach((policy) => {
@@ -220,6 +308,10 @@ class BookingController {
           hotelServiceFee = Number(policy.value);
         } else if (policy.type === "SURCHARGE_RATES") {
           hotelSurChargeRates = JSON.parse(policy.value);
+        } else if (policy.type === "CHECK_IN_TIME") {
+          hotelCheckInTime = policy.value;
+        } else if (policy.type === "CHECK_OUT_TIME") {
+          hotelCheckOutTime = policy.value;
         }
       });
 
@@ -250,15 +342,18 @@ class BookingController {
         });
       }
 
+      console.log(new Date(`${check_in} ${hotelCheckInTime}:00`));
+
       const newBooking = await Booking.create({
         code: bookingCode,
         customer_id,
-        check_in,
-        check_out,
+        check_in: new Date(`${check_in} ${hotelCheckInTime}:00`),
+        check_out: new Date(`${check_out} ${hotelCheckOutTime}:00`),
         total_room_price: cost.total_room_price,
         tax_and_fee: cost.total_service_fee + cost.total_tax,
         status: BOOKING_STATUS.PENDING,
         expires_at: expiresAt,
+        note,
       });
 
       // Select the first num_rooms rooms
@@ -361,26 +456,24 @@ class BookingController {
         status: 201,
         message: "Booking created successfully!",
         data: {
+          ...newBooking.toJSON(),
+          code: bookingCode,
           hotel: {
             ...hotel.toJSON(),
             hotelImages,
             roomTypes: { ...roomType.toJSON(), roomImages: roomTypeImages },
             address: `${hotel.street}, ${hotel.ward}, ${hotel.district}, ${hotel.province}`,
+            check_in_time: hotelCheckInTime,
+            check_out_time: hotelCheckOutTime,
           },
           cost,
-          code: bookingCode,
           customer,
-          check_in,
-          check_out,
           num_adults,
           num_children,
           num_rooms,
-          total_room_price,
           total_service_fee,
           total_tax,
           final_price,
-          status: newBooking.status,
-          expires_at: newBooking.expires_at,
           room_bookings: selectedRooms.map((room, index) => ({
             room_id: room.id,
             num_adults: cost.rooms[index].adults,
@@ -391,6 +484,112 @@ class BookingController {
             discount: cost.room_discount,
           })),
         },
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async getAllBookingsByCustomerId(req: Request, res: Response) {
+    try {
+      const { customer_id } = req.params;
+
+      const bookings = await Booking.findAll({
+        where: {
+          customer_id,
+        },
+        include: [
+          {
+            model: RoomBooking,
+            include: [
+              {
+                model: Room,
+                include: [
+                  {
+                    model: RoomType,
+                    include: [
+                      { model: Hotel, include: [{ model: HotelImage }] },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            model: Customer,
+          },
+        ],
+      });
+
+      // Tạo URL được ký trước cho mỗi hình ảnh của khách sạn
+      const presignedUrls = await Promise.all(
+        bookings.map(async (booking) => {
+          const updatedRoomBookings = await Promise.all(
+            booking.roomBookings.map(async (roomBooking) => {
+              const updatedRoom = {
+                ...roomBooking.room.toJSON(),
+                roomType: {
+                  ...roomBooking.room.roomType.toJSON(),
+                  hotel: {
+                    ...roomBooking.room.roomType.hotel.toJSON(),
+                    hotelImages: await Promise.all(
+                      roomBooking.room.roomType.hotel.hotelImages.map(
+                        async (image) => {
+                          const presignedUrl = await new Promise<string>(
+                            (resolve, reject) => {
+                              minioConfig
+                                .getClient()
+                                .presignedGetObject(
+                                  DEFAULT_MINIO.BUCKET,
+                                  `${DEFAULT_MINIO.HOTEL_PATH}/${roomBooking.room.roomType.hotel.id}/${image.url}`,
+                                  24 * 60 * 60,
+                                  (err, presignedUrl) => {
+                                    if (err) reject(err);
+                                    else resolve(presignedUrl);
+                                  }
+                                );
+                            }
+                          );
+
+                          return {
+                            ...image.toJSON(),
+                            url: presignedUrl,
+                          };
+                        }
+                      )
+                    ),
+                  },
+                },
+              };
+
+              return {
+                ...roomBooking.toJSON(),
+                room: updatedRoom,
+              };
+            })
+          );
+
+          return {
+            ...booking.toJSON(),
+            roomBookings: updatedRoomBookings,
+            translateStatus: translate("bookingStatus", booking.status),
+            totalAdults: booking.roomBookings.reduce(
+              (sum, roomBooking) => sum + roomBooking.num_adults,
+              0
+            ),
+            totalChildren: booking.roomBookings.reduce(
+              (sum, roomBooking) => sum + roomBooking.num_children,
+              0
+            ),
+            totalPrice: booking.total_room_price + booking.tax_and_fee,
+          };
+        })
+      );
+
+      return res.status(200).json({
+        status: 200,
+        message: "Successfully fetched all booking data!",
+        data: presignedUrls,
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

@@ -8,6 +8,7 @@ import { minioConfig } from "../config/minio.config";
 import generateRandomString from "../utils/RandomString";
 import { Op } from "sequelize";
 import getFileType from "../utils/GetFileType";
+import { RoomType } from "../model/RoomType";
 
 class RoomImageController {
   async getImagesByRoomId(req: Request, res: Response) {
@@ -122,11 +123,11 @@ class RoomImageController {
         });
       }
 
-      // Check if the room_id exists in the room table
-      const { hotel_id, room_type_id, room_id } = req.params;
-      const roomExists = await Room.findOne({
+      // Check if the room_type_id exists in the room table
+      const { hotel_id, room_type_id } = req.params;
+      const roomExists = await RoomType.findOne({
         where: {
-          id: room_id,
+          id: room_type_id,
           hotel_id,
         },
       });
@@ -165,7 +166,7 @@ class RoomImageController {
 
         // Create a new RoomImage object with room_id and fileUrl
         const newRoomImage = new RoomImage({
-          room_id,
+          room_id: room_type_id,
           url: newName,
           caption,
           is_primary,
@@ -184,7 +185,7 @@ class RoomImageController {
               { is_primary: false },
               {
                 where: {
-                  room_id,
+                  room_id: room_type_id,
                   id: { [Op.ne]: roomImage.id }, // Exclude the current room_image
                 },
               }

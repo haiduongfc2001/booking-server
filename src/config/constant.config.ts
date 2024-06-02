@@ -46,6 +46,7 @@ export const TABLE_NAME = {
   POLICY: "policy",
   PAYMENT: "payment",
   PAYMENT_METHOD: "payment_method",
+  REFUND: "refund",
 };
 
 export const PAGINATION = {

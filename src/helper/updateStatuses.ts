@@ -50,7 +50,7 @@ export const updateRoomStatus = async (): Promise<void> => {
 
       if (room && booking) {
         if (
-          [BOOKING_STATUS.CANCELED, BOOKING_STATUS.CHECKED_OUT].includes(
+          [BOOKING_STATUS.CANCELLED, BOOKING_STATUS.CHECKED_OUT].includes(
             booking.status
           )
         ) {

@@ -3,6 +3,8 @@ import {
   BOOKING_STATUS,
   DISCOUNT_TYPE,
   GENDER,
+  PAYMENT_STATUS,
+  REFUND_STATUS,
   ROLE_TYPE,
   ROOM_STATUS,
   ROOM_TYPE,
@@ -23,10 +25,11 @@ const translation: { [key: string]: { [key: string]: string } } = {
   },
   bookingStatus: {
     [BOOKING_STATUS.PENDING]: "Chờ xác nhận",
-    [BOOKING_STATUS.CONFIRMED]: "Đã xác nhận",
+    [BOOKING_STATUS.CONFIRMED]: "Đặt phòng thành công",
     [BOOKING_STATUS.CHECKED_IN]: "Đã nhận phòng",
     [BOOKING_STATUS.CHECKED_OUT]: "Đã trả phòng",
-    [BOOKING_STATUS.CANCELED]: "Đã hủy",
+    [BOOKING_STATUS.CANCELLED]: "Đã hủy",
+    [BOOKING_STATUS.FAILED]: "Đặt phòng thất bại",
   },
   gender: {
     [GENDER.MALE]: "Nam",
@@ -95,6 +98,28 @@ const translation: { [key: string]: { [key: string]: string } } = {
       "Phòng ngủ tập thể với giường tầng, thích hợp cho nhóm du lịch hoặc khách tiết kiệm.",
     [ROOM_TYPE.CONNECTING]:
       "Phòng kết nối với nhau, thích hợp cho gia đình hoặc nhóm bạn.",
+  },
+  paymentStatus: {
+    [PAYMENT_STATUS.PENDING]: "Chờ xử lý",
+    [PAYMENT_STATUS.COMPLETED]: "Đã thanh toán",
+    [PAYMENT_STATUS.FAILED]: "Thất bại",
+    [PAYMENT_STATUS.CANCELLED]: "Đã hủy",
+    [PAYMENT_STATUS.REFUNDED]: "Đã hoàn tiền",
+    [PAYMENT_STATUS.EXPIRED]: "Đã hết hạn",
+  },
+  refundStatus: {
+    [REFUND_STATUS.PENDING]: "Chờ xử lý",
+    [REFUND_STATUS.PROCESSING]: "Đang xử lý",
+    [REFUND_STATUS.APPROVED]: "Đã duyệt",
+    [REFUND_STATUS.DECLINED]: "Từ chối",
+    [REFUND_STATUS.COMPLETED]: "Hoàn thành",
+    [REFUND_STATUS.FAILED]: "Thất bại",
+    [REFUND_STATUS.CANCELLED]: "Đã hủy",
+    [REFUND_STATUS.EXPIRED]: "Đã hết hạn",
+    [REFUND_STATUS.PENDING_APPROVAL]: "Chờ duyệt",
+    [REFUND_STATUS.UNDER_REVIEW]: "Đang xem xét",
+    [REFUND_STATUS.REVERSED]: "Đã đảo ngược",
+    [REFUND_STATUS.PARTIALLY_REFUNDED]: "Hoàn tiền một phần",
   },
 };
 

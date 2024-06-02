@@ -2,8 +2,9 @@
 import cron from "node-cron";
 import { Op } from "sequelize";
 import { Booking } from "../model/Booking";
+import { Payment } from "../model/Payment"; // Import Payment model
 import { Promotion } from "../model/Promotion";
-import { BOOKING_STATUS } from "../config/enum.config";
+import { BOOKING_STATUS, PAYMENT_STATUS } from "../config/enum.config"; // Add PAYMENT_STATUS
 import { updateRoomStatus } from "../helper/updateStatuses";
 
 // Set up the cron job
@@ -11,11 +12,28 @@ cron.schedule("*/1 * * * *", async () => {
   try {
     const now = new Date();
 
-    // Update expired bookings to CANCELED
+    // Find payments that are either CANCELLED, FAILED, or EXPIRED
+    const expiredPaymentIds = await Payment.findAll({
+      attributes: ["booking_id"],
+      where: {
+        status: {
+          [Op.in]: [
+            PAYMENT_STATUS.CANCELLED,
+            PAYMENT_STATUS.FAILED,
+            PAYMENT_STATUS.EXPIRED,
+          ],
+        },
+      },
+    }).then((payments) => payments.map((payment) => payment.booking_id));
+
+    // Update expired bookings to CANCELLED where the status is PENDING
     await Booking.update(
-      { status: BOOKING_STATUS.CANCELED },
+      { status: BOOKING_STATUS.CANCELLED },
       {
         where: {
+          id: {
+            [Op.in]: expiredPaymentIds,
+          },
           status: BOOKING_STATUS.PENDING,
           expires_at: {
             [Op.lt]: now,

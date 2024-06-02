@@ -21,8 +21,10 @@ const vnpayConfig: VNPayConfig = {
   VNP_HASH_SECRET: process.env.VNP_HASH_SECRET || "",
   VNP_PAYMENT_URL: "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
   // VNP_RETURN_URL: "https://booking-customer.vercel.app/",
+  // VNP_RETURN_URL:
+  //   "https://5a75-2405-4802-1ca8-e970-8885-3c91-e34c-826e.ngrok-free.app/api/v1",
   VNP_RETURN_URL:
-    "https://5a75-2405-4802-1ca8-e970-8885-3c91-e34c-826e.ngrok-free.app/api/v1",
+    "https://booking-customer.vercel.app//account/my-booking/payment",
 };
 
 // Check for required environment variables and throw an error if any are missing

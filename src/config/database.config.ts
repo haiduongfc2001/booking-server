@@ -18,6 +18,7 @@ import { RoomType } from "../model/RoomType";
 import { Policy } from "../model/Policy";
 import { Payment } from "../model/Payment";
 import { PaymentMethod } from "../model/PaymentMethod";
+import { Refund } from "../model/Refund";
 
 dotenv.config();
 
@@ -88,6 +89,7 @@ class Database {
         Policy,
         Payment,
         PaymentMethod,
+        Refund,
       ],
       define: config.define,
       logging: false,

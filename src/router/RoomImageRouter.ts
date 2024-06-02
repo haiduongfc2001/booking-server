@@ -21,7 +21,7 @@ class HotelRoutes extends BaseRoutes {
       RoomImageController.createRoomImage
     );
     this.router.post(
-      "/:hotel_id/room/:room_id/createRoomImages",
+      "/:hotel_id/room/:room_type_id/createRoomImages",
       authFullRole,
       upload.array("images", 5),
       RoomImageController.createRoomImages

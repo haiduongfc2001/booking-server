@@ -15,7 +15,9 @@ const zaloPayConfig: ZaloPayConfig = {
   KEY1: process.env.ZALOPAY_KEY1 || "",
   KEY2: process.env.ZALOPAY_KEY2 || "",
   ENDPOINT: "https://sb-openapi.zalopay.vn/v2",
-  REDIRECT_URL: "http://localhost:5000/api/v1",
+  // REDIRECT_URL: "http://localhost:5000/api/v1",
+  REDIRECT_URL:
+    "https://booking-customer.vercel.app//hotel/booking/payment?paymentMethod=ZALOPAY",
   CALLBACK_URL:
     "https://79b0-14-177-235-116.ngrok-free.app/api/v1/payment/zalopay/callback",
 };

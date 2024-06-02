@@ -15,7 +15,8 @@ export enum BOOKING_STATUS {
   CONFIRMED = "CONFIRMED",
   CHECKED_IN = "CHECKED_IN",
   CHECKED_OUT = "CHECKED_OUT",
-  CANCELED = "CANCELED",
+  CANCELLED = "CANCELLED",
+  FAILED = "FAILED",
 }
 
 export enum GENDER {
@@ -90,7 +91,6 @@ export enum ProductCode {
   Other = "other",
 }
 
-
 // VNPay
 export enum UrlService {
   sandbox = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
@@ -125,4 +125,33 @@ export enum VnpTransactionType {
 export enum RefundTransactionType {
   FULL_REFUND = "02",
   PARTIAL_REFUND = "03",
+}
+
+export enum PAYMENT_METHOD {
+  ZALOPAY = "ZALOPAY",
+  MOMO = "MOMO",
+}
+
+export enum PAYMENT_STATUS {
+  PENDING = "PENDING",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+  CANCELLED = "CANCELLED",
+  REFUNDED = "REFUNDED",
+  EXPIRED = "EXPIRED",
+}
+
+export enum REFUND_STATUS {
+  PENDING = "PENDING",
+  PROCESSING = "PROCESSING",
+  APPROVED = "APPROVED",
+  DECLINED = "DECLINED",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+  CANCELLED = "CANCELLED",
+  EXPIRED = "EXPIRED",
+  PENDING_APPROVAL = "PENDING_APPROVAL",
+  UNDER_REVIEW = "UNDER_REVIEW",
+  REVERSED = "REVERSED",
+  PARTIALLY_REFUNDED = "PARTIALLY_REFUNDED",
 }

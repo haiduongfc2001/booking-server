@@ -7,7 +7,12 @@ import {
   hash,
   resolveUrlString,
 } from "../utils/VNPayCommon";
-import { HashAlgorithm, VnpLocale } from "../config/enum.config";
+import {
+  BOOKING_STATUS,
+  HashAlgorithm,
+  PAYMENT_STATUS,
+  VnpLocale,
+} from "../config/enum.config";
 import {
   PAYMENT_ENDPOINT,
   VNPAY_GATEWAY_SANDBOX_HOST,
@@ -16,10 +21,20 @@ import vnpayConfig from "../config/vnpay.config";
 import zaloPayConfig from "../config/zalopay.config";
 import axios from "axios";
 import qs from "qs";
-import { BUFFER_ENCODE } from "../config/constant.config";
+import { BUFFER_ENCODE, DEFAULT_MINIO } from "../config/constant.config";
 import { Booking } from "../model/Booking";
 import { PaymentMethod } from "../model/PaymentMethod";
 import { Payment } from "../model/Payment";
+import { RoomBooking } from "../model/RoomBooking";
+import { RoomType } from "../model/RoomType";
+import { Hotel } from "../model/Hotel";
+import { HotelImage } from "../model/HotelImage";
+import { RoomImage } from "../model/RoomImage";
+import { Customer } from "../model/Customer";
+import { minioConfig } from "../config/minio.config";
+import { translate } from "../utils/Translation";
+import { Room } from "../model/Room";
+import { Bed } from "../model/Bed";
 
 const numberRegex = /^[0-9]+$/;
 
@@ -32,6 +47,7 @@ interface VNPayPaymentRequest {
 }
 
 interface ZaloPayPaymentRequest {
+  booking_id: string;
   appUser: string;
   amount: number;
   bankCode?: string; // Optional property
@@ -281,9 +297,10 @@ class PaymentController {
       const transID = Math.floor(Math.random() * 1000000);
 
       const {
+        booking_id,
         appUser = "",
         amount,
-        description = `DHD Boooking - Payment for the order #${transID}`,
+        description = `DHD Boooking - Payment for the order ${booking_id}`,
         bankCode = "",
       } = req.body as ZaloPayPaymentRequest;
 
@@ -328,11 +345,31 @@ class PaymentController {
         params: order,
       });
 
+      if (response?.data) {
+        await Payment.create({
+          booking_id,
+          payment_method_id: 1,
+          amount,
+          description,
+          transaction_date: new Date(),
+          trans_reference: order.app_trans_id,
+          provider_metadata: response?.data,
+          status: PAYMENT_STATUS.PENDING,
+        });
+      }
+
       return res
         .status(201)
         .json({ ...response.data, app_trans_id: order.app_trans_id });
-    } catch (error) {
-      return res.status(400).json(error);
+    } catch (error: any) {
+      console.error(
+        "Error creating ZaloPay payment URL:",
+        error.response?.data || error.message
+      );
+      return res.status(400).json({
+        message: "Failed to create ZaloPay payment URL",
+        error: error.response?.data || error.message,
+      });
     }
   }
 
@@ -378,16 +415,14 @@ class PaymentController {
     const app_trans_id = req.params.app_trans_id;
     const { APP_ID, KEY1, ENDPOINT } = zaloPayConfig;
 
-    let postData = {
+    const data = `${APP_ID}|${app_trans_id}|${KEY1}`;
+    const postData = {
       app_id: APP_ID,
-      app_trans_id: app_trans_id,
-      mac: "",
+      app_trans_id,
+      mac: hash(HashAlgorithm.SHA256, KEY1, data),
     };
 
-    let data = postData.app_id + "|" + postData.app_trans_id + "|" + KEY1; // appid|app_trans_id|key1
-    postData.mac = hash(HashAlgorithm.SHA256, KEY1, data);
-
-    let postConfig = {
+    const postConfig = {
       method: "post",
       url: `${ENDPOINT}/query`,
       headers: {
@@ -397,8 +432,165 @@ class PaymentController {
     };
 
     try {
+      const payment = await Payment.findOne({
+        where: { trans_reference: app_trans_id },
+        include: [{ model: PaymentMethod }],
+      });
+
+      if (!payment) {
+        return res.status(400).json({ message: "Payment not found!" });
+      }
+
+      const booking = await Booking.findByPk(payment.booking_id, {
+        include: [
+          {
+            model: RoomBooking,
+            include: [
+              {
+                model: Room,
+                include: [
+                  {
+                    model: RoomType,
+                    include: [
+                      { model: RoomImage },
+                      { model: Bed },
+                      { model: Hotel, include: [{ model: HotelImage }] },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+          { model: Customer },
+        ],
+      });
+
+      if (!booking) {
+        return res
+          .status(404)
+          .json({ status: 404, message: "Booking not found!" });
+      }
+
+      const updatedRoomBookings = await Promise.all(
+        booking.roomBookings.map(async (roomBooking) => {
+          const updatedRoom = {
+            ...roomBooking.room.toJSON(),
+            roomType: {
+              ...roomBooking.room.roomType.toJSON(),
+              roomImages: await Promise.all(
+                roomBooking.room.roomType.roomImages.map(async (image) => {
+                  const presignedUrl = await new Promise<string>(
+                    (resolve, reject) => {
+                      minioConfig
+                        .getClient()
+                        .presignedGetObject(
+                          DEFAULT_MINIO.BUCKET,
+                          `${DEFAULT_MINIO.HOTEL_PATH}/${roomBooking.room.roomType.hotel.id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${roomBooking.room.roomType.id}/${image.url}`,
+                          24 * 60 * 60,
+                          (err, presignedUrl) =>
+                            err ? reject(err) : resolve(presignedUrl)
+                        );
+                    }
+                  );
+
+                  return { ...image.toJSON(), url: presignedUrl };
+                })
+              ),
+              hotel: {
+                ...roomBooking.room.roomType.hotel.toJSON(),
+                address: `${roomBooking.room.roomType.hotel.street}, ${roomBooking.room.roomType.hotel.ward}, ${roomBooking.room.roomType.hotel.district}, ${roomBooking.room.roomType.hotel.province}`,
+                hotelImages: await Promise.all(
+                  roomBooking.room.roomType.hotel.hotelImages.map(
+                    async (image) => {
+                      const presignedUrl = await new Promise<string>(
+                        (resolve, reject) => {
+                          minioConfig
+                            .getClient()
+                            .presignedGetObject(
+                              DEFAULT_MINIO.BUCKET,
+                              `${DEFAULT_MINIO.HOTEL_PATH}/${roomBooking.room.roomType.hotel.id}/${image.url}`,
+                              24 * 60 * 60,
+                              (err, presignedUrl) =>
+                                err ? reject(err) : resolve(presignedUrl)
+                            );
+                        }
+                      );
+
+                      return { ...image.toJSON(), url: presignedUrl };
+                    }
+                  )
+                ),
+              },
+            },
+          };
+
+          return { ...roomBooking.toJSON(), room: updatedRoom };
+        })
+      );
+
+      const bookingInfo = {
+        ...booking.toJSON(),
+        roomBookings: updatedRoomBookings,
+        translateStatus: translate("bookingStatus", booking.status),
+        totalAdults: booking.roomBookings.reduce(
+          (sum, roomBooking) => sum + roomBooking.num_adults,
+          0
+        ),
+        totalChildren: booking.roomBookings.reduce(
+          (sum, roomBooking) => sum + roomBooking.num_children,
+          0
+        ),
+        totalPrice: booking.total_room_price + booking.tax_and_fee,
+      };
+
       const response = await axios(postConfig);
-      return res.status(200).json(response.data);
+
+      if (response?.data?.return_code === 1) {
+        await payment.update({ status: PAYMENT_STATUS.COMPLETED });
+        await booking.update({ status: BOOKING_STATUS.CONFIRMED });
+        return res.status(200).json({
+          status: 200,
+          message: response.data.return_message,
+          details: response.data,
+          data: {
+            ...payment.toJSON(),
+            translateStatus: translate("paymentStatus", payment.status),
+            bookingInfo,
+          },
+        });
+      } else if (response?.data?.return_code === 2) {
+        await payment.update({ status: PAYMENT_STATUS.FAILED });
+        await booking.update({ status: BOOKING_STATUS.FAILED });
+        return res.status(400).json({
+          status: 400,
+          message: response.data.return_message,
+          details: response.data,
+          data: {
+            ...payment.toJSON(),
+            translateStatus: translate("paymentStatus", payment.status),
+            bookingInfo,
+          },
+        });
+      } else if (response?.data?.return_code === 3) {
+        await payment.update({ status: PAYMENT_STATUS.PENDING });
+        await booking.update({ status: BOOKING_STATUS.PENDING });
+        return res.status(202).json({
+          status: 202,
+          message: response.data.return_message,
+          details: response.data,
+          data: {
+            ...payment.toJSON(),
+            translateStatus: translate("paymentStatus", payment.status),
+            bookingInfo,
+          },
+        });
+      } else {
+        return res.status(500).json({
+          status: 500,
+          message: "Unexpected return code",
+          details: response.data,
+        });
+      }
     } catch (error: any) {
       return res.status(500).json({ error: error.message });
     }
@@ -569,6 +761,124 @@ class PaymentController {
       return res.status(200).json({
         status: 200,
         message: "Payment deleted successfully!",
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async updatePaymentStatus(req: Request, res: Response) {
+    try {
+      const { trans_reference } = req.body;
+
+      const payment = await Payment.findOne({
+        where: { trans_reference },
+        include: [{ model: PaymentMethod }],
+      });
+
+      if (!payment) {
+        return res.status(400).json({
+          message: "Payment not found!",
+        });
+      }
+
+      const booking = await Booking.findByPk(payment.booking_id, {
+        include: [
+          {
+            model: RoomBooking,
+            include: [
+              {
+                model: Room,
+                include: [
+                  {
+                    model: RoomType,
+                    include: [
+                      { model: RoomImage },
+                      { model: Hotel, include: [{ model: HotelImage }] },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+          { model: Customer },
+        ],
+      });
+
+      if (!booking) {
+        return res.status(404).json({
+          status: 404,
+          message: "Booking not found!",
+        });
+      }
+
+      const updatedRoomBookings = await Promise.all(
+        booking.roomBookings.map(async (roomBooking) => {
+          const updatedRoom = {
+            ...roomBooking.room.toJSON(),
+            roomType: {
+              ...roomBooking.room.roomType.toJSON(),
+              hotel: {
+                ...roomBooking.room.roomType.hotel.toJSON(),
+                hotelImages: await Promise.all(
+                  roomBooking.room.roomType.hotel.hotelImages.map(
+                    async (image) => {
+                      const presignedUrl = await new Promise<string>(
+                        (resolve, reject) => {
+                          minioConfig
+                            .getClient()
+                            .presignedGetObject(
+                              DEFAULT_MINIO.BUCKET,
+                              `${DEFAULT_MINIO.HOTEL_PATH}/${roomBooking.room.roomType.hotel.id}/${image.url}`,
+                              24 * 60 * 60,
+                              (err, presignedUrl) => {
+                                if (err) reject(err);
+                                else resolve(presignedUrl);
+                              }
+                            );
+                        }
+                      );
+
+                      return {
+                        ...image.toJSON(),
+                        url: presignedUrl,
+                      };
+                    }
+                  )
+                ),
+              },
+            },
+          };
+
+          return {
+            ...roomBooking.toJSON(),
+            room: updatedRoom,
+          };
+        })
+      );
+
+      const bookingInfo = {
+        ...booking.toJSON(),
+        roomBookings: updatedRoomBookings,
+        translateStatus: translate("bookingStatus", booking.status),
+        totalAdults: booking.roomBookings.reduce(
+          (sum, roomBooking) => sum + roomBooking.num_adults,
+          0
+        ),
+        totalChildren: booking.roomBookings.reduce(
+          (sum, roomBooking) => sum + roomBooking.num_children,
+          0
+        ),
+        totalPrice: booking.total_room_price + booking.tax_and_fee,
+      };
+
+      return res.status(200).json({
+        status: 200,
+        message: "Successfully fetched all booking data!",
+        data: {
+          ...payment.toJSON(),
+          bookingInfo,
+        },
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

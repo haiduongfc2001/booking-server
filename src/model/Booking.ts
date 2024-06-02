@@ -53,6 +53,12 @@ export class Booking extends Model {
   check_out!: Date;
 
   @Column({
+    type: DataType.STRING,
+    // allowNull: false,
+  })
+  note!: string;
+
+  @Column({
     type: DataType.INTEGER,
     allowNull: false,
   })
@@ -71,7 +77,8 @@ export class Booking extends Model {
       BOOKING_STATUS.CONFIRMED,
       BOOKING_STATUS.CHECKED_IN,
       BOOKING_STATUS.CHECKED_OUT,
-      BOOKING_STATUS.CANCELED
+      BOOKING_STATUS.CANCELLED,
+      BOOKING_STATUS.FAILED
     ),
     allowNull: false,
   })

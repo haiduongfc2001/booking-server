@@ -10,6 +10,7 @@ class PaymentRoutes {
   constructor() {
     this.router = Router();
     this.initializeRoutes();
+    this.routes();
   }
 
   private initializeRoutes() {
@@ -17,7 +18,7 @@ class PaymentRoutes {
     this.router.use("/zalopay", ZaloPayRouter);
   }
 
-  public routes(): void {
+  private routes() {
     this.router.post(
       "/createPayment",
       authFullRole,
@@ -27,6 +28,11 @@ class PaymentRoutes {
     this.router.get("/getPaymentById/:id", PaymentController.getPaymentById);
     this.router.put("/updatePayment/:id", PaymentController.updatePayment);
     this.router.delete("/deletePayment/:id", PaymentController.deletePayment);
+    this.router.post(
+      "/updatePaymentStatus",
+      authFullRole,
+      PaymentController.updatePaymentStatus
+    );
   }
 }
 
