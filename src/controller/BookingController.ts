@@ -231,7 +231,7 @@ class BookingController {
       });
 
       const createdAt = new Date();
-      const expiresAt = new Date(createdAt.getTime() + 15 * 60 * 1000);
+      const expiresAt = new Date(createdAt.getTime() + 10 * 60 * 1000);
 
       // Fetch available rooms of the specified room_type_id
       const availableRooms = await Room.findAll({
@@ -379,6 +379,8 @@ class BookingController {
           total_service_fee,
           total_tax,
           final_price,
+          status: newBooking.status,
+          expires_at: newBooking.expires_at,
           room_bookings: selectedRooms.map((room, index) => ({
             room_id: room.id,
             num_adults: cost.rooms[index].adults,
@@ -388,7 +390,6 @@ class BookingController {
             surcharge: cost.rooms[index].surcharges,
             discount: cost.room_discount,
           })),
-          status: BOOKING_STATUS.PENDING,
         },
       });
     } catch (error) {

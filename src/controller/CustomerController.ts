@@ -6,6 +6,10 @@ import securePassword from "../utils/SecurePassword";
 import sendVerifyMail from "../utils/SendVerifyMail";
 import bcrypt from "bcrypt";
 import { generateCustomerToken } from "../utils/GenerateToken";
+import { DEFAULT_MINIO } from "../config/constant.config";
+import getFileType from "../utils/GetFileType";
+import generateRandomString from "../utils/RandomString";
+import { minioConfig } from "../config/minio.config";
 
 class CustomerController {
   async createCustomer(req: Request, res: Response) {
@@ -98,7 +102,14 @@ class CustomerController {
 
   async updateCustomer(req: Request, res: Response) {
     try {
-      const customer_id = parseInt(req.params["customer_id"]);
+      const customer_id = parseInt(req.params["customer_id"], 10);
+
+      if (isNaN(customer_id)) {
+        return res.status(400).json({
+          status: 400,
+          message: "Invalid customer ID!",
+        });
+      }
 
       const customerToUpdate = await Customer.findByPk(customer_id);
 
@@ -109,23 +120,56 @@ class CustomerController {
         });
       }
 
-      const fieldsToUpdate = [
-        "password",
-        "email",
-        "full_name",
-        "gender",
-        "phone",
-        "dob",
-        "avatar",
-        "address",
-        "location",
-      ];
+      const fieldsToUpdate: Partial<
+        Record<keyof typeof customerToUpdate, any>
+      > = {
+        password: req.body.password,
+        email: req.body.email,
+        full_name: req.body.full_name,
+        gender: req.body.gender,
+        phone: req.body.phone,
+        dob: req.body.dob,
+        address: req.body.address,
+        location: req.body.location,
+      };
 
-      fieldsToUpdate.forEach((field) => {
-        if (req.body[field]) {
-          (customerToUpdate as any)[field] = req.body[field];
+      for (const [field, value] of Object.entries(fieldsToUpdate)) {
+        if (value !== undefined) {
+          (customerToUpdate as any)[field] = value;
         }
-      });
+      }
+
+      if (req.file) {
+        const folder = `${DEFAULT_MINIO.CUSTOMER_PATH}/${customer_id}`;
+
+        if (customerToUpdate.avatar) {
+          await minioConfig
+            .getClient()
+            .removeObject(
+              DEFAULT_MINIO.BUCKET,
+              `${folder}/${customerToUpdate.avatar}`
+            );
+        }
+        const file = req.file as Express.Multer.File;
+
+        // Upload the file to MinIO server with specified object name
+        const metaData = { "Content-Type": file.mimetype };
+        const typeFile = getFileType(file.originalname);
+        const newName = `${Date.now()}_${generateRandomString(16)}.${typeFile}`;
+        const objectName = `${folder}/${newName}`;
+
+        await minioConfig
+          .getClient()
+          .putObject(
+            DEFAULT_MINIO.BUCKET,
+            objectName,
+            file.buffer,
+            file.size,
+            metaData
+          );
+
+        (customerToUpdate as any).avatar = newName;
+      }
 
       await new CustomerRepo().update(customerToUpdate);
 

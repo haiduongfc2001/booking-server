@@ -6,6 +6,11 @@ import {
   updateCustomerSchema,
 } from "../schema/CustomerSchema";
 import { authFullRole } from "../middleware/Auth.middleware";
+import multer from "multer";
+
+// Set up multer storage
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 class CustomerRoutes extends BaseRoutes {
   public routes(): void {
@@ -36,6 +41,7 @@ class CustomerRoutes extends BaseRoutes {
       "/:customer_id/updateCustomer",
       authFullRole,
       validate(updateCustomerSchema),
+      upload.single("image"),
       CustomerController.updateCustomer
     );
     this.router.delete(
