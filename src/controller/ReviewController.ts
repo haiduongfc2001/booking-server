@@ -2,6 +2,10 @@ import { Request, Response } from "express";
 import { Booking } from "../model/Booking";
 import ErrorHandler from "../utils/ErrorHandler";
 import { Review } from "../model/Review";
+import { RoomBooking } from "../model/RoomBooking";
+import { Room } from "../model/Room";
+import { Hotel } from "../model/Hotel";
+import { RoomType } from "../model/RoomType";
 
 class ReviewController {
   async createReview(req: Request, res: Response) {
@@ -149,6 +153,74 @@ class ReviewController {
       return res.status(200).json({
         status: 200,
         message: "Review deleted successfully!",
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async getHotelReviews(req: Request, res: Response) {
+    try {
+      const { hotel_id } = req.params;
+
+      // Lấy tất cả các đánh giá của khách sạn
+      const reviews = await Review.findAll({
+        include: [
+          {
+            model: Booking,
+            include: [
+              {
+                model: RoomBooking,
+                include: [
+                  {
+                    model: Room,
+                    include: [
+                      {
+                        model: RoomType,
+                        include: [
+                          {
+                            model: Hotel,
+                            where: { id: hotel_id },
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      // Tính toán rating trung bình của khách sạn
+      let totalRating = 0;
+      let totalReviews = 0;
+      const reviewRatings = reviews.map((review) => {
+        const reviewAverageRating =
+          (review.location_rating +
+            review.price_rating +
+            review.service_rating +
+            review.cleanliness_rating +
+            review.amenities_rating) /
+          5; // 5 là tổng số tiêu chí đánh giá
+
+        totalRating += reviewAverageRating;
+        totalReviews++;
+
+        return {
+          ...review.toJSON(),
+          averageRating: reviewAverageRating,
+        };
+      });
+
+      const averageHotelRating =
+        totalReviews > 0 ? totalRating / totalReviews : 0;
+
+      return res.status(200).json({
+        status: 200,
+        data: reviewRatings,
+        averageHotelRating: averageHotelRating,
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

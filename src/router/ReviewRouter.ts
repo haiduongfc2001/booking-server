@@ -25,6 +25,11 @@ class ReviewRoutes extends BaseRoutes {
       authFullRole,
       ReviewController.deleteReview
     );
+    this.router.get(
+      "/getHotelReviews/:hotel_id",
+      authFullRole,
+      ReviewController.getHotelReviews
+    );
   }
 }
 
