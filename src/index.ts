@@ -1,5 +1,7 @@
 import express, { Application, Request, Response } from "express";
 import cors from "cors";
+import * as dotenv from "dotenv";
+import "./middleware/CronJobs";
 import { dbConfig } from "./config/database.config";
 import ServiceRouter from "./router/ServiceRouter";
 import CustomerRouter from "./router/CustomerRouter";
@@ -7,12 +9,12 @@ import HotelRouter from "./router/HotelRouter";
 import HotelImageRouter from "./router/HotelImageRouter";
 import StaffRouter from "./router/StaffRouter";
 import RoomRouter from "./router/RoomRouter";
-import * as dotenv from "dotenv";
 import RoomImageRouter from "./router/RoomImageRouter";
 import AddressRouter from "./router/AddressRouter";
 import BookingRouter from "./router/BookingRouter";
 import PaymentRouter from "./router/payment/PaymentRouter";
 import PromotionRouter from "./router/PromotionRouter";
+import ReviewRouter from "./router/ReviewRouter";
 
 dotenv.config();
 
@@ -59,6 +61,7 @@ class App {
     apiRouter.use("/payment", PaymentRouter);
     apiRouter.use("/promotion", PromotionRouter);
     apiRouter.use("/payment-method", PromotionRouter);
+    apiRouter.use("/review", ReviewRouter);
 
     this.app.use("/api/v1", apiRouter);
   }
@@ -78,5 +81,3 @@ class App {
 }
 
 new App();
-
-import "./middleware/CronJobs";

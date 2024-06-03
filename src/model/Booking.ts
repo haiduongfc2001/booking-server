@@ -12,6 +12,7 @@ import { Customer } from "./Customer";
 import { BOOKING_STATUS } from "../config/enum.config";
 import { TABLE_NAME } from "../config/constant.config";
 import { RoomBooking } from "./RoomBooking";
+import { Review } from "./Review";
 
 @Table({
   tableName: TABLE_NAME.BOOKING,
@@ -92,4 +93,7 @@ export class Booking extends Model {
 
   @HasMany(() => RoomBooking)
   roomBookings!: RoomBooking[];
+
+  @HasMany(() => Review)
+  reviews!: Review[];
 }

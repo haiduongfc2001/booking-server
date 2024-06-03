@@ -19,6 +19,7 @@ import { Policy } from "../model/Policy";
 import { Payment } from "../model/Payment";
 import { PaymentMethod } from "../model/PaymentMethod";
 import { Refund } from "../model/Refund";
+import { Review } from "../model/Review";
 
 dotenv.config();
 
@@ -90,6 +91,7 @@ class Database {
         Payment,
         PaymentMethod,
         Refund,
+        Review,
       ],
       define: config.define,
       logging: false,

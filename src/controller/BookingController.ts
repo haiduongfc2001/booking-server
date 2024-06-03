@@ -342,8 +342,6 @@ class BookingController {
         });
       }
 
-      console.log(new Date(`${check_in} ${hotelCheckInTime}:00`));
-
       const newBooking = await Booking.create({
         code: bookingCode,
         customer_id,
