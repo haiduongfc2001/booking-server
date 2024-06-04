@@ -32,7 +32,7 @@ class ZaloPayRouter {
       PaymentController.getBankListZaloPay
     );
     this.router.post(
-      "/zaloPayRefund/:zp_trans_id",
+      "/zaloPayRefund",
       authFullRole,
       PaymentController.zaloPayRefund
     );

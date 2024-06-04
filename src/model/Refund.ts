@@ -40,7 +40,7 @@ export class Refund extends Model {
 
   @Column({
     type: DataType.STRING,
-    allowNull: false,
+    // allowNull: false,
   })
   reason!: string;
 
@@ -67,17 +67,8 @@ export class Refund extends Model {
   @Column({
     type: DataType.ENUM(
       REFUND_STATUS.PENDING,
-      REFUND_STATUS.PROCESSING,
-      REFUND_STATUS.APPROVED,
-      REFUND_STATUS.DECLINED,
-      REFUND_STATUS.COMPLETED,
       REFUND_STATUS.FAILED,
-      REFUND_STATUS.CANCELLED,
-      REFUND_STATUS.EXPIRED,
-      REFUND_STATUS.PENDING_APPROVAL,
-      REFUND_STATUS.UNDER_REVIEW,
-      REFUND_STATUS.REVERSED,
-      REFUND_STATUS.PARTIALLY_REFUNDED
+      REFUND_STATUS.COMPLETED
     ),
     allowNull: false,
   })

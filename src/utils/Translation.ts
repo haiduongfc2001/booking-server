@@ -109,17 +109,8 @@ const translation: { [key: string]: { [key: string]: string } } = {
   },
   refundStatus: {
     [REFUND_STATUS.PENDING]: "Chờ xử lý",
-    [REFUND_STATUS.PROCESSING]: "Đang xử lý",
-    [REFUND_STATUS.APPROVED]: "Đã duyệt",
-    [REFUND_STATUS.DECLINED]: "Từ chối",
-    [REFUND_STATUS.COMPLETED]: "Hoàn thành",
+    [REFUND_STATUS.COMPLETED]: "Đã hoàn tiền",
     [REFUND_STATUS.FAILED]: "Thất bại",
-    [REFUND_STATUS.CANCELLED]: "Đã hủy",
-    [REFUND_STATUS.EXPIRED]: "Đã hết hạn",
-    [REFUND_STATUS.PENDING_APPROVAL]: "Chờ duyệt",
-    [REFUND_STATUS.UNDER_REVIEW]: "Đang xem xét",
-    [REFUND_STATUS.REVERSED]: "Đã đảo ngược",
-    [REFUND_STATUS.PARTIALLY_REFUNDED]: "Hoàn tiền một phần",
   },
 };
 

@@ -11,6 +11,8 @@ import {
   BOOKING_STATUS,
   HashAlgorithm,
   PAYMENT_STATUS,
+  REFUND_STATUS,
+  ROOM_STATUS,
   VnpLocale,
 } from "../config/enum.config";
 import {
@@ -35,6 +37,7 @@ import { minioConfig } from "../config/minio.config";
 import { translate } from "../utils/Translation";
 import { Room } from "../model/Room";
 import { Bed } from "../model/Bed";
+import { Refund } from "../model/Refund";
 
 const numberRegex = /^[0-9]+$/;
 
@@ -60,6 +63,7 @@ interface resultCallback {
 }
 
 interface ZaloPayRefundRequest {
+  booking_id: number;
   amount: number;
   description: string;
 }
@@ -476,60 +480,55 @@ class PaymentController {
           .json({ status: 404, message: "Booking not found!" });
       }
 
+      // Prepare room booking information with presigned URLs
       const updatedRoomBookings = await Promise.all(
         booking.roomBookings.map(async (roomBooking) => {
-          const updatedRoom = {
-            ...roomBooking.room.toJSON(),
-            roomType: {
-              ...roomBooking.room.roomType.toJSON(),
-              roomImages: await Promise.all(
-                roomBooking.room.roomType.roomImages.map(async (image) => {
-                  const presignedUrl = await new Promise<string>(
-                    (resolve, reject) => {
-                      minioConfig
-                        .getClient()
-                        .presignedGetObject(
-                          DEFAULT_MINIO.BUCKET,
-                          `${DEFAULT_MINIO.HOTEL_PATH}/${roomBooking.room.roomType.hotel.id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${roomBooking.room.roomType.id}/${image.url}`,
-                          24 * 60 * 60,
-                          (err, presignedUrl) =>
-                            err ? reject(err) : resolve(presignedUrl)
-                        );
-                    }
-                  );
+          const roomType = roomBooking.room.roomType;
+          const hotel = roomType.hotel;
 
-                  return { ...image.toJSON(), url: presignedUrl };
-                })
-              ),
-              hotel: {
-                ...roomBooking.room.roomType.hotel.toJSON(),
-                address: `${roomBooking.room.roomType.hotel.street}, ${roomBooking.room.roomType.hotel.ward}, ${roomBooking.room.roomType.hotel.district}, ${roomBooking.room.roomType.hotel.province}`,
-                hotelImages: await Promise.all(
-                  roomBooking.room.roomType.hotel.hotelImages.map(
-                    async (image) => {
-                      const presignedUrl = await new Promise<string>(
-                        (resolve, reject) => {
-                          minioConfig
-                            .getClient()
-                            .presignedGetObject(
-                              DEFAULT_MINIO.BUCKET,
-                              `${DEFAULT_MINIO.HOTEL_PATH}/${roomBooking.room.roomType.hotel.id}/${image.url}`,
-                              24 * 60 * 60,
-                              (err, presignedUrl) =>
-                                err ? reject(err) : resolve(presignedUrl)
-                            );
-                        }
-                      );
+          // Generate presigned URLs for room images
+          const roomImages = await Promise.all(
+            roomType.roomImages.map(async (image) => {
+              const presignedUrl = await minioConfig
+                .getClient()
+                .presignedGetObject(
+                  DEFAULT_MINIO.BUCKET,
+                  `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${roomType.id}/${image.url}`,
+                  24 * 60 * 60
+                );
+              return { ...image.toJSON(), url: presignedUrl };
+            })
+          );
 
-                      return { ...image.toJSON(), url: presignedUrl };
-                    }
-                  )
-                ),
+          // Generate presigned URLs for hotel images
+          const hotelImages = await Promise.all(
+            hotel.hotelImages.map(async (image) => {
+              const presignedUrl = await minioConfig
+                .getClient()
+                .presignedGetObject(
+                  DEFAULT_MINIO.BUCKET,
+                  `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.id}/${image.url}`,
+                  24 * 60 * 60
+                );
+              return { ...image.toJSON(), url: presignedUrl };
+            })
+          );
+
+          return {
+            ...roomBooking.toJSON(),
+            room: {
+              ...roomBooking.room.toJSON(),
+              roomType: {
+                ...roomType.toJSON(),
+                roomImages,
+                hotel: {
+                  ...hotel.toJSON(),
+                  address: `${hotel.street}, ${hotel.ward}, ${hotel.district}, ${hotel.province}`,
+                  hotelImages,
+                },
               },
             },
           };
-
-          return { ...roomBooking.toJSON(), room: updatedRoom };
         })
       );
 
@@ -538,28 +537,34 @@ class PaymentController {
         roomBookings: updatedRoomBookings,
         translateStatus: translate("bookingStatus", booking.status),
         totalAdults: booking.roomBookings.reduce(
-          (sum, roomBooking) => sum + roomBooking.num_adults,
+          (sum, rb) => sum + rb.num_adults,
           0
         ),
         totalChildren: booking.roomBookings.reduce(
-          (sum, roomBooking) => sum + roomBooking.num_children,
+          (sum, rb) => sum + rb.num_children,
           0
         ),
         totalPrice: booking.total_room_price + booking.tax_and_fee,
       };
 
+      // Make the post request to ZaloPay endpoint
       const response = await axios(postConfig);
 
-      if (response?.data?.return_code === 1) {
+      // Handle response and update the database
+      const handleZaloPayResponse = async (
+        paymentStatus: string,
+        bookingStatus: string
+      ) => {
         const [updatedPayment, updatedBooking] = await Promise.all([
           payment.update({
-            status: PAYMENT_STATUS.COMPLETED,
+            status: paymentStatus,
             provider_metadata: response.data,
           }),
-          booking.update({ status: BOOKING_STATUS.CONFIRMED }),
+          booking.update({ status: bookingStatus }),
         ]);
-        return res.status(200).json({
-          status: 200,
+
+        return res.status(response?.data?.return_code === 1 ? 200 : 400).json({
+          status: response?.data?.return_code === 1 ? 200 : 400,
           message: response.data.return_message,
           details: response.data,
           data: {
@@ -575,62 +580,33 @@ class PaymentController {
             },
           },
         });
-      } else if (response?.data?.return_code === 2) {
-        const [updatedPayment, updatedBooking] = await Promise.all([
-          payment.update({
-            status: PAYMENT_STATUS.FAILED,
-            provider_metadata: response.data,
-          }),
-          booking.update({ status: BOOKING_STATUS.FAILED }),
-        ]);
-        return res.status(400).json({
-          status: 400,
-          message: response.data.return_message,
-          details: response.data,
-          data: {
-            ...updatedPayment.toJSON(),
-            translateStatus: translate("paymentStatus", updatedPayment.status),
-            bookingInfo: {
-              ...bookingInfo,
-              status: updatedBooking.status,
-              translateStatus: translate(
-                "bookingStatus",
-                updatedBooking.status
-              ),
-            },
-          },
-        });
-      } else if (response?.data?.return_code === 3) {
-        const [updatedPayment, updatedBooking] = await Promise.all([
-          payment.update({
-            status: PAYMENT_STATUS.PENDING,
-            provider_metadata: response.data,
-          }),
-          booking.update({ status: BOOKING_STATUS.PENDING }),
-        ]);
-        return res.status(202).json({
-          status: 202,
-          message: response.data.return_message,
-          details: response.data,
-          data: {
-            ...updatedPayment.toJSON(),
-            translateStatus: translate("paymentStatus", updatedPayment.status),
-            bookingInfo: {
-              ...bookingInfo,
-              status: updatedBooking.status,
-              translateStatus: translate(
-                "bookingStatus",
-                updatedBooking.status
-              ),
-            },
-          },
-        });
-      } else {
-        return res.status(500).json({
-          status: 500,
-          message: "Unexpected return code",
-          details: response.data,
-        });
+      };
+
+      switch (response?.data?.return_code) {
+        case 1:
+          await handleZaloPayResponse(
+            PAYMENT_STATUS.COMPLETED,
+            BOOKING_STATUS.CONFIRMED
+          );
+          break;
+        case 2:
+          await handleZaloPayResponse(
+            PAYMENT_STATUS.FAILED,
+            BOOKING_STATUS.FAILED
+          );
+          break;
+        case 3:
+          await handleZaloPayResponse(
+            PAYMENT_STATUS.PENDING,
+            BOOKING_STATUS.PENDING
+          );
+          break;
+        default:
+          return res.status(500).json({
+            status: 500,
+            message: "Unexpected return code",
+            details: response.data,
+          });
       }
     } catch (error: any) {
       return res.status(500).json({ error: error.message });
@@ -670,12 +646,54 @@ class PaymentController {
 
   async zaloPayRefund(req: Request, res: Response) {
     try {
+      const { booking_id, amount, description } =
+        req.body as ZaloPayRefundRequest;
+
+      const payment = await Payment.findOne({
+        where: { booking_id, status: PAYMENT_STATUS.COMPLETED },
+      });
+
+      const booking = await Booking.findByPk(booking_id, {
+        include: [
+          {
+            model: RoomBooking,
+            include: [
+              {
+                model: Room,
+              },
+            ],
+          },
+        ],
+      });
+
+      if (!payment || !booking || booking.status !== BOOKING_STATUS.CONFIRMED) {
+        return res.status(404).json({
+          status: 404,
+          message: "Booking not valid!",
+        });
+      }
+
+      await booking.update({
+        status: BOOKING_STATUS.CANCELLED,
+      });
+
+      // Update the status of each room associated with the booking
+      for (const roomBooking of booking.roomBookings) {
+        await roomBooking.room.update({
+          status: ROOM_STATUS.AVAILABLE,
+        });
+      }
+
       const { APP_ID, KEY1, ENDPOINT } = zaloPayConfig;
       const timestamp = Date.now();
       const uid = `${timestamp}${Math.floor(111 + Math.random() * 999)}`; // unique id
 
-      const { amount, description } = req.body as ZaloPayRefundRequest;
-      const { zp_trans_id } = req.params;
+      // Explicitly type the provider_metadata
+      const providerMetadata = payment.provider_metadata as {
+        zp_trans_id: number | undefined;
+      };
+
+      const zp_trans_id = providerMetadata?.zp_trans_id || 0;
 
       let params = {
         app_id: APP_ID,
@@ -711,10 +729,19 @@ class PaymentController {
         throw new Error("Empty response from ZaloPay API");
       }
 
+      // If response is not empty, create a new refund entry in the database
+      const newRefund = await Refund.create({
+        payment_id: payment.id,
+        amount,
+        reason: "",
+        refund_date: new Date(),
+        refund_trans_reference: response.data.m_refund_id,
+        provider_metadata: JSON.stringify(response.data),
+        status: REFUND_STATUS.PENDING,
+      });
+
       // If response is not empty, return it
-      return res
-        .status(200)
-        .json({ ...response.data, m_refund_id: params.m_refund_id });
+      return res.status(200).json({ ...response.data, refund: newRefund });
     } catch (error: any) {
       console.error("Error in ZaloPay refund:", error);
       return res
@@ -725,12 +752,26 @@ class PaymentController {
 
   async zaloPayRefundStatus(req: Request, res: Response) {
     try {
+      const { payment_id } = req.params;
+
+      const refund = await Refund.findOne({
+        where: {
+          payment_id,
+        },
+      });
+
+      if (!refund) {
+        return res.status(404).json({
+          status: 404,
+          message: "Refund not valid!",
+        });
+      }
+
       const { APP_ID, KEY1, ENDPOINT } = zaloPayConfig;
-      const { m_refund_id } = req.params;
       const params = {
         app_id: APP_ID,
         timestamp: Date.now(), // miliseconds
-        m_refund_id,
+        m_refund_id: refund?.refund_trans_reference,
         mac: "",
       };
 
@@ -748,6 +789,31 @@ class PaymentController {
       };
 
       const response = await axios(postConfig);
+
+      switch (response?.data?.return_code) {
+        case 1:
+          await refund.update({
+            status: REFUND_STATUS.COMPLETED,
+          });
+          break;
+        case 2:
+          await refund.update({
+            status: REFUND_STATUS.FAILED,
+          });
+          break;
+        case 3:
+          await refund.update({
+            status: REFUND_STATUS.PENDING,
+          });
+          break;
+        default:
+          return res.status(500).json({
+            status: 500,
+            message: "Unexpected return code",
+            details: response.data,
+          });
+      }
+
       return res.status(200).json(response.data);
     } catch (error: any) {
       console.error("Error in ZaloPay refund:", error);
