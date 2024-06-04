@@ -2,7 +2,7 @@ interface Room {
   adults: number;
   children: number[];
   cost?: number;
-  surcharges: number;
+  surcharges?: number;
 }
 
 interface SurchargeRates {
