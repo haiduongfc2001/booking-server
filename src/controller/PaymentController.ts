@@ -546,42 +546,78 @@ class PaymentController {
       const response = await axios(postConfig);
 
       if (response?.data?.return_code === 1) {
-        await payment.update({ status: PAYMENT_STATUS.COMPLETED });
-        await booking.update({ status: BOOKING_STATUS.CONFIRMED });
+        const [updatedPayment, updatedBooking] = await Promise.all([
+          payment.update({
+            status: PAYMENT_STATUS.COMPLETED,
+            provider_metadata: response.data,
+          }),
+          booking.update({ status: BOOKING_STATUS.CONFIRMED }),
+        ]);
         return res.status(200).json({
           status: 200,
           message: response.data.return_message,
           details: response.data,
           data: {
-            ...payment.toJSON(),
-            translateStatus: translate("paymentStatus", payment.status),
-            bookingInfo,
+            ...updatedPayment.toJSON(),
+            translateStatus: translate("paymentStatus", updatedPayment.status),
+            bookingInfo: {
+              ...bookingInfo,
+              status: updatedBooking.status,
+              translateStatus: translate(
+                "bookingStatus",
+                updatedBooking.status
+              ),
+            },
           },
         });
       } else if (response?.data?.return_code === 2) {
-        await payment.update({ status: PAYMENT_STATUS.FAILED });
-        await booking.update({ status: BOOKING_STATUS.FAILED });
+        const [updatedPayment, updatedBooking] = await Promise.all([
+          payment.update({
+            status: PAYMENT_STATUS.FAILED,
+            provider_metadata: response.data,
+          }),
+          booking.update({ status: BOOKING_STATUS.FAILED }),
+        ]);
         return res.status(400).json({
           status: 400,
           message: response.data.return_message,
           details: response.data,
           data: {
-            ...payment.toJSON(),
-            translateStatus: translate("paymentStatus", payment.status),
-            bookingInfo,
+            ...updatedPayment.toJSON(),
+            translateStatus: translate("paymentStatus", updatedPayment.status),
+            bookingInfo: {
+              ...bookingInfo,
+              status: updatedBooking.status,
+              translateStatus: translate(
+                "bookingStatus",
+                updatedBooking.status
+              ),
+            },
           },
         });
       } else if (response?.data?.return_code === 3) {
-        await payment.update({ status: PAYMENT_STATUS.PENDING });
-        await booking.update({ status: BOOKING_STATUS.PENDING });
+        const [updatedPayment, updatedBooking] = await Promise.all([
+          payment.update({
+            status: PAYMENT_STATUS.PENDING,
+            provider_metadata: response.data,
+          }),
+          booking.update({ status: BOOKING_STATUS.PENDING }),
+        ]);
         return res.status(202).json({
           status: 202,
           message: response.data.return_message,
           details: response.data,
           data: {
-            ...payment.toJSON(),
-            translateStatus: translate("paymentStatus", payment.status),
-            bookingInfo,
+            ...updatedPayment.toJSON(),
+            translateStatus: translate("paymentStatus", updatedPayment.status),
+            bookingInfo: {
+              ...bookingInfo,
+              status: updatedBooking.status,
+              translateStatus: translate(
+                "bookingStatus",
+                updatedBooking.status
+              ),
+            },
           },
         });
       } else {

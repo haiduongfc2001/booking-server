@@ -6,6 +6,7 @@ import { RoomBooking } from "../model/RoomBooking";
 import { Room } from "../model/Room";
 import { Hotel } from "../model/Hotel";
 import { RoomType } from "../model/RoomType";
+import { Payment } from "../model/Payment";
 
 class ReviewController {
   async createReview(req: Request, res: Response) {

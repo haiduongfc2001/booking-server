@@ -93,7 +93,4 @@ export class Booking extends Model {
 
   @HasMany(() => RoomBooking)
   roomBookings!: RoomBooking[];
-
-  @HasMany(() => Review)
-  reviews!: Review[];
 }

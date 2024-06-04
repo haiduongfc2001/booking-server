@@ -8,7 +8,11 @@ import generateRandomString from "../utils/RandomString";
 import dayjs from "dayjs";
 import { toUpperCase } from "../utils/StringConversion";
 import { Policy } from "../model/Policy";
-import { BOOKING_STATUS, ROOM_STATUS } from "../config/enum.config";
+import {
+  BOOKING_STATUS,
+  PAYMENT_STATUS,
+  ROOM_STATUS,
+} from "../config/enum.config";
 import { calculateRoomDiscount } from "../utils/CalculateRoomDiscount";
 import { RoomBooking } from "../model/RoomBooking";
 import { Room } from "../model/Room";
@@ -21,6 +25,8 @@ import { RoomImage } from "../model/RoomImage";
 import { minioConfig } from "../config/minio.config";
 import { DEFAULT_MINIO } from "../config/constant.config";
 import { translate } from "../utils/Translation";
+import { Payment } from "../model/Payment";
+import { PaymentMethod } from "../model/PaymentMethod";
 
 interface Child {
   age: number;
@@ -59,6 +65,8 @@ class BookingController {
                     model: RoomType,
                     include: [
                       { model: Hotel, include: [{ model: HotelImage }] },
+                      { model: Bed },
+                      { model: RoomImage },
                     ],
                   },
                 ],
@@ -86,6 +94,30 @@ class BookingController {
             ...roomBooking.room.toJSON(),
             roomType: {
               ...roomBooking.room.roomType.toJSON(),
+              roomImages: await Promise.all(
+                roomBooking.room.roomType.roomImages.map(async (image) => {
+                  const presignedUrl = await new Promise<string>(
+                    (resolve, reject) => {
+                      minioConfig
+                        .getClient()
+                        .presignedGetObject(
+                          DEFAULT_MINIO.BUCKET,
+                          `${DEFAULT_MINIO.HOTEL_PATH}/${roomBooking.room.roomType.hotel.id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${roomBooking.room.roomType.id}/${image.url}`,
+                          24 * 60 * 60,
+                          (err, presignedUrl) => {
+                            if (err) reject(err);
+                            else resolve(presignedUrl);
+                          }
+                        );
+                    }
+                  );
+
+                  return {
+                    ...image.toJSON(),
+                    url: presignedUrl,
+                  };
+                })
+              ),
               hotel: {
                 ...roomBooking.room.roomType.hotel.toJSON(),
                 hotelImages: await Promise.all(
@@ -125,6 +157,11 @@ class BookingController {
         })
       );
 
+      const payment = await Payment.findOne({
+        where: { booking_id: booking.id },
+        include: [{ model: PaymentMethod }],
+      });
+
       // Add additional calculated fields
       const bookingInfo = {
         ...booking.toJSON(),
@@ -141,10 +178,31 @@ class BookingController {
         totalPrice: booking.total_room_price + booking.tax_and_fee,
       };
 
+      // If payment is not found, return 404 with payment status
+      if (!payment) {
+        return res.status(404).json({
+          status: 404,
+          message: "The booking has not been paid yet!",
+          data: {
+            ...bookingInfo,
+            payment: {
+              status: PAYMENT_STATUS.FAILED,
+              translateStatus: "Chưa thanh toán",
+            },
+          },
+        });
+      }
+
       return res.status(200).json({
         status: 200,
         message: `Successfully fetched booking by id ${booking_id}!`,
-        data: bookingInfo,
+        data: {
+          ...bookingInfo,
+          payment: {
+            ...payment.toJSON(),
+            translateStatus: translate("paymentStatus", payment.status),
+          },
+        },
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
@@ -496,6 +554,7 @@ class BookingController {
         where: {
           customer_id,
         },
+        order: [["created_at", "desc"]],
         include: [
           {
             model: RoomBooking,
