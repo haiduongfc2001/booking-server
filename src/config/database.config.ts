@@ -22,6 +22,7 @@ import { Refund } from "../model/Refund";
 import { Review } from "../model/Review";
 import { RoomTypeAmenity } from "../model/RoomTypeAmenity";
 import { HotelAmenity } from "../model/HotelAmenity";
+import { Admin } from "../model/Admin";
 
 dotenv.config();
 
@@ -96,6 +97,7 @@ class Database {
         Review,
         RoomTypeAmenity,
         HotelAmenity,
+        Admin,
       ],
       define: config.define,
       logging: false,

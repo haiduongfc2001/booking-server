@@ -30,9 +30,10 @@ export const BED_TYPE = {
 export const TABLE_NAME = {
   SERVICE: "service",
   CUSTOMER: "customer",
+  STAFF: "staff",
+  ADMIN: "admin",
   HOTEL: "hotel",
   HOTEL_IMAGE: "hotel_image",
-  STAFF: "staff",
   ROOM: "room",
   ROOM_IMAGE: "room_image",
   PROMOTION: "promotion",

@@ -15,6 +15,7 @@ import BookingRouter from "./router/BookingRouter";
 import PaymentRouter from "./router/payment/PaymentRouter";
 import PromotionRouter from "./router/PromotionRouter";
 import ReviewRouter from "./router/ReviewRouter";
+import AdminRouter from "./router/AdminRouter";
 
 dotenv.config();
 
@@ -62,6 +63,7 @@ class App {
     apiRouter.use("/promotion", PromotionRouter);
     apiRouter.use("/payment-method", PromotionRouter);
     apiRouter.use("/review", ReviewRouter);
+    apiRouter.use("/admin", AdminRouter);
 
     this.app.use("/api/v1", apiRouter);
   }

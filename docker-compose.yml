@@ -12,6 +12,7 @@ services:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio123
     command: ["server", "/data", "--console-address", ":9001"]
+    restart: always
     networks:
       - my-booking-network
 
@@ -53,7 +54,7 @@ services:
     volumes:
       - ./:/app
       - /app/node_modules
-    restart: always
+    # restart: always
     networks:
       - my-booking-network
     # command: ["nodemon", "--exec", "ts-node", "src/index.ts"]

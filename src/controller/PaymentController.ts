@@ -684,6 +684,19 @@ class PaymentController {
         });
       }
 
+      if (amount <= 0) {
+        return res.status(200).json({
+          status: 200,
+          data: {
+            status: BOOKING_STATUS.CANCELLED,
+            translateStatus: translate(
+              "bookingStatus",
+              BOOKING_STATUS.CANCELLED
+            ),
+          },
+        });
+      }
+
       const { APP_ID, KEY1, ENDPOINT } = zaloPayConfig;
       const timestamp = Date.now();
       const uid = `${timestamp}${Math.floor(111 + Math.random() * 999)}`; // unique id
@@ -729,19 +742,28 @@ class PaymentController {
         throw new Error("Empty response from ZaloPay API");
       }
 
+      console.log(response.data);
+
       // If response is not empty, create a new refund entry in the database
       const newRefund = await Refund.create({
         payment_id: payment.id,
         amount,
-        reason: "",
+        reason: description,
         refund_date: new Date(),
-        refund_trans_reference: response.data.m_refund_id,
+        refund_trans_reference: params.m_refund_id,
         provider_metadata: JSON.stringify(response.data),
         status: REFUND_STATUS.PENDING,
       });
 
       // If response is not empty, return it
-      return res.status(200).json({ ...response.data, refund: newRefund });
+      return res.status(200).json({
+        ...response.data,
+        refund: newRefund,
+        booking: {
+          status: BOOKING_STATUS.CANCELLED,
+          translateStatus: translate("bookingStatus", BOOKING_STATUS.CANCELLED),
+        },
+      });
     } catch (error: any) {
       console.error("Error in ZaloPay refund:", error);
       return res

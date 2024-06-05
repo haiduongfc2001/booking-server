@@ -37,7 +37,7 @@ class ZaloPayRouter {
       PaymentController.zaloPayRefund
     );
     this.router.get(
-      "/zaloPayRefundStatus/:m_refund_id",
+      "/zaloPayRefundStatus/:payment_id",
       authFullRole,
       PaymentController.zaloPayRefundStatus
     );

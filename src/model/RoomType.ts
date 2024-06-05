@@ -2,6 +2,7 @@ import {
   BelongsTo,
   Column,
   DataType,
+  Default,
   ForeignKey,
   HasMany,
   Model,
@@ -56,6 +57,13 @@ export class RoomType extends Model {
     },
   })
   base_price!: number;
+
+  @Default(true)
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+  })
+  free_breakfast!: boolean;
 
   @Column({
     type: DataType.INTEGER,

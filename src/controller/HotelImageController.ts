@@ -97,6 +97,85 @@ class HotelImageController {
       return ErrorHandler.handleServerError(res, error);
     }
   }
+  async createHotelImage(req: Request, res: Response) {
+    try {
+      // Check if files are uploaded
+      if (!req.file) {
+        return res.status(400).json({
+          status: 400,
+          error: "No files uploaded!",
+        });
+      }
+
+      // Check if the hotel_id exists in the hotel table
+      const hotel_id = req.params.hotel_id;
+      const hotelExists = await Hotel.findByPk(hotel_id);
+      if (!hotelExists) {
+        return res.status(404).json({
+          status: 404,
+          message: "Hotel not found!",
+        });
+      }
+
+      // Define the folder or path within the bucket
+      const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}`;
+
+      const file = req.file as Express.Multer.File;
+
+      const metaData = { "Content-Type": file.mimetype };
+      const typeFile = getFileType(file.originalname);
+      const newName = `${Date.now()}_${generateRandomString(16)}.${typeFile}`;
+      const objectName = `${folder}/${newName}`;
+
+      await minioConfig
+        .getClient()
+        .putObject(
+          DEFAULT_MINIO.BUCKET,
+          objectName,
+          file.buffer,
+          file.size,
+          metaData
+        );
+
+      const caption = req.body?.caption;
+      const is_primary = req.body?.is_primary;
+
+      // Create a new HotelImage object with hotel_id, fileUrl, caption, and is_primary
+      const newHotelImage = new HotelImage({
+        hotel_id,
+        url: newName,
+        caption,
+        is_primary,
+      });
+
+      // Save the new HotelImage object to the database
+      const hotelImage = await newHotelImage.save();
+
+      if (is_primary !== undefined) {
+        if (is_primary === true || is_primary === "true") {
+          // Set all is_primary to false for other room_images with the same room_id
+          await HotelImage.update(
+            { is_primary: false },
+            {
+              where: {
+                hotel_id,
+                id: { [Op.ne]: hotelImage.id }, // Exclude the current room_image
+              },
+            }
+          );
+        }
+        hotelImage.is_primary = is_primary;
+      }
+
+      // Respond with success message
+      res.status(201).json({
+        status: 201,
+        message: "Successfully created new hotel images!",
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
 
   async getImagesByHotelId(req: Request, res: Response) {
     try {

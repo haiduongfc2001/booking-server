@@ -23,6 +23,65 @@ import { Bed } from "../model/Bed";
 import calculateNumberOfNights from "../utils/CalculateNumNights";
 import { RoomTypeAmenity } from "../model/RoomTypeAmenity";
 import { HotelAmenity } from "../model/HotelAmenity";
+import { Review } from "../model/Review";
+import { calculateAverageRatings } from "../utils/CalculateRating";
+
+export const extractPolicies = (policies: Policy[]) => {
+  let tax = 0;
+  let service_fee = 0;
+  let surcharge_rates: { [key: string]: any } = {};
+
+  policies.forEach((policy) => {
+    if (policy.type === "TAX") {
+      tax = Number(policy.value);
+    } else if (policy.type === "SERVICE_FEE") {
+      service_fee = Number(policy.value);
+    } else if (policy.type === "SURCHARGE_RATES") {
+      surcharge_rates = JSON.parse(policy.value);
+    }
+  });
+
+  return { tax, service_fee, surcharge_rates };
+};
+
+export const getPresignedUrl = (
+  hotelId: number,
+  imagePath: string
+): Promise<string> => {
+  return new Promise<string>((resolve, reject) => {
+    minioConfig
+      .getClient()
+      .presignedGetObject(
+        DEFAULT_MINIO.BUCKET,
+        `${DEFAULT_MINIO.HOTEL_PATH}/${hotelId}/${imagePath}`,
+        24 * 60 * 60,
+        (err, presignedUrl) => {
+          if (err) reject(err);
+          else resolve(presignedUrl);
+        }
+      );
+  });
+};
+
+export const generatePresignedUrls = async (
+  hotelId: number,
+  images: any[]
+): Promise<any[]> => {
+  return Promise.all(
+    images.map(async (image) => {
+      try {
+        const presignedUrl = await getPresignedUrl(hotelId, image.url);
+        return {
+          ...image.toJSON(),
+          url: presignedUrl,
+        };
+      } catch (error) {
+        console.error("Error generating presigned URL:", error);
+        return null;
+      }
+    })
+  );
+};
 
 class HotelController {
   async createHotel(req: Request, res: Response) {
@@ -134,11 +193,7 @@ class HotelController {
                 include: [
                   {
                     model: RoomBooking,
-                    include: [
-                      {
-                        model: Booking,
-                      },
-                    ],
+                    include: [{ model: Booking }],
                   },
                 ],
               },
@@ -159,22 +214,11 @@ class HotelController {
         });
       }
 
-      let tax: number = 0;
-      let service_fee: number = 0;
-      let surcharge_rates: { [key: string]: any } = {};
-
-      hotel.policies.forEach((policy) => {
-        if (policy.type === "TAX") {
-          tax = Number(policy.value);
-        } else if (policy.type === "SERVICE_FEE") {
-          service_fee = Number(policy.value);
-        } else if (policy.type === "SURCHARGE_RATES") {
-          surcharge_rates = JSON.parse(policy.value);
-        }
-      });
+      const { tax, service_fee, surcharge_rates } = extractPolicies(
+        hotel.policies
+      );
 
       const num_nights = calculateNumberOfNights(check_in, check_out);
-
       const customerRequest = {
         num_rooms,
         num_nights,
@@ -182,7 +226,6 @@ class HotelController {
         num_children,
         children_ages,
       };
-
       const formattedCheckInDate = getDateOnly(check_in);
       const formattedCheckOutDate = getDateOnly(check_out);
 
@@ -229,34 +272,9 @@ class HotelController {
 
             let roomTypeImages = [];
             if (roomType.roomImages && roomType.roomImages.length > 0) {
-              roomTypeImages = await Promise.all(
-                roomType.roomImages.map(async (image) => {
-                  try {
-                    const presignedUrl = await new Promise<string>(
-                      (resolve, reject) => {
-                        minioConfig
-                          .getClient()
-                          .presignedGetObject(
-                            DEFAULT_MINIO.BUCKET,
-                            `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${roomType.id}/${image.url}`,
-                            24 * 60 * 60,
-                            (err, presignedUrl) => {
-                              if (err) reject(err);
-                              else resolve(presignedUrl);
-                            }
-                          );
-                      }
-                    );
-
-                    return {
-                      ...image.toJSON(),
-                      url: presignedUrl,
-                    };
-                  } catch (error) {
-                    console.error("Error generating presigned URL:", error);
-                    return null;
-                  }
-                })
+              roomTypeImages = await generatePresignedUrls(
+                hotel.id,
+                roomType.roomImages
               );
             }
 
@@ -271,7 +289,6 @@ class HotelController {
               tax,
               service_fee,
             };
-
             const cost = calculateCost(customerRequest, hotelPolicy);
 
             const beds: any[] = roomType.beds;
@@ -298,56 +315,63 @@ class HotelController {
         (roomType) => roomType !== null
       );
 
-      // Sort the filtered room types by final_price from low to high
-      filteredRoomTypes.sort((a, b) => a.final_price - b.final_price);
+      // Sort the filtered room types by effective_price from low to high
+      filteredRoomTypes.sort((a, b) => a.effective_price - b.effective_price);
+
+      const reviews = await Review.findAll({
+        include: [
+          {
+            model: Booking,
+            include: [
+              {
+                model: RoomBooking,
+                include: [
+                  {
+                    model: Room,
+                    include: [
+                      {
+                        model: RoomType,
+                        where: { hotel_id },
+                        include: [{ model: Hotel }],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      const reviewsByHotel = reviews.filter((review) =>
+        review.booking.roomBookings.some(
+          (roomBooking) =>
+            roomBooking.room && // Kiểm tra roomBooking.room có tồn tại không
+            roomBooking.room.roomType &&
+            roomBooking.room.roomType.hotel.id === Number(hotel_id)
+        )
+      );
 
       if (filteredRoomTypes.length > 0) {
-        const hotelImages = await Promise.all(
-          hotel.hotelImages.map(async (image) => {
-            try {
-              const presignedUrl = await new Promise<string>(
-                (resolve, reject) => {
-                  minioConfig
-                    .getClient()
-                    .presignedGetObject(
-                      DEFAULT_MINIO.BUCKET,
-                      `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.id}/${image.url}`,
-                      24 * 60 * 60,
-                      (err, presignedUrl) => {
-                        if (err) reject(err);
-                        else resolve(presignedUrl);
-                      }
-                    );
-                }
-              );
-
-              return {
-                ...image.toJSON(),
-                url: presignedUrl,
-              };
-            } catch (error) {
-              console.error("Error generating presigned URL:", error);
-              return null;
-            }
-          })
+        const hotelImages = await generatePresignedUrls(
+          hotel.id,
+          hotel.hotelImages
         );
+
+        const averageRatings = calculateAverageRatings(reviewsByHotel);
 
         const { street, ward, district, province } = hotel;
         return res.status(200).json({
           status: 200,
           data: {
-            id: hotel.id,
-            name: hotel.name,
-            street,
-            ward,
-            district,
-            province,
+            ...hotel.toJSON(),
             address: `${street}, ${ward}, ${district}, ${province}`,
-            description: hotel.description,
             min_room_price,
             original_room_price,
             images: hotelImages.filter((image) => image !== null),
             room_types: filteredRoomTypes,
+            averageRatings,
+            totalReviews: reviewsByHotel.length,
           },
         });
       }

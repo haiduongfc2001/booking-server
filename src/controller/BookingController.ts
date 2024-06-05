@@ -27,9 +27,8 @@ import { DEFAULT_MINIO } from "../config/constant.config";
 import { translate } from "../utils/Translation";
 import { Payment } from "../model/Payment";
 import { PaymentMethod } from "../model/PaymentMethod";
-import { Promotion } from "../model/Promotion";
-import { Op } from "sequelize";
-import { DISCOUNT_TYPE } from "../config/enum.config";
+import { Refund } from "../model/Refund";
+import { Review } from "../model/Review";
 
 interface Child {
   age: number;
@@ -183,8 +182,8 @@ class BookingController {
 
       // If payment is not found, return 404 with payment status
       if (!payment) {
-        return res.status(404).json({
-          status: 404,
+        return res.status(200).json({
+          status: 200,
           message: "The booking has not been paid yet!",
           data: {
             ...bookingInfo,
@@ -196,6 +195,14 @@ class BookingController {
         });
       }
 
+      const refund = await Refund.findOne({
+        where: { payment_id: payment.id },
+      });
+
+      const review = await Review.findOne({
+        where: { booking_id, customer_id: booking.customer_id },
+      });
+
       return res.status(200).json({
         status: 200,
         message: `Successfully fetched booking by id ${booking_id}!`,
@@ -204,7 +211,18 @@ class BookingController {
           payment: {
             ...payment.toJSON(),
             translateStatus: translate("paymentStatus", payment.status),
+            refund: refund
+              ? {
+                  ...refund.toJSON(),
+                  translateStatus: translate("refundStatus", refund.status),
+                }
+              : null,
           },
+          review: review
+            ? {
+                ...review.toJSON(),
+              }
+            : null,
         },
       });
     } catch (error) {
