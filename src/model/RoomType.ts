@@ -13,6 +13,7 @@ import { Hotel } from "./Hotel";
 import { Bed } from "./Bed";
 import { RoomImage } from "./RoomImage";
 import { Promotion } from "./Promotion";
+import { RoomTypeAmenity } from "./RoomTypeAmenity";
 
 @Table({
   tableName: TABLE_NAME.ROOM_TYPE,
@@ -120,4 +121,7 @@ export class RoomType extends Model {
 
   @HasMany(() => Promotion)
   promotions!: Promotion[];
+
+  @HasMany(() => RoomTypeAmenity)
+  roomTypeAmenities!: RoomTypeAmenity[];
 }

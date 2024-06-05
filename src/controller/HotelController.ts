@@ -21,6 +21,8 @@ import { Policy } from "../model/Policy";
 import { RoomImage } from "../model/RoomImage";
 import { Bed } from "../model/Bed";
 import calculateNumberOfNights from "../utils/CalculateNumNights";
+import { RoomTypeAmenity } from "../model/RoomTypeAmenity";
+import { HotelAmenity } from "../model/HotelAmenity";
 
 class HotelController {
   async createHotel(req: Request, res: Response) {
@@ -141,8 +143,10 @@ class HotelController {
                 ],
               },
               { model: Bed },
+              { model: RoomTypeAmenity },
             ],
           },
+          { model: HotelAmenity },
           { model: HotelImage },
           { model: Policy },
         ],

@@ -20,6 +20,8 @@ import { Payment } from "../model/Payment";
 import { PaymentMethod } from "../model/PaymentMethod";
 import { Refund } from "../model/Refund";
 import { Review } from "../model/Review";
+import { RoomTypeAmenity } from "../model/RoomTypeAmenity";
+import { HotelAmenity } from "../model/HotelAmenity";
 
 dotenv.config();
 
@@ -92,6 +94,8 @@ class Database {
         PaymentMethod,
         Refund,
         Review,
+        RoomTypeAmenity,
+        HotelAmenity,
       ],
       define: config.define,
       logging: false,

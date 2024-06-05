@@ -8,9 +8,10 @@ import {
 } from "sequelize-typescript";
 import { Booking } from "./Booking";
 import { Customer } from "./Customer";
+import { TABLE_NAME } from "../config/constant.config";
 
 @Table({
-  tableName: "review",
+  tableName: TABLE_NAME.REVIEW,
 })
 export class Review extends Model {
   @Column({
@@ -92,7 +93,7 @@ export class Review extends Model {
 
   @Column({
     type: DataType.TEXT,
-    allowNull: true,
+    allowNull: false,
   })
   comment!: string;
 }

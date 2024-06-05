@@ -2,9 +2,9 @@
 import cron from "node-cron";
 import { Op } from "sequelize";
 import { Booking } from "../model/Booking";
-import { Payment } from "../model/Payment"; // Import Payment model
+import { Payment } from "../model/Payment";
 import { Promotion } from "../model/Promotion";
-import { BOOKING_STATUS, PAYMENT_STATUS } from "../config/enum.config"; // Add PAYMENT_STATUS
+import { BOOKING_STATUS, PAYMENT_STATUS } from "../config/enum.config";
 import { updateRoomStatus } from "../helper/updateStatuses";
 
 // Set up the cron job

@@ -48,6 +48,8 @@ export const TABLE_NAME = {
   PAYMENT_METHOD: "payment_method",
   REFUND: "refund",
   REVIEW: "review",
+  ROOM_TYPE_AMENITY: "room_type_amenity",
+  HOTEL_AMENITY: "hotel_amenity",
 };
 
 export const PAGINATION = {

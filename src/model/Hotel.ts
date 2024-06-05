@@ -3,6 +3,7 @@ import { TABLE_NAME } from "../config/constant.config";
 import { Policy } from "./Policy";
 import { RoomType } from "./RoomType";
 import { HotelImage } from "./HotelImage";
+import { HotelAmenity } from "./HotelAmenity";
 
 @Table({
   tableName: TABLE_NAME.HOTEL,
@@ -75,4 +76,7 @@ export class Hotel extends Model {
 
   @HasMany(() => HotelImage)
   hotelImages!: HotelImage[];
+
+  @HasMany(() => HotelAmenity)
+  hotelAmenities!: HotelAmenity[];
 }
