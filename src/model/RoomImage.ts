@@ -26,7 +26,7 @@ export class RoomImage extends Model {
     type: DataType.INTEGER,
     allowNull: false,
   })
-  room_id!: number;
+  room_type_id!: number;
 
   @BelongsTo(() => RoomType)
   roomType!: RoomType;

@@ -1,6 +1,5 @@
 import { Sequelize } from "sequelize-typescript";
 import * as dotenv from "dotenv";
-import { Service } from "../model/Service";
 import { Customer } from "../model/Customer";
 import { Hotel } from "../model/Hotel";
 import { HotelImage } from "../model/HotelImage";
@@ -23,6 +22,8 @@ import { Review } from "../model/Review";
 import { RoomTypeAmenity } from "../model/RoomTypeAmenity";
 import { HotelAmenity } from "../model/HotelAmenity";
 import { Admin } from "../model/Admin";
+import { BookingGuest } from "../model/BookingGuest";
+import { RoomBookingGuest } from "../model/RoomBookingGuest";
 
 dotenv.config();
 
@@ -75,7 +76,6 @@ class Database {
         idle: 10000,
       },
       models: [
-        Service,
         Customer,
         Hotel,
         HotelImage,
@@ -98,6 +98,8 @@ class Database {
         RoomTypeAmenity,
         HotelAmenity,
         Admin,
+        BookingGuest,
+        RoomBookingGuest,
       ],
       define: config.define,
       logging: false,

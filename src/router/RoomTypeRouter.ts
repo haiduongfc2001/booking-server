@@ -1,5 +1,5 @@
 import BaseRoutes from "./base/BaseRouter";
-import RoomController from "../controller/RoomController";
+import RoomTypeController from "../controller/RoomTypeController";
 import multer from "multer";
 import validate from "../helper/validate";
 import { createRoomSchema, updateRoomSchema } from "../schema/RoomSchema";
@@ -13,36 +13,36 @@ const upload = multer({ storage: storage });
 class RoomRoutes extends BaseRoutes {
   public routes(): void {
     this.router.get(
-      "/room/getAllRooms",
-      authFullRole,
+      "/:room_type_id/getAllRoomTypes",
+      // authFullRole,
       updateRoomStatus,
-      RoomController.getAllRooms
+      RoomTypeController.getAllRoomTypes
     );
     this.router.get(
-      "/:hotel_id/room_type/:room_type_id/:room_id/getRoomById",
-      authFullRole,
+      "/:hotel_id/room_type/:room_type_id/getRoomTypeById",
+      // authFullRole,
       updateRoomStatus,
-      RoomController.getRoomById
+      RoomTypeController.getRoomTypeById
     );
     this.router.post(
-      "/:hotel_id/room_type/:room_type_id/createRoom",
-      authFullRole,
+      "/:hotel_id/room_type/createRoomType",
+      // authFullRole,
       // validate(createRoomSchema),
       upload.array("images", 5),
-      RoomController.createRoom
+      RoomTypeController.createRoomType
     );
     this.router.patch(
       "/:hotel_id/room_type/:room_type_id/updateRoom",
-      authFullRole,
+      // authFullRole,
       updateRoomStatus,
       // validate(updateRoomSchema),
       upload.array("images", 5),
-      RoomController.updateRoom
+      RoomTypeController.updateRoom
     );
     this.router.delete(
-      "/:hotel_id/room_type/:room_type_id/:room_id/deleteRoom",
-      authFullRole,
-      RoomController.deleteRoom
+      "/:hotel_id/room_type/:room_type_id/deleteRoomType",
+      // authFullRole,
+      RoomTypeController.deleteRoomType
     );
   }
 }

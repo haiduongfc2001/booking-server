@@ -1,22 +1,22 @@
 import {
-  BelongsTo,
   Column,
   DataType,
   Default,
-  ForeignKey,
   HasMany,
   Model,
   Table,
 } from "sequelize-typescript";
-import { Customer } from "./Customer";
-import { BOOKING_STATUS } from "../config/enum.config";
+import {
+  BOOKING_GUEST_PAYMENT_STATUS,
+  BOOKING_GUEST_STATUS,
+} from "../config/enum.config";
 import { TABLE_NAME } from "../config/constant.config";
-import { RoomBooking } from "./RoomBooking";
+import { RoomBookingGuest } from "./RoomBookingGuest";
 
 @Table({
-  tableName: TABLE_NAME.BOOKING,
+  tableName: TABLE_NAME.BOOKING_GUEST,
 })
-export class Booking extends Model {
+export class BookingGuest extends Model {
   @Column({
     type: DataType.INTEGER,
     primaryKey: true,
@@ -30,15 +30,17 @@ export class Booking extends Model {
   })
   code!: string;
 
-  @ForeignKey(() => Customer)
   @Column({
-    type: DataType.INTEGER,
+    type: DataType.STRING,
     allowNull: false,
   })
-  customer_id!: number;
+  customer_name!: string;
 
-  @BelongsTo(() => Customer)
-  customer!: Customer;
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
+  customer_phone!: string;
 
   @Column({
     type: DataType.DATE,
@@ -70,27 +72,28 @@ export class Booking extends Model {
   })
   tax_and_fee!: number;
 
-  @Default(BOOKING_STATUS.PENDING)
+  @Default(BOOKING_GUEST_STATUS.CONFIRMED)
   @Column({
     type: DataType.ENUM(
-      BOOKING_STATUS.PENDING,
-      BOOKING_STATUS.CONFIRMED,
-      BOOKING_STATUS.CHECKED_IN,
-      BOOKING_STATUS.CHECKED_OUT,
-      BOOKING_STATUS.CANCELLED,
-      BOOKING_STATUS.FAILED
+      BOOKING_GUEST_STATUS.CONFIRMED,
+      BOOKING_GUEST_STATUS.CHECKED_IN,
+      BOOKING_GUEST_STATUS.CHECKED_OUT,
+      BOOKING_GUEST_STATUS.CANCELLED
     ),
     allowNull: false,
   })
-  status!: BOOKING_STATUS;
+  status!: BOOKING_GUEST_STATUS;
 
-  @Default(new Date())
+  @Default(BOOKING_GUEST_PAYMENT_STATUS.UNPAID)
   @Column({
-    type: DataType.DATE,
+    type: DataType.ENUM(
+      BOOKING_GUEST_PAYMENT_STATUS.PAID,
+      BOOKING_GUEST_PAYMENT_STATUS.UNPAID
+    ),
     allowNull: false,
   })
-  expires_at!: Date;
+  payment_status!: BOOKING_GUEST_PAYMENT_STATUS;
 
-  @HasMany(() => RoomBooking)
-  roomBookings!: RoomBooking[];
+  @HasMany(() => RoomBookingGuest)
+  roomBookings!: RoomBookingGuest[];
 }

@@ -3,7 +3,6 @@ import cors from "cors";
 import * as dotenv from "dotenv";
 import "./middleware/CronJobs";
 import { dbConfig } from "./config/database.config";
-import ServiceRouter from "./router/ServiceRouter";
 import CustomerRouter from "./router/CustomerRouter";
 import HotelRouter from "./router/HotelRouter";
 import HotelImageRouter from "./router/HotelImageRouter";
@@ -16,6 +15,8 @@ import PaymentRouter from "./router/payment/PaymentRouter";
 import PromotionRouter from "./router/PromotionRouter";
 import ReviewRouter from "./router/ReviewRouter";
 import AdminRouter from "./router/AdminRouter";
+import RoomTypeRouter from "./router/RoomTypeRouter";
+import BedRouter from "./router/BedRouter";
 
 dotenv.config();
 
@@ -50,7 +51,6 @@ class App {
       res.send("Welcome home");
     });
 
-    apiRouter.use("/service", ServiceRouter);
     apiRouter.use("/customer", CustomerRouter);
     apiRouter.use("/hotel", HotelRouter);
     apiRouter.use("/hotel", HotelImageRouter);
@@ -64,6 +64,8 @@ class App {
     apiRouter.use("/payment-method", PromotionRouter);
     apiRouter.use("/review", ReviewRouter);
     apiRouter.use("/admin", AdminRouter);
+    apiRouter.use("/hotel", RoomTypeRouter);
+    apiRouter.use("/hotel/room-type", BedRouter);
 
     this.app.use("/api/v1", apiRouter);
   }

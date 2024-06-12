@@ -9,34 +9,41 @@ import generateRandomString from "../utils/RandomString";
 import { RoomImage } from "../model/RoomImage";
 import getFileType from "../utils/GetFileType";
 import { RoomType } from "../model/RoomType";
+import { RoomTypeRepo } from "../repository/RoomTypeRepo";
+import { Bed } from "../model/Bed";
 
-class RoomController {
-  async getAllRooms(req: Request, res: Response) {
+class RoomTypeController {
+  async getAllRoomTypes(req: Request, res: Response) {
     try {
-      const roomsData = await new RoomRepo().retrieveAll();
+      const roomTypesData = await RoomType.findAll();
 
       return res.status(200).json({
         status: 200,
-        message: "Successfully fetched all room data!",
-        data: roomsData,
+        message: "Successfully fetched all room type data!",
+        data: roomTypesData,
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
     }
   }
 
-  async createRoom(req: Request, res: Response) {
+  async createRoomType(req: Request, res: Response) {
     try {
       const hotel_id = parseInt(req.params?.hotel_id);
-      const room_type_id = parseInt(req.params?.room_type_id);
-      const { number, description, status } = req.body;
+      const {
+        name,
+        description,
+        base_price,
+        standard_occupant,
+        max_children,
+        max_occupant,
+        max_extra_bed,
+        views,
+        area,
+        free_breakfast,
+      } = req.body;
 
-      const existingHotel = await RoomType.findOne({
-        where: {
-          id: room_type_id,
-          hotel_id,
-        },
-      });
+      const existingHotel = await Hotel.findByPk(hotel_id);
 
       if (!existingHotel) {
         return res.status(404).json({
@@ -45,38 +52,38 @@ class RoomController {
         });
       }
 
-      const existingRoomNumber = await Room.findOne({
-        where: {
-          room_type_id,
-          number,
-        },
-      });
-
-      if (existingRoomNumber) {
-        return res.status(400).json({
-          status: 400,
-          message: "Room number already exists!",
-        });
-      }
-
-      const newRoom = new Room({
-        room_type_id,
-        number,
+      const newRoomType = new RoomType({
+        name,
         description,
-        status,
+        base_price,
+        standard_occupant,
+        max_children,
+        max_occupant,
+        max_extra_bed,
+        views,
+        area,
+        free_breakfast,
       });
 
-      await new RoomRepo().save(newRoom);
+      await new RoomTypeRepo().save(newRoomType);
 
       const savedRoom = await Room.findOne({
         where: {
-          room_type_id: newRoom.room_type_id,
-          number: newRoom.number,
+          hotel_id: newRoomType.hotel_id,
+          name: newRoomType.name,
+          description: newRoomType.description,
+          base_price: newRoomType.base_price,
+          standard_occupant: newRoomType.standard_occupant,
+          max_children: newRoomType.max_children,
+          max_occupant: newRoomType.max_occupant,
+          max_extra_bed: newRoomType.max_extra_bed,
+          views: newRoomType.views,
+          area: newRoomType.area,
+          free_breakfast: newRoomType.free_breakfast,
         },
       });
 
       if (req.files && savedRoom) {
-        const room_id = savedRoom.id;
         const room_type_id = savedRoom.room_type_id;
 
         // Define the folder or path within the bucket
@@ -121,37 +128,36 @@ class RoomController {
 
       res.status(201).json({
         status: 201,
-        message: "Successfully created room!",
+        message: "Successfully created room type!",
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
     }
   }
 
-  async deleteRoom(req: Request, res: Response) {
+  async deleteRoomType(req: Request, res: Response) {
     try {
       const hotel_id = parseInt(req.params.hotel_id);
       const room_type_id = parseInt(req.params.room_type_id);
-      const room_id = parseInt(req.params.room_id);
 
-      const room = await Room.findOne({
+      const roomType = await RoomType.findOne({
         where: {
-          id: room_id,
-          room_type_id,
+          id: room_type_id,
+          hotel_id,
         },
       });
 
-      if (!room) {
+      if (!roomType) {
         return res.status(404).json({
           status: 404,
-          message: "Room not found!",
+          message: "Room Type not found!",
         });
       }
 
       const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}`;
       const deleteImages = await RoomImage.findAll({
         where: {
-          room_id,
+          room_type_id,
         },
       });
 
@@ -177,7 +183,7 @@ class RoomController {
           });
       }
 
-      await new RoomRepo().delete(room_id);
+      await new RoomTypeRepo().delete(room_type_id);
 
       return res.status(200).json({
         status: 200,
@@ -195,31 +201,57 @@ class RoomController {
     }
   }
 
-  async getRoomById(req: Request, res: Response) {
+  async getRoomTypeById(req: Request, res: Response) {
     try {
+      const hotel_id = parseInt(req.params.hotel_id);
       const room_type_id = parseInt(req.params.room_type_id);
-      const room_id = parseInt(req.params.room_id);
 
-      const room = await Room.findOne({
+      const roomType = await RoomType.findOne({
         where: {
-          id: room_id,
-          room_type_id,
+          id: room_type_id,
+          hotel_id: hotel_id,
         },
+        include: [{ model: Bed }, { model: RoomImage }, { model: Room }],
       });
 
-      if (!room) {
+      if (!roomType) {
         return res.status(404).json({
           status: 404,
-          message: "Room not found!",
+          message: "Room type not found!",
         });
       }
 
-      const roomInfo = await new RoomRepo().retrieveById(room_id);
+      const updatedImages = await Promise.all(
+        roomType.roomImages.map(async (image) => {
+          const presignedUrl = await new Promise<string>((resolve, reject) => {
+            minioConfig
+              .getClient()
+              .presignedGetObject(
+                DEFAULT_MINIO.BUCKET,
+                `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}/${image.url}`,
+                24 * 60 * 60,
+                (err, presignedUrl) => {
+                  if (err) reject(err);
+                  else resolve(presignedUrl);
+                }
+              );
+          });
+
+          return {
+            ...image.toJSON(),
+            url: presignedUrl,
+          };
+        })
+      );
 
       return res.status(200).json({
         status: 200,
-        message: `Successfully fetched room by id ${room_id}!`,
-        data: roomInfo,
+        message: `Successfully fetched room type by id ${room_type_id}!`,
+        data: {
+          ...roomType.toJSON(),
+          totalRooms: roomType.rooms.length,
+          roomImages: updatedImages,
+        },
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
@@ -270,4 +302,4 @@ class RoomController {
   }
 }
 
-export default new RoomController();
+export default new RoomTypeController();

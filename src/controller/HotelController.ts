@@ -6,7 +6,7 @@ import { StaffRepo } from "../repository/StaffRepo";
 import { RoomRepo } from "../repository/RoomRepo";
 import { HotelImage } from "../model/HotelImage";
 import { dbConfig } from "../config/database.config";
-import { Op, QueryTypes } from "sequelize";
+import { Op, QueryTypes, where } from "sequelize";
 import { DEFAULT_MINIO, PAGINATION } from "../config/constant.config";
 import { minioConfig } from "../config/minio.config";
 import { Room } from "../model/Room";
@@ -423,13 +423,59 @@ class HotelController {
       });
     }
 
-    const rooms = await new RoomRepo().retrieveAllRoomsByHotelId(hotel_id);
+    try {
+      const roomTypes = await RoomType.findAll({
+        where: {
+          hotel_id,
+        },
+        order: [["created_at", "desc"]],
+        include: [{ model: Bed }, { model: RoomImage }, { model: Room }],
+      });
 
-    return res.status(200).json({
-      status: 200,
-      message: `Successfully fetched room by hotel id ${hotel_id}!`,
-      data: rooms,
-    });
+      // Create presigned URLs for hotel images
+      const updatedRoomTypes = await Promise.all(
+        roomTypes.map(async (roomType) => {
+          const updatedImages = await Promise.all(
+            roomType.roomImages.map(async (image) => {
+              const presignedUrl = await new Promise<string>(
+                (resolve, reject) => {
+                  minioConfig
+                    .getClient()
+                    .presignedGetObject(
+                      DEFAULT_MINIO.BUCKET,
+                      `${DEFAULT_MINIO.HOTEL_PATH}/${roomType.hotel.id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${roomType.id}/${image.url}`,
+                      24 * 60 * 60,
+                      (err, presignedUrl) => {
+                        if (err) reject(err);
+                        else resolve(presignedUrl);
+                      }
+                    );
+                }
+              );
+
+              return {
+                ...image.toJSON(),
+                url: presignedUrl,
+              };
+            })
+          );
+
+          return {
+            ...roomType.toJSON(),
+            totalRooms: roomType.rooms.length,
+            roomImages: updatedImages,
+          };
+        })
+      );
+
+      return res.status(200).json({
+        status: 200,
+        message: `Successfully fetched room by hotel id ${hotel_id}!`,
+        data: updatedRoomTypes,
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
   }
 
   async getAllStaffsByHotelId(req: Request, res: Response) {
@@ -513,13 +559,15 @@ class HotelController {
         "contact",
       ];
 
+      // Create an updated hotel object
+      const updatedHotelData: Partial<Hotel> = {};
       fieldsToUpdate.forEach((field) => {
         if (req.body[field]) {
-          (hotelToUpdate as any)[field] = req.body[field];
+          (updatedHotelData as any)[field] = req.body[field];
         }
       });
 
-      await new HotelRepo().update(hotelToUpdate);
+      await Hotel.update(updatedHotelData, { where: { id: hotel_id } });
 
       return res.status(200).json({
         status: 200,

@@ -28,7 +28,6 @@ export const BED_TYPE = {
 };
 
 export const TABLE_NAME = {
-  SERVICE: "service",
   CUSTOMER: "customer",
   STAFF: "staff",
   ADMIN: "admin",
@@ -51,6 +50,9 @@ export const TABLE_NAME = {
   REVIEW: "review",
   ROOM_TYPE_AMENITY: "room_type_amenity",
   HOTEL_AMENITY: "hotel_amenity",
+  BOOKING_GUEST: "booking_guest",
+  ROOM_BOOKING_GUEST: "room_booking_guest",
+  REPLY_REVIEW: "reply_review",
 };
 
 export const PAGINATION = {
