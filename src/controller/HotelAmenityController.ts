@@ -5,7 +5,8 @@ import { HotelAmenity } from "../model/HotelAmenity";
 class HotelAmenityController {
   async createHotelAmenity(req: Request, res: Response) {
     try {
-      const { hotel_id, amenity } = req.body;
+      const { hotel_id } = req.params;
+      const { amenity } = req.body;
 
       const newAmenity = await HotelAmenity.create({
         hotel_id,
@@ -44,7 +45,7 @@ class HotelAmenityController {
       if (!amenity) {
         return res.status(404).json({
           status: 404,
-          message: "Hotel amenity not found!",
+          message: "Tạo dịch vụ với thành công!",
         });
       }
       return res.status(200).json({
@@ -84,8 +85,14 @@ class HotelAmenityController {
 
   async deleteHotelAmenity(req: Request, res: Response) {
     try {
-      const { id } = req.params;
-      const amenity = await HotelAmenity.findByPk(id);
+      const { hotel_id, amenity_id } = req.params;
+      const amenity = await HotelAmenity.findOne({
+        where: {
+          id: amenity_id,
+          hotel_id,
+        },
+      });
+
       if (!amenity) {
         return res.status(404).json({
           status: 404,
@@ -95,7 +102,7 @@ class HotelAmenityController {
       await amenity.destroy();
       return res.status(200).json({
         status: 200,
-        message: "Hotel amenity deleted successfully!",
+        message: "Xóa dịch vụ thành công!",
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

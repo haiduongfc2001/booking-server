@@ -44,6 +44,11 @@ class StaffRoutes extends BaseRoutes {
       StaffController.deleteStaff
     );
     this.router.post("/staff/login", StaffController.staffLogin);
+    this.router.get(
+      "/:hotel_id/staff/getAllStaffsByHotelId",
+      authFullRole,
+      StaffController.getAllStaffsByHotelId
+    );
   }
 }
 

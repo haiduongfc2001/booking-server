@@ -10,35 +10,35 @@ const upload = multer({ storage: storage });
 class HotelRoutes extends BaseRoutes {
   public routes(): void {
     this.router.get(
-      "/:hotel_id/room/:room_id/getImagesByRoomId",
+      "/:hotel_id/room/:room_type_id/getImagesByRoomId",
       authFullRole,
       RoomImageController.getImagesByRoomId
     );
     this.router.post(
-      "/:hotel_id/room/:room_id/createRoomImage",
+      "/:hotel_id/room/:room_type_id/createRoomTypeImage",
       authFullRole,
       upload.single("image"),
-      RoomImageController.createRoomImage
+      RoomImageController.createRoomTypeImage
     );
     this.router.post(
-      "/:hotel_id/room/:room_type_id/createRoomImages",
+      "/:hotel_id/room/:room_type_id/createRoomTypeImages",
       authFullRole,
       upload.array("images", 5),
-      RoomImageController.createRoomImages
+      RoomImageController.createRoomTypeImages
     );
     this.router.patch(
-      "/:hotel_id/room/:room_id/image/:room_image_id/updateRoomImageById",
+      "/room/:room_type_id/image/:room_image_id/updateRoomImageById",
       authFullRole,
       RoomImageController.updateRoomImageById
     );
     this.router.patch(
-      "/:hotel_id/room/:room_id/updateImagesByRoomId",
+      "/room/:room_type_id/updateImagesByRoomId",
       authFullRole,
       upload.array("image"),
       RoomImageController.updateImagesByRoomId
     );
     this.router.delete(
-      "/:hotel_id/room/:room_id/image/:room_image_id/deleteImage",
+      "/room/:room_type_id/image/:room_image_id/deleteImage",
       authFullRole,
       RoomImageController.deleteRoomImageById
     );

@@ -10,6 +10,8 @@ import {
   generateReceptionistToken,
 } from "../utils/GenerateToken";
 import securePassword from "../utils/SecurePassword";
+import generateRandomString from "../utils/RandomString";
+import { sendMailPassword } from "../utils/SendVerifyMail";
 
 const roleToTokenGenerator = {
   [ROLE.MANAGER]: generateMangerToken,
@@ -20,13 +22,13 @@ class StaffController {
   async createStaff(req: Request, res: Response) {
     try {
       const hotel_id = parseInt(req.params.hotel_id);
-      const { email, password, full_name, gender, role } = req.body;
+      const { email, full_name, gender, phone, role } = req.body;
 
       const existingHotel = await Hotel.findByPk(hotel_id);
       if (!existingHotel) {
         return res.status(400).json({
           status: 400,
-          message: "Hotel not found!",
+          message: "Không tìm thấy khách sạn!",
         });
       }
 
@@ -39,9 +41,12 @@ class StaffController {
       if (existingEmail) {
         return res.status(400).json({
           status: 400,
-          message: "Email already exists!",
+          message: "Email đã tồn tại!",
         });
       }
+
+      const password = generateRandomString(8, true);
+
       const hashedPassword = await securePassword(password);
 
       const newStaff = new Staff({
@@ -57,10 +62,22 @@ class StaffController {
 
       await new StaffRepo().save(newStaff);
 
-      return res.status(201).json({
-        status: 201,
-        message: "Successfully created staff!",
+      const staffData = await Staff.findOne({
+        where: {
+          email,
+        },
       });
+      if (staffData) {
+        await sendMailPassword(full_name, email, password, staffData.id);
+        return res.status(201).json({
+          status: 201,
+          message: "Tạo tài khoản mới thành công!",
+        });
+      } else {
+        res
+          .status(404)
+          .json({ status: 400, message: "Tạo tài khoản mới không thành công" });
+      }
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
     }
@@ -211,7 +228,7 @@ class StaffController {
         if (!hotel) {
           return res.status(404).json({
             status: 404,
-            message: "Hotel not found!",
+            message: "Không tìm thấy khách sạn!",
           });
         }
         staffToUpdate.hotel_id = parseInt(hotel_id);
@@ -283,6 +300,26 @@ class StaffController {
         status: 200,
         message: "Đăng nhập thành công!",
         token,
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async getAllStaffsByHotelId(req: Request, res: Response) {
+    try {
+      const { hotel_id } = req.params;
+
+      const staffs = await Staff.findAll({
+        where: {
+          hotel_id,
+        },
+      });
+
+      return res.status(200).json({
+        status: 200,
+        message: "Successfully fetched all staff data!",
+        data: staffs,
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

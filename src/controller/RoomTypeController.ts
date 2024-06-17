@@ -11,6 +11,7 @@ import getFileType from "../utils/GetFileType";
 import { RoomType } from "../model/RoomType";
 import { RoomTypeRepo } from "../repository/RoomTypeRepo";
 import { Bed } from "../model/Bed";
+import { RoomTypeAmenity } from "../model/RoomTypeAmenity";
 
 class RoomTypeController {
   async getAllRoomTypes(req: Request, res: Response) {
@@ -37,7 +38,7 @@ class RoomTypeController {
         standard_occupant,
         max_children,
         max_occupant,
-        max_extra_bed,
+        max_extra_bed = 0,
         views,
         area,
         free_breakfast,
@@ -48,11 +49,12 @@ class RoomTypeController {
       if (!existingHotel) {
         return res.status(404).json({
           status: 404,
-          message: "Hotel not found!",
+          message: "Không tìm thấy khách sạn!",
         });
       }
 
       const newRoomType = new RoomType({
+        hotel_id,
         name,
         description,
         base_price,
@@ -67,7 +69,7 @@ class RoomTypeController {
 
       await new RoomTypeRepo().save(newRoomType);
 
-      const savedRoom = await Room.findOne({
+      const savedRoomType = await RoomType.findOne({
         where: {
           hotel_id: newRoomType.hotel_id,
           name: newRoomType.name,
@@ -83,8 +85,8 @@ class RoomTypeController {
         },
       });
 
-      if (req.files && savedRoom) {
-        const room_type_id = savedRoom.room_type_id;
+      if (req.files && savedRoomType) {
+        const room_type_id = savedRoomType.id;
 
         // Define the folder or path within the bucket
         const folder = `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${room_type_id}`;
@@ -128,7 +130,7 @@ class RoomTypeController {
 
       res.status(201).json({
         status: 201,
-        message: "Successfully created room type!",
+        message: "Tạo loại phòng mới thành công!",
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
@@ -150,7 +152,7 @@ class RoomTypeController {
       if (!roomType) {
         return res.status(404).json({
           status: 404,
-          message: "Room Type not found!",
+          message: "Không tìm thấy dữ liệu!",
         });
       }
 
@@ -174,10 +176,10 @@ class RoomTypeController {
           .getClient()
           .removeObjects(DEFAULT_MINIO.BUCKET, objectsList, function (e) {
             if (e) {
-              console.error("Unable to remove Objects ", e);
+              console.error("Không thể xóa ảnh ", e);
               return res.status(500).json({
                 status: 500,
-                message: "Unable to remove Objects!",
+                message: "Không thể xóa ảnh!",
               });
             }
           });
@@ -187,7 +189,7 @@ class RoomTypeController {
 
       return res.status(200).json({
         status: 200,
-        message: "Successfully deleted room!",
+        message: "Xóa thành công!",
       });
     } catch (error) {
       if (error instanceof Error) {
@@ -211,13 +213,18 @@ class RoomTypeController {
           id: room_type_id,
           hotel_id: hotel_id,
         },
-        include: [{ model: Bed }, { model: RoomImage }, { model: Room }],
+        include: [
+          { model: Bed },
+          { model: RoomImage },
+          { model: Room },
+          { model: RoomTypeAmenity },
+        ],
       });
 
       if (!roomType) {
         return res.status(404).json({
           status: 404,
-          message: "Room type not found!",
+          message: "Không tìm thấy loại phòng!",
         });
       }
 
@@ -246,7 +253,7 @@ class RoomTypeController {
 
       return res.status(200).json({
         status: 200,
-        message: `Successfully fetched room type by id ${room_type_id}!`,
+        message: `Lấy dữ liệu loại phòng có id ${room_type_id} thành công!`,
         data: {
           ...roomType.toJSON(),
           totalRooms: roomType.rooms.length,
@@ -258,43 +265,53 @@ class RoomTypeController {
     }
   }
 
-  async updateRoom(req: Request, res: Response) {
+  async updateRoomType(req: Request, res: Response) {
     try {
+      const hotel_id = parseInt(req.params.hotel_id);
       const room_type_id = parseInt(req.params.room_type_id);
-      const room_id = parseInt(req.params.room_id);
 
-      const room = await Room.findOne({
+      const roomType = await RoomType.findOne({
         where: {
-          id: room_id,
-          room_type_id,
+          id: room_type_id,
+          hotel_id,
         },
       });
 
-      if (!room) {
+      if (!roomType) {
         return res.status(404).json({
           status: 404,
-          message: "Room not found!",
+          message: "Không tìm thấy dữ liệu!",
         });
       }
 
       const fieldsToUpdate = [
-        "room_type_id",
-        "number",
+        "hotel_id",
+        "name",
         "description",
-        "status",
+        "base_price",
+        "free_breakfast",
+        "standard_occupant",
+        "max_children",
+        "max_occupant",
+        "max_extra_bed",
+        "views",
+        "area",
       ];
 
+      const updatedRoomTypeData: Partial<RoomType> = {};
       fieldsToUpdate.forEach((field) => {
-        if (req.body[field]) {
-          (room as any)[field] = req.body[field];
+        if (req.body.hasOwnProperty(field)) {
+          (updatedRoomTypeData as any)[field] = req.body[field];
         }
       });
 
-      await new RoomRepo().update(room);
+      await RoomType.update(updatedRoomTypeData, {
+        where: { id: room_type_id, hotel_id },
+      });
 
       return res.status(200).json({
         status: 200,
-        message: "Successfully updated room data!",
+        message: "Cập nhật dữ liệu thành công!",
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

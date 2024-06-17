@@ -24,6 +24,7 @@ import { HotelAmenity } from "../model/HotelAmenity";
 import { Admin } from "../model/Admin";
 import { BookingGuest } from "../model/BookingGuest";
 import { RoomBookingGuest } from "../model/RoomBookingGuest";
+import { ReplyReview } from "../model/ReplyReview";
 
 dotenv.config();
 
@@ -69,6 +70,7 @@ class Database {
       host: this.POSTGRES_HOST,
       port: this.POSTGRES_PORT,
       dialect: "postgres",
+      ssl: true,
       pool: {
         max: 5,
         min: 0,
@@ -95,6 +97,7 @@ class Database {
         PaymentMethod,
         Refund,
         Review,
+        ReplyReview,
         RoomTypeAmenity,
         HotelAmenity,
         Admin,

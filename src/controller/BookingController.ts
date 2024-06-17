@@ -673,6 +673,140 @@ class BookingController {
       return ErrorHandler.handleServerError(res, error);
     }
   }
+
+  async getAllBookingsByHotelId(req: Request, res: Response) {
+    try {
+      const { hotel_id } = req.params;
+
+      const bookings = await Booking.findAll({
+        order: [["check_in", "desc"]],
+        include: [
+          {
+            model: RoomBooking,
+            include: [
+              {
+                model: Room,
+                include: [
+                  {
+                    model: RoomType,
+                    where: {
+                      hotel_id,
+                    },
+                    include: [
+                      {
+                        model: Hotel,
+                      },
+                      { model: Bed },
+                      { model: RoomImage },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            model: Customer,
+          },
+        ],
+      });
+
+      // Log bookings to debug if necessary
+      console.log("Bookings:", JSON.stringify(bookings, null, 2));
+
+      // Tạo URL được ký trước cho mỗi hình ảnh của khách sạn
+      const presignedUrls = await Promise.all(
+        bookings.map(async (booking) => {
+          // Extract roomTypes to avoid duplication
+          const roomTypesMap: { [key: string]: any } = {};
+
+          const updatedRoomBookings = await Promise.all(
+            booking.roomBookings.map(async (roomBooking) => {
+              if (!roomBooking.room || !roomBooking.room.roomType) {
+                console.warn("Null room or roomType:", roomBooking);
+                return roomBooking.toJSON();
+              }
+
+              const roomType = roomBooking.room.roomType;
+              const hotel = roomType.hotel;
+
+              if (!hotel) {
+                console.warn("Null hotel:", roomType);
+                return roomBooking.toJSON();
+              }
+
+              // Check if roomType is already processed
+              if (!roomTypesMap[roomType.id]) {
+                const roomImages = await Promise.all(
+                  (roomType.roomImages || []).map(async (image) => {
+                    const presignedUrl = await new Promise<string>(
+                      (resolve, reject) => {
+                        minioConfig
+                          .getClient()
+                          .presignedGetObject(
+                            DEFAULT_MINIO.BUCKET,
+                            `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${roomType.id}/${image.url}`,
+                            24 * 60 * 60,
+                            (err, presignedUrl) => {
+                              if (err) reject(err);
+                              else resolve(presignedUrl);
+                            }
+                          );
+                      }
+                    );
+
+                    return {
+                      ...image.toJSON(),
+                      url: presignedUrl,
+                    };
+                  })
+                );
+
+                roomTypesMap[roomType.id] = {
+                  ...roomType.toJSON(),
+                  roomImages,
+                  hotel: hotel.toJSON(),
+                };
+              }
+
+              return {
+                ...roomBooking.toJSON(),
+                room: {
+                  ...roomBooking.room.toJSON(),
+                  roomType: roomTypesMap[roomType.id],
+                },
+              };
+            })
+          );
+
+          return {
+            ...booking.toJSON(),
+            roomBookings: updatedRoomBookings,
+            translateStatus: translate("bookingStatus", booking.status),
+            totalAdults: booking.roomBookings.reduce(
+              (sum, roomBooking) => sum + roomBooking.num_adults,
+              0
+            ),
+            totalChildren: booking.roomBookings.reduce(
+              (sum, roomBooking) => sum + roomBooking.num_children,
+              0
+            ),
+            totalPrice: booking.total_room_price + booking.tax_and_fee,
+          };
+        })
+      );
+
+      const totalBookings = bookings.length;
+
+      return res.status(200).json({
+        status: 200,
+        message: "Successfully fetched all booking data!",
+        data: presignedUrls,
+        totalBookings,
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
 }
 
 export default new BookingController();

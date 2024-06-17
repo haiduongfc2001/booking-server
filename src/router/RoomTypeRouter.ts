@@ -19,28 +19,25 @@ class RoomRoutes extends BaseRoutes {
       RoomTypeController.getAllRoomTypes
     );
     this.router.get(
-      "/:hotel_id/room_type/:room_type_id/getRoomTypeById",
+      "/:hotel_id/room-type/:room_type_id/getRoomTypeById",
       // authFullRole,
       updateRoomStatus,
       RoomTypeController.getRoomTypeById
     );
     this.router.post(
-      "/:hotel_id/room_type/createRoomType",
+      "/:hotel_id/room-type/createRoomType",
       // authFullRole,
       // validate(createRoomSchema),
       upload.array("images", 5),
       RoomTypeController.createRoomType
     );
     this.router.patch(
-      "/:hotel_id/room_type/:room_type_id/updateRoom",
+      "/:hotel_id/room-type/:room_type_id/updateRoomType",
       // authFullRole,
-      updateRoomStatus,
-      // validate(updateRoomSchema),
-      upload.array("images", 5),
-      RoomTypeController.updateRoom
+      RoomTypeController.updateRoomType
     );
     this.router.delete(
-      "/:hotel_id/room_type/:room_type_id/deleteRoomType",
+      "/:hotel_id/room-type/:room_type_id/deleteRoomType",
       // authFullRole,
       RoomTypeController.deleteRoomType
     );

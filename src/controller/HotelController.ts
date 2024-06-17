@@ -130,7 +130,7 @@ class HotelController {
       if (!existingHotel) {
         return res.status(404).json({
           status: 404,
-          message: "Hotel not found!",
+          message: "Không tìm thấy khách sạn!",
         });
       }
 
@@ -154,7 +154,7 @@ class HotelController {
       if (!existingHotel) {
         return res.status(404).json({
           status: 404,
-          message: "Hotel not found!",
+          message: "Không tìm thấy khách sạn!",
         });
       }
 
@@ -210,7 +210,7 @@ class HotelController {
       if (!hotel) {
         return res.status(404).json({
           status: 404,
-          message: "Hotel not found!",
+          message: "Không tìm thấy khách sạn!",
         });
       }
 
@@ -395,7 +395,7 @@ class HotelController {
       if (!existingHotel) {
         return res.status(404).json({
           status: 404,
-          message: "Hotel not found!",
+          message: "Không tìm thấy khách sạn!",
         });
       }
 
@@ -411,7 +411,7 @@ class HotelController {
     }
   }
 
-  async getAllRoomsByHotelId(req: Request, res: Response) {
+  async getAllRoomTypesByHotelId(req: Request, res: Response) {
     const hotel_id = parseInt(req.params["hotel_id"]);
 
     const existingHotel = await Hotel.findByPk(hotel_id);
@@ -419,7 +419,7 @@ class HotelController {
     if (!existingHotel) {
       return res.status(404).json({
         status: 404,
-        message: "Hotel not found!",
+        message: "Không tìm thấy khách sạn!",
       });
     }
 
@@ -428,13 +428,25 @@ class HotelController {
         where: {
           hotel_id,
         },
-        order: [["created_at", "desc"]],
-        include: [{ model: Bed }, { model: RoomImage }, { model: Room }],
+        order: [["name", "asc"]],
+        include: [{ model: RoomImage }, { model: Room }],
       });
 
       // Create presigned URLs for hotel images
       const updatedRoomTypes = await Promise.all(
         roomTypes.map(async (roomType) => {
+          // Check if roomImages array is empty
+          if (!roomType.roomImages || roomType.roomImages.length === 0) {
+            return {
+              ...roomType.toJSON(),
+              totalRooms: 0,
+              roomImages: [],
+            };
+          }
+
+          // Check if rooms array is empty or undefined
+          const totalRooms = roomType.rooms.length;
+
           const updatedImages = await Promise.all(
             roomType.roomImages.map(async (image) => {
               const presignedUrl = await new Promise<string>(
@@ -443,7 +455,7 @@ class HotelController {
                     .getClient()
                     .presignedGetObject(
                       DEFAULT_MINIO.BUCKET,
-                      `${DEFAULT_MINIO.HOTEL_PATH}/${roomType.hotel.id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${roomType.id}/${image.url}`,
+                      `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${roomType.id}/${image.url}`,
                       24 * 60 * 60,
                       (err, presignedUrl) => {
                         if (err) reject(err);
@@ -462,7 +474,7 @@ class HotelController {
 
           return {
             ...roomType.toJSON(),
-            totalRooms: roomType.rooms.length,
+            totalRooms,
             roomImages: updatedImages,
           };
         })
@@ -471,7 +483,10 @@ class HotelController {
       return res.status(200).json({
         status: 200,
         message: `Successfully fetched room by hotel id ${hotel_id}!`,
-        data: updatedRoomTypes,
+        data: {
+          totalRoomTypes: roomTypes.length,
+          roomTypes: updatedRoomTypes,
+        },
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
@@ -486,7 +501,7 @@ class HotelController {
       if (!hotelExists) {
         return res.status(404).json({
           status: 404,
-          message: "Hotel not found!",
+          message: "Không tìm thấy khách sạn!",
         });
       }
 
@@ -543,7 +558,7 @@ class HotelController {
       if (!hotelToUpdate) {
         return res.status(404).json({
           status: 404,
-          message: "Hotel not found!",
+          message: "Không tìm thấy khách sạn!",
         });
       }
 

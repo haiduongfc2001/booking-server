@@ -12,24 +12,24 @@ class RoomRoutes extends BaseRoutes {
       RoomController.getAllRooms
     );
     this.router.get(
-      "/:hotel_id/room_type/:room_type_id/:room_id/getRoomById",
+      "/room-type/:room_type_id/room/:room_id/getRoomById",
       authFullRole,
       updateRoomStatus,
       RoomController.getRoomById
     );
     this.router.post(
-      "/:hotel_id/room_type/:room_type_id/createRoom",
+      "/room-type/:room_type_id/room/createRoom",
       authFullRole,
       RoomController.createRoom
     );
     this.router.patch(
-      "/:hotel_id/room_type/:room_type_id/updateRoom",
+      "/room-type/:room_type_id/room/:room_id/updateRoom",
       authFullRole,
       updateRoomStatus,
       RoomController.updateRoom
     );
     this.router.delete(
-      "/:hotel_id/room_type/:room_type_id/:room_id/deleteRoom",
+      "/room-type/:room_type_id/room/:room_id/deleteRoom",
       authFullRole,
       RoomController.deleteRoom
     );

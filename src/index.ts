@@ -17,6 +17,10 @@ import ReviewRouter from "./router/ReviewRouter";
 import AdminRouter from "./router/AdminRouter";
 import RoomTypeRouter from "./router/RoomTypeRouter";
 import BedRouter from "./router/BedRouter";
+import RoomTypeAmenityRouter from "./router/RoomTypeAmenityRouter";
+import HotelAmenityRouter from "./router/HotelAmenityRouter";
+import PolicyRouter from "./router/PolicyRouter";
+import PaymentMethodRouter from "./router/payment/PaymentMethodRouter";
 
 dotenv.config();
 
@@ -54,18 +58,21 @@ class App {
     apiRouter.use("/customer", CustomerRouter);
     apiRouter.use("/hotel", HotelRouter);
     apiRouter.use("/hotel", HotelImageRouter);
+    apiRouter.use("/hotel", HotelAmenityRouter);
+    apiRouter.use("/hotel", PolicyRouter);
     apiRouter.use("/hotel", RoomRouter);
     apiRouter.use("/hotel", StaffRouter);
     apiRouter.use("/hotel", RoomImageRouter);
     apiRouter.use("/address", AddressRouter);
     apiRouter.use("/booking", BookingRouter);
     apiRouter.use("/payment", PaymentRouter);
-    apiRouter.use("/promotion", PromotionRouter);
-    apiRouter.use("/payment-method", PromotionRouter);
+    apiRouter.use("/hotel/room-type", PromotionRouter);
+    apiRouter.use("/payment-method", PaymentMethodRouter);
     apiRouter.use("/review", ReviewRouter);
     apiRouter.use("/admin", AdminRouter);
     apiRouter.use("/hotel", RoomTypeRouter);
     apiRouter.use("/hotel/room-type", BedRouter);
+    apiRouter.use("/hotel/room-type", RoomTypeAmenityRouter);
 
     this.app.use("/api/v1", apiRouter);
   }

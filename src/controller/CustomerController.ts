@@ -3,7 +3,7 @@ import { Customer } from "../model/Customer";
 import { CustomerRepo } from "../repository/CustomerRepo";
 import ErrorHandler from "../utils/ErrorHandler";
 import securePassword from "../utils/SecurePassword";
-import sendVerifyMail from "../utils/SendVerifyMail";
+import { sendVerifyMail } from "../utils/SendVerifyMail";
 import bcrypt from "bcrypt";
 import { generateCustomerToken } from "../utils/GenerateToken";
 import { DEFAULT_MINIO } from "../config/constant.config";

@@ -19,7 +19,7 @@ class AdminController {
       // Check if email already exists
       const existingAdmin = await Admin.findOne({ where: { email } });
       if (existingAdmin) {
-        return res.status(400).json({ message: "Email already exists" });
+        return res.status(400).json({ message: "Email đã tồn tại" });
       }
 
       // Hash the password
@@ -33,7 +33,7 @@ class AdminController {
 
       return res
         .status(201)
-        .json({ message: "Admin created successfully", data: newAdmin });
+        .json({ message: "Tạo tài khoản admin thành công", data: newAdmin });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
     }
@@ -56,7 +56,7 @@ class AdminController {
       const admin = await Admin.findByPk(id);
 
       if (!admin) {
-        return res.status(404).json({ message: "Admin not found" });
+        return res.status(404).json({ message: "Không tìm thấy thông tin!" });
       }
 
       return res.status(200).json({ data: admin });
@@ -74,7 +74,9 @@ class AdminController {
       const admin = await Admin.findByPk(id);
 
       if (!admin) {
-        return res.status(404).json({ message: "Admin not found" });
+        return res
+          .status(404)
+          .json({ message: "Không tìm thấy thông tin admin!" });
       }
 
       if (email) admin.email = email;
@@ -84,7 +86,7 @@ class AdminController {
 
       return res
         .status(200)
-        .json({ message: "Admin updated successfully", data: admin });
+        .json({ message: "Cập nhật thông tin thành công", data: admin });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
     }
@@ -98,12 +100,16 @@ class AdminController {
       const admin = await Admin.findByPk(id);
 
       if (!admin) {
-        return res.status(404).json({ message: "Admin not found" });
+        return res
+          .status(404)
+          .json({ message: "Không tìm thấy thông tin admin!" });
       }
 
       await admin.destroy();
 
-      return res.status(200).json({ message: "Admin deleted successfully" });
+      return res
+        .status(200)
+        .json({ message: "Xóa tài khoản admin thành công!" });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
     }

@@ -33,9 +33,9 @@ class HotelRoutes extends BaseRoutes {
       HotelController.getStaffsByHotelId
     );
     this.router.get(
-      "/:hotel_id/getAllRoomsByHotelId",
+      "/:hotel_id/getAllRoomTypesByHotelId",
       authFullRole,
-      HotelController.getAllRoomsByHotelId
+      HotelController.getAllRoomTypesByHotelId
     );
     this.router.get(
       "/:hotel_id/getAllStaffsByHotelId",

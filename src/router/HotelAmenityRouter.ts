@@ -5,7 +5,7 @@ import HotelAmenityController from "../controller/HotelAmenityController";
 class HotelAmenityRoutes extends BaseRoutes {
   public routes(): void {
     this.router.post(
-      "/createHotelAmenity",
+      "/:hotel_id/amenity/createHotelAmenity",
       authFullRole,
       HotelAmenityController.createHotelAmenity
     );
@@ -25,7 +25,7 @@ class HotelAmenityRoutes extends BaseRoutes {
       HotelAmenityController.updateHotelAmenity
     );
     this.router.delete(
-      "/deleteHotelAmenity/:id",
+      "/:hotel_id/amenity/:amenity_id/deleteHotelAmenity",
       authFullRole,
       HotelAmenityController.deleteHotelAmenity
     );

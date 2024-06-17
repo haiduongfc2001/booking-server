@@ -1,4 +1,5 @@
 import { DEFAULT_MINIO } from "../config/constant.config";
+import { ROOM_STATUS } from "../config/enum.config";
 import { minioConfig } from "../config/minio.config";
 import { Hotel } from "../model/Hotel";
 import { Room } from "../model/Room";
@@ -11,7 +12,7 @@ interface IRoomRepo {
   delete(room_id: number): Promise<void>;
   retrieveAll(): Promise<RoomWithImages[]>;
   retrieveAllRoomsByHotelId(hotel_id: number): Promise<RoomWithImages[]>;
-  retrieveById(room_id: number): Promise<RoomWithImages>;
+  retrieveById(room_id: number): Promise<Room>;
 }
 
 interface IRoomImage {
@@ -120,10 +121,10 @@ export class RoomRepo implements IRoomRepo {
     }
   }
 
-  async retrieveById(room_id: number): Promise<RoomWithImages> {
+  async retrieveById(room_id: number): Promise<Room> {
     try {
       const room = await this.fetchRoom(room_id);
-      return { ...room.toJSON(), images: await this.fetchRoomImages(room) };
+      return room;
     } catch (error) {
       throw new Error("Failed to retrieve room by ID!");
     }
@@ -135,7 +136,8 @@ export class RoomRepo implements IRoomRepo {
         number: newRoom.number,
         room_type_id: newRoom.room_type_id,
         description: newRoom.description,
-        status: newRoom.status,
+        status: ROOM_STATUS.AVAILABLE,
+        // status: newRoom.status,
       });
     } catch (error) {
       if (error instanceof Error) {
@@ -153,13 +155,6 @@ export class RoomRepo implements IRoomRepo {
       if (!existingRoom) {
         throw new Error("Room not found!");
       }
-
-      // First, delete associated room images
-      await RoomImage.destroy({
-        where: {
-          room_id,
-        },
-      });
 
       // Then, delete the room itself
       await existingRoom.destroy();
@@ -182,10 +177,10 @@ export class RoomRepo implements IRoomRepo {
 
       // Update the room with new values
       await existingRoom.update({
-        room_type_id: updatedRoom.room_type_id,
+        // room_type_id: updatedRoom.room_type_id,
         number: updatedRoom.number,
         description: updatedRoom.description,
-        status: updatedRoom.status,
+        // status: updatedRoom.status,
       });
     } catch (error) {
       if (error instanceof Error) {

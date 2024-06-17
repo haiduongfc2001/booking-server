@@ -69,7 +69,7 @@ export class RoomTypeRepo implements IRoomTypeRepo {
   private async fetchRoomType(room_type_id: number): Promise<RoomType> {
     const roomType = await RoomType.findByPk(room_type_id);
     if (!roomType) {
-      throw new Error("RoomType not found!");
+      throw new Error("Loại phòng không tồn tại!!");
     }
     return roomType;
   }
@@ -165,7 +165,7 @@ export class RoomTypeRepo implements IRoomTypeRepo {
       const existingRoomType = await RoomType.findByPk(room_type_id);
 
       if (!existingRoomType) {
-        throw new Error("RoomType not found!");
+        throw new Error("Loại phòng không tồn tại!!");
       }
 
       // First, delete associated roomType images
@@ -191,7 +191,7 @@ export class RoomTypeRepo implements IRoomTypeRepo {
       const existingRoomType = await RoomType.findByPk(updatedRoomType.id);
 
       if (!existingRoomType) {
-        throw new Error("RoomType not found!");
+        throw new Error("Loại phòng không tồn tại!!");
       }
 
       // Update the roomType with new values
@@ -200,13 +200,13 @@ export class RoomTypeRepo implements IRoomTypeRepo {
         name: updatedRoomType.name,
         description: updatedRoomType.description,
         base_price: updatedRoomType.base_price,
+        free_breakfast: updatedRoomType.free_breakfast,
         standard_occupant: updatedRoomType.standard_occupant,
         max_children: updatedRoomType.max_children,
         max_occupant: updatedRoomType.max_occupant,
         max_extra_bed: updatedRoomType.max_extra_bed,
         views: updatedRoomType.views,
         area: updatedRoomType.area,
-        free_breakfast: updatedRoomType.free_breakfast,
       });
     } catch (error) {
       if (error instanceof Error) {

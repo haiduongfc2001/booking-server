@@ -1,6 +1,7 @@
 import { DEFAULT_MINIO } from "../config/constant.config";
 import { minioConfig } from "../config/minio.config";
 import { Hotel } from "../model/Hotel";
+import { HotelAmenity } from "../model/HotelAmenity";
 import { HotelImage } from "../model/HotelImage";
 
 interface IHotelRepo {
@@ -48,7 +49,7 @@ export class HotelRepo implements IHotelRepo {
   private async fetchHotel(hotel_id: number): Promise<Hotel> {
     const hotel = await Hotel.findByPk(hotel_id);
     if (!hotel) {
-      throw new Error("Hotel not found!");
+      throw new Error("Không tìm thấy khách sạn!");
     }
     return hotel;
   }
@@ -122,7 +123,13 @@ export class HotelRepo implements IHotelRepo {
   async retrieveById(hotel_id: number): Promise<HotelWithImages> {
     try {
       const hotel = await this.fetchHotel(hotel_id);
-      return { ...hotel.toJSON(), images: await this.fetchHotelImages(hotel) };
+      return {
+        ...hotel.toJSON(),
+        images: await this.fetchHotelImages(hotel),
+        hotelAmenities: await HotelAmenity.findAll({
+          where: { hotel_id },
+        }),
+      };
     } catch (error) {
       throw new Error("Failed to retrieve hotel by ID!");
     }

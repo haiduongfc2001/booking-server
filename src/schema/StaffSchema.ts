@@ -7,10 +7,10 @@ export const createStaffSchema = z.object({
       .string()
       .email({ message: "Email is invalid!" })
       .min(4, { message: "Email must be greater than 4 characters!" }),
-    password: z.string().refine((value) => !value || value.length >= 8, {
-      message:
-        "Password must be greater than or equal to 8 characters when not null",
-    }),
+    // password: z.string().refine((value) => !value || value.length >= 8, {
+    //   message:
+    //     "Password must be greater than or equal to 8 characters when not null",
+    // }),
     full_name: z
       .string()
       .min(1, { message: "Full name must be greater than 1 characters!" }),

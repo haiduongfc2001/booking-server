@@ -27,7 +27,7 @@ class HotelImageController {
       if (!hotelExists) {
         return res.status(404).json({
           status: 404,
-          message: "Hotel not found!",
+          message: "Không tìm thấy khách sạn!",
         });
       }
 
@@ -113,7 +113,7 @@ class HotelImageController {
       if (!hotelExists) {
         return res.status(404).json({
           status: 404,
-          message: "Hotel not found!",
+          message: "Không tìm thấy khách sạn!",
         });
       }
 
@@ -185,7 +185,7 @@ class HotelImageController {
       if (!hotelExists) {
         return res.status(404).json({
           status: 404,
-          message: "Hotel not found!",
+          message: "Không tìm thấy khách sạn!",
         });
       }
 
@@ -210,7 +210,7 @@ class HotelImageController {
       if (!hotelExists) {
         return res.status(404).json({
           status: 404,
-          message: "Hotel not found!",
+          message: "Không tìm thấy khách sạn!",
         });
       }
 
@@ -244,10 +244,10 @@ class HotelImageController {
           .getClient()
           .removeObjects(DEFAULT_MINIO.BUCKET, objectsList, function (e) {
             if (e) {
-              console.error("Unable to remove Objects ", e);
+              console.error("Không thể xóa ảnh ", e);
               return res.status(500).json({
                 status: 500,
-                message: "Unable to remove Objects!",
+                message: "Không thể xóa ảnh!",
               });
             }
 
@@ -279,7 +279,7 @@ class HotelImageController {
       if (!hotelExists) {
         return res.status(404).json({
           status: 404,
-          message: "Hotel not found!",
+          message: "Không tìm thấy khách sạn!",
         });
       }
 

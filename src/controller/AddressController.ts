@@ -11,7 +11,7 @@ class AddressController {
 
       return res.status(200).json({
         status: 200,
-        message: "Successfully fetched all provinces data!",
+        message: "Đã tìm nạp thành công tất cả dữ liệu tỉnh!",
         data: provinceData,
       });
     } catch (error) {

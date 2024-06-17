@@ -5,7 +5,7 @@ import RoomTypeAmenityController from "../controller/RoomTypeAmenityController";
 class RoomTypeAmenityRoutes extends BaseRoutes {
   public routes(): void {
     this.router.post(
-      "/createRoomTypeAmenity",
+      "/:room_type_id/amenity/createRoomTypeAmenity",
       authFullRole,
       RoomTypeAmenityController.createRoomTypeAmenity
     );
@@ -25,7 +25,7 @@ class RoomTypeAmenityRoutes extends BaseRoutes {
       RoomTypeAmenityController.updateRoomTypeAmenity
     );
     this.router.delete(
-      "/deleteRoomTypeAmenity/:id",
+      "/:room_type_id/amenity/:amenity_id/deleteRoomTypeAmenity",
       authFullRole,
       RoomTypeAmenityController.deleteRoomTypeAmenity
     );

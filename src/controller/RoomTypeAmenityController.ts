@@ -1,11 +1,13 @@
 import { Request, Response } from "express";
 import ErrorHandler from "../utils/ErrorHandler";
 import { RoomTypeAmenity } from "../model/RoomTypeAmenity";
+import { where } from "sequelize";
 
 class RoomTypeAmenityController {
   async createRoomTypeAmenity(req: Request, res: Response) {
     try {
-      const { room_type_id, amenity } = req.body;
+      const { room_type_id } = req.params;
+      const { amenity } = req.body;
 
       const newAmenity = await RoomTypeAmenity.create({
         room_type_id,
@@ -49,7 +51,7 @@ class RoomTypeAmenityController {
       }
       return res.status(200).json({
         status: 200,
-        data: amenity,
+        message: "Tiện ích đã được tạo thành công!",
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
@@ -86,18 +88,25 @@ class RoomTypeAmenityController {
 
   async deleteRoomTypeAmenity(req: Request, res: Response) {
     try {
-      const { id } = req.params;
-      const amenity = await RoomTypeAmenity.findByPk(id);
+      const { room_type_id, amenity_id } = req.params;
+      const amenity = await RoomTypeAmenity.findOne({
+        where: {
+          id: amenity_id,
+          room_type_id,
+        },
+      });
+
       if (!amenity) {
         return res.status(404).json({
           status: 404,
           message: "RoomType amenity not found!",
         });
       }
+
       await amenity.destroy();
       return res.status(200).json({
         status: 200,
-        message: "RoomType amenity deleted successfully!",
+        message: "Tiện ích đã được xóa thành công!",
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

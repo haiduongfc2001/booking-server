@@ -10,7 +10,7 @@ export class BedController {
       const roomType = await RoomType.findByPk(room_type_id);
 
       if (!roomType) {
-        return res.status(404).json({ message: "RoomType not found" });
+        return res.status(404).json({ message: "Loại phòng không tồn tại!" });
       }
 
       const newBed = await Bed.create({
@@ -26,7 +26,7 @@ export class BedController {
         newBed,
       });
     } catch (error) {
-      return res.status(500).json({ message: "Internal Server Error", error });
+      return res.status(500).json({ message: "Lỗi máy chủ nội bộ!", error });
     }
   }
 
@@ -36,7 +36,7 @@ export class BedController {
       const beds = await Bed.findAll({ include: [RoomType] });
       return res.status(200).json(beds);
     } catch (error) {
-      return res.status(500).json({ message: "Internal Server Error", error });
+      return res.status(500).json({ message: "Lỗi máy chủ nội bộ!", error });
     }
   }
 
@@ -47,12 +47,12 @@ export class BedController {
       const bed = await Bed.findByPk(id, { include: [RoomType] });
 
       if (!bed) {
-        return res.status(404).json({ message: "Bed not found" });
+        return res.status(404).json({ message: "Giường không tồn tại!" });
       }
 
       return res.status(200).json(bed);
     } catch (error) {
-      return res.status(500).json({ message: "Internal Server Error", error });
+      return res.status(500).json({ message: "Lỗi máy chủ nội bộ!", error });
     }
   }
 
@@ -65,7 +65,7 @@ export class BedController {
       const bed = await Bed.findByPk(bed_id);
 
       if (!bed) {
-        return res.status(404).json({ message: "Bed not found" });
+        return res.status(404).json({ message: "Giường không tồn tại!" });
       }
 
       bed.room_type_id = room_type_id;
@@ -81,7 +81,7 @@ export class BedController {
         bed,
       });
     } catch (error) {
-      return res.status(500).json({ message: "Internal Server Error", error });
+      return res.status(500).json({ message: "Lỗi máy chủ nội bộ!", error });
     }
   }
 
@@ -92,7 +92,7 @@ export class BedController {
       const bed = await Bed.findByPk(bed_id);
 
       if (!bed) {
-        return res.status(404).json({ message: "Bed not found" });
+        return res.status(404).json({ message: "Giường không tồn tại!" });
       }
 
       await bed.destroy();
@@ -102,7 +102,7 @@ export class BedController {
         message: "Xóa giường thành công!",
       });
     } catch (error) {
-      return res.status(500).json({ message: "Internal Server Error", error });
+      return res.status(500).json({ message: "Lỗi máy chủ nội bộ!", error });
     }
   }
 }
