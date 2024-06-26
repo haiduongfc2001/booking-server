@@ -23,7 +23,7 @@ import { Customer } from "../model/Customer";
 import { HotelImage } from "../model/HotelImage";
 import { RoomImage } from "../model/RoomImage";
 import { minioConfig } from "../config/minio.config";
-import { DEFAULT_MINIO } from "../config/constant.config";
+import { DEFAULT_MINIO, PAGINATION } from "../config/constant.config";
 import { translate } from "../utils/Translation";
 import { Payment } from "../model/Payment";
 import { PaymentMethod } from "../model/PaymentMethod";
@@ -677,6 +677,33 @@ class BookingController {
   async getAllBookingsByHotelId(req: Request, res: Response) {
     try {
       const { hotel_id } = req.params;
+      const { page = PAGINATION.INITIAL_PAGE, size = PAGINATION.PAGE_SIZE } =
+        req.query;
+      const offset = (Number(page) - 1) * Number(size);
+
+      const totalBookings = await Booking.findAll({
+        include: [
+          {
+            model: RoomBooking,
+            include: [
+              {
+                model: Room,
+                include: [
+                  {
+                    model: RoomType,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      const count = totalBookings.filter(
+        (booking) =>
+          String(booking.roomBookings[0].room.roomType.hotel_id) ===
+          String(hotel_id)
+      ).length;
 
       const bookings = await Booking.findAll({
         order: [["check_in", "desc"]],
@@ -689,16 +716,7 @@ class BookingController {
                 include: [
                   {
                     model: RoomType,
-                    where: {
-                      hotel_id,
-                    },
-                    include: [
-                      {
-                        model: Hotel,
-                      },
-                      { model: Bed },
-                      { model: RoomImage },
-                    ],
+                    include: [{ model: RoomImage }],
                   },
                 ],
               },
@@ -708,15 +726,18 @@ class BookingController {
             model: Customer,
           },
         ],
+        limit: Number(size),
+        offset: offset,
       });
 
-      // Log bookings to debug if necessary
-      console.log("Bookings:", JSON.stringify(bookings, null, 2));
+      const validBookings = bookings.filter(
+        (booking) =>
+          String(booking.roomBookings[0].room.roomType.hotel_id) ===
+          String(hotel_id)
+      );
 
-      // Tạo URL được ký trước cho mỗi hình ảnh của khách sạn
       const presignedUrls = await Promise.all(
-        bookings.map(async (booking) => {
-          // Extract roomTypes to avoid duplication
+        validBookings.map(async (booking) => {
           const roomTypesMap: { [key: string]: any } = {};
 
           const updatedRoomBookings = await Promise.all(
@@ -727,14 +748,7 @@ class BookingController {
               }
 
               const roomType = roomBooking.room.roomType;
-              const hotel = roomType.hotel;
 
-              if (!hotel) {
-                console.warn("Null hotel:", roomType);
-                return roomBooking.toJSON();
-              }
-
-              // Check if roomType is already processed
               if (!roomTypesMap[roomType.id]) {
                 const roomImages = await Promise.all(
                   (roomType.roomImages || []).map(async (image) => {
@@ -744,7 +758,7 @@ class BookingController {
                           .getClient()
                           .presignedGetObject(
                             DEFAULT_MINIO.BUCKET,
-                            `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${roomType.id}/${image.url}`,
+                            `${DEFAULT_MINIO.HOTEL_PATH}/${hotel_id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${roomType.id}/${image.url}`,
                             24 * 60 * 60,
                             (err, presignedUrl) => {
                               if (err) reject(err);
@@ -764,7 +778,6 @@ class BookingController {
                 roomTypesMap[roomType.id] = {
                   ...roomType.toJSON(),
                   roomImages,
-                  hotel: hotel.toJSON(),
                 };
               }
 
@@ -795,13 +808,13 @@ class BookingController {
         })
       );
 
-      const totalBookings = bookings.length;
+      // const totalBookings = bookingsHotel.length;
 
       return res.status(200).json({
         status: 200,
         message: "Successfully fetched all booking data!",
         data: presignedUrls,
-        totalBookings,
+        totalBookings: count,
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
@@ -810,34 +823,3 @@ class BookingController {
 }
 
 export default new BookingController();
-
-/**
-  const priceKeyObject = {
-	  originalPrice: 1000000,
-	  discountedPrice: 120000,
-	  bookingStartTime: 1716651196079,
-	  priceHoldDuration: 1716652155560,
-  };
-
-  // const priceKey = encodeJsonObject(priceKeyObject);
-  const priceKey = decodeJsonObject(
-	"nej9kzIAoQzCcXcF7628JQ==:hfkqBiwQXgY6+RLxQBigc0HjmIK+j2Z+o/Y/tK3Ff+OXepk/GFM/8TIJ4BgVHprKk8hsYbDUTdaxY5+ALw69vhRHANhAOmu6kqptAS0DsFhZvh7U/hmG862dtW5PCFDE+o/MUVxbp67cyQB4lV5qDHHBTw44xw+D6IozBTmwUUs="
-  );
-  console.log(priceKey);
- */
-
-/**
-{
-    "room_type_id": "258262",
-    "room_key": "49697%3A29083%3A9942%3ATA_INSTANT%3A1%3A17%3ANORMAL%3AREQUEST%3AN%3Anull%3AOTA_REQUEST-OTA-TA_INSTANT-TA_REQUEST%3A1174873%3Anull",
-    "promotion_code": "CHAOHE2024",
-    "check_in": "29-05-2024",
-    "check_out": "30-05-2024",
-    "num_adults": 2,
-    "num_children": 2,
-    "num_rooms": 1,
-    "hotel_id": 49697,
-    "children_ages": [17, 4],
-    "price_key": "E8z98dPhvRfLAQ+FrpctGA==:Ttj77F/G7ST9dKvUxSxr+A41eKgbYMbE9WQtVWw61x3K4nVD9nMRZ+4iU52w+6xQ/5/Mp8IkkaY1c8Yc75X0xwHWKPdIrMoK3/bCWWl+X8GDhzZMujz28GlKJJ6eOo2fNV7aZPIRwUF82aHQK7ulaULHcDPJtQ1B7I5hMcVJows="
-}
-*/

@@ -16,7 +16,7 @@ class RoomTypeAmenityController {
 
       return res.status(201).json({
         status: 201,
-        message: "RoomType amenity created successfully!",
+        message: "Thêm tiện nghi mới thành công!",
         data: newAmenity,
       });
     } catch (error) {
