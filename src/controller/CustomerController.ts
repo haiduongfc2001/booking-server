@@ -10,6 +10,7 @@ import { DEFAULT_MINIO } from "../config/constant.config";
 import getFileType from "../utils/GetFileType";
 import generateRandomString from "../utils/RandomString";
 import { minioConfig } from "../config/minio.config";
+import { FavoriteHotel } from "../model/FavoriteHotel";
 
 class CustomerController {
   async createCustomer(req: Request, res: Response) {
@@ -307,6 +308,81 @@ class CustomerController {
         status: 200,
         message: "Đăng nhập thành công!",
         token,
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async getFavoriteHotelsByCustomerId(req: Request, res: Response) {
+    try {
+      const customer_id = parseInt(req.params["customer_id"]);
+
+      const existingCustomer = await Customer.findByPk(customer_id);
+
+      if (!existingCustomer) {
+        return res.status(404).json({
+          status: 404,
+          message: "Không tìm thấy khách hàng!",
+        });
+      }
+
+      const hotels = await FavoriteHotel.findAll({
+        where: {
+          customer_id,
+        },
+      });
+
+      return res.status(200).json({
+        status: 200,
+        message: `Successfully fetched favorite hotels by customer id ${customer_id}!`,
+        data: hotels,
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async addFavoriteHotel(req: Request, res: Response) {
+    try {
+      const { customer_id, hotel_id } = req.body;
+
+      const existingCustomer = await Customer.findByPk(customer_id);
+
+      if (!existingCustomer) {
+        return res.status(404).json({
+          status: 404,
+          message: "Không tìm thấy khách hàng!",
+        });
+      }
+
+      await FavoriteHotel.create({
+        customer_id,
+        hotel_id,
+      });
+
+      return res.status(200).json({
+        status: 200,
+        message: "Thêm thành công!",
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async deleteFavoriteHotel(req: Request, res: Response) {
+    try {
+      const favorite_hotel_id = parseInt(req.params["favorite_hotel_id"]);
+
+      await FavoriteHotel.destroy({
+        where: {
+          id: favorite_hotel_id,
+        },
+      });
+
+      return res.status(200).json({
+        status: 200,
+        message: "Xóa thành công!",
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

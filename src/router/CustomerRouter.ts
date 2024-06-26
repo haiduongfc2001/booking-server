@@ -49,6 +49,21 @@ class CustomerRoutes extends BaseRoutes {
       authFullRole,
       CustomerController.deleteCustomer
     );
+    this.router.get(
+      "/:customer_id/getFavoriteHotelsByCustomerId",
+      authFullRole,
+      CustomerController.getFavoriteHotelsByCustomerId
+    );
+    this.router.post(
+      "/addFavoriteHotel",
+      authFullRole,
+      CustomerController.addFavoriteHotel
+    );
+    this.router.delete(
+      "/:favorite_hotel_id/deleteFavoriteHotel",
+      authFullRole,
+      CustomerController.deleteFavoriteHotel
+    );
   }
 }
 

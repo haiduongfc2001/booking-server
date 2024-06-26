@@ -2,12 +2,6 @@ import { Request, Response } from "express";
 import { RoomRepo } from "../repository/RoomRepo";
 import ErrorHandler from "../utils/ErrorHandler";
 import { Room } from "../model/Room";
-import { Hotel } from "../model/Hotel";
-import { DEFAULT_MINIO } from "../config/constant.config";
-import { minioConfig } from "../config/minio.config";
-import generateRandomString from "../utils/RandomString";
-import { RoomImage } from "../model/RoomImage";
-import getFileType from "../utils/GetFileType";
 import { RoomType } from "../model/RoomType";
 
 class RoomController {

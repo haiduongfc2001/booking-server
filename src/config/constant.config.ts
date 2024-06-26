@@ -53,6 +53,7 @@ export const TABLE_NAME = {
   BOOKING_GUEST: "booking_guest",
   ROOM_BOOKING_GUEST: "room_booking_guest",
   REPLY_REVIEW: "reply_review",
+  FAVORITE_HOTEL: "favorite_hotel",
 };
 
 export const PAGINATION = {

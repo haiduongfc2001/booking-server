@@ -25,6 +25,7 @@ import { Admin } from "../model/Admin";
 import { BookingGuest } from "../model/BookingGuest";
 import { RoomBookingGuest } from "../model/RoomBookingGuest";
 import { ReplyReview } from "../model/ReplyReview";
+import { FavoriteHotel } from "../model/FavoriteHotel";
 
 dotenv.config();
 
@@ -103,6 +104,7 @@ class Database {
         Admin,
         BookingGuest,
         RoomBookingGuest,
+        FavoriteHotel,
       ],
       define: config.define,
       logging: false,

@@ -43,12 +43,12 @@ export const updateHotelSchema = z.object({
       province: z
         .string()
         .min(1, { message: "Province must be greater than 1 characters!" }),
-      latitude: z
-        .string()
-        .min(1, { message: "Latitude must be greater than 1 characters!" }),
-      longitude: z
-        .string()
-        .min(1, { message: "Longitude must be greater than 1 characters!" }),
+      // latitude: z
+      //   .string()
+      //   .min(1, { message: "Latitude must be greater than 1 characters!" }),
+      // longitude: z
+      //   .string()
+      //   .min(1, { message: "Longitude must be greater than 1 characters!" }),
       description: z
         .string()
         .min(1, { message: "Hotel name must be greater than 1 characters!" }),

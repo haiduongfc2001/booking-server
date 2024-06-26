@@ -46,15 +46,15 @@ export class Hotel extends Model {
   })
   province!: string;
 
-  @Column({
-    type: DataType.STRING,
-  })
-  latitude!: string;
+  // @Column({
+  //   type: DataType.STRING,
+  // })
+  // latitude!: string;
 
-  @Column({
-    type: DataType.STRING,
-  })
-  longitude!: string;
+  // @Column({
+  //   type: DataType.STRING,
+  // })
+  // longitude!: string;
 
   @Column({
     type: DataType.STRING,

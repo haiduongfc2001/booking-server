@@ -84,8 +84,8 @@ export class HotelRepo implements IHotelRepo {
         ward: newHotel.ward,
         district: newHotel.district,
         province: newHotel.province,
-        latitude: newHotel.latitude,
-        longitude: newHotel.longitude,
+        // latitude: newHotel.latitude,
+        // longitude: newHotel.longitude,
         description: newHotel.description,
         contact: newHotel.contact,
       });
