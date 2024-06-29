@@ -388,6 +388,47 @@ class CustomerController {
       return ErrorHandler.handleServerError(res, error);
     }
   }
+
+  async getCustomerStats(req: Request, res: Response) {
+    try {
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth();
+      const currentYear = currentDate.getFullYear();
+      const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+      const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+      const currentMonthCount = await new CustomerRepo().countCustomersByMonth(
+        currentYear,
+        currentMonth
+      );
+      const previousMonthCount = await new CustomerRepo().countCustomersByMonth(
+        previousYear,
+        previousMonth
+      );
+
+      let percentageChange: number | null = null;
+      if (previousMonthCount !== 0) {
+        percentageChange =
+          ((currentMonthCount - previousMonthCount) / previousMonthCount) * 100;
+      } else if (currentMonthCount > 0) {
+        percentageChange = 100; // If no customers in previous month but there are in the current month, it's a 100% increase.
+      }
+
+      if (percentageChange !== null) {
+        percentageChange = parseFloat(percentageChange.toFixed(2));
+      }
+
+      const totalCustomers = await Customer.count();
+
+      return res.status(200).json({
+        status: 200,
+        message: "Successfully fetched customer statistics!",
+        data: { totalCustomers, currentMonthCount, percentageChange },
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
 }
 
 export default new CustomerController();

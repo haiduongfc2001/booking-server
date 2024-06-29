@@ -5,7 +5,7 @@ import ErrorHandler from "../utils/ErrorHandler";
 import { StaffRepo } from "../repository/StaffRepo";
 import { HotelImage } from "../model/HotelImage";
 import { dbConfig } from "../config/database.config";
-import { Op, QueryTypes, where } from "sequelize";
+import { Op, QueryTypes } from "sequelize";
 import { DEFAULT_MINIO, PAGINATION } from "../config/constant.config";
 import { minioConfig } from "../config/minio.config";
 import { Room } from "../model/Room";
@@ -958,6 +958,61 @@ class HotelController {
         res,
         error instanceof Error ? error.message : "An unknown error occurred."
       );
+    }
+  }
+
+  async getHotelStats(req: Request, res: Response) {
+    try {
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth();
+      const currentYear = currentDate.getFullYear();
+      const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+      const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+      const currentMonthCount = await new HotelRepo().countHotelsByMonth(
+        currentYear,
+        currentMonth
+      );
+      const previousMonthCount = await new HotelRepo().countHotelsByMonth(
+        previousYear,
+        previousMonth
+      );
+
+      let percentageChange: number | null = null;
+      if (previousMonthCount !== 0) {
+        percentageChange =
+          ((currentMonthCount - previousMonthCount) / previousMonthCount) * 100;
+      } else if (currentMonthCount > 0) {
+        percentageChange = 100; // If no hotels in previous month but there are in the current month, it's a 100% increase.
+      }
+
+      if (percentageChange !== null) {
+        percentageChange = parseFloat(percentageChange.toFixed(2));
+      }
+
+      const totalCustomers = await Hotel.count();
+
+      return res.status(200).json({
+        status: 200,
+        message: "Successfully fetched hotel statistics!",
+        data: { totalCustomers, currentMonthCount, percentageChange },
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async getTotalHotels(req: Request, res: Response) {
+    try {
+      const totalHotels = await Hotel.count();
+
+      return res.status(200).json({
+        status: 200,
+        message: "Successfully fetched total hotels!",
+        data: totalHotels,
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
     }
   }
 }

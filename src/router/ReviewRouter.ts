@@ -15,7 +15,7 @@ class ReviewRoutes extends BaseRoutes {
       authFullRole,
       ReviewController.getReviewById
     );
-    this.router.put(
+    this.router.patch(
       "/updateReview/:id",
       authFullRole,
       ReviewController.updateReview
@@ -29,6 +29,21 @@ class ReviewRoutes extends BaseRoutes {
       "/getHotelReviews/:hotel_id",
       authFullRole,
       ReviewController.getHotelReviews
+    );
+    this.router.post(
+      "/:review_id/createReplyReview",
+      authFullRole,
+      ReviewController.createReplyReview
+    );
+    this.router.patch(
+      "/updateReplyReview/:reply_review_id",
+      authFullRole,
+      ReviewController.updateReplyReview
+    );
+    this.router.delete(
+      "/deleteReplyReview/:reply_review_id",
+      authFullRole,
+      ReviewController.deleteReplyReview
     );
   }
 }

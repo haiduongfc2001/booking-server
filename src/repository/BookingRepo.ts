@@ -1,7 +1,9 @@
+import { Op } from "sequelize";
 import { Booking } from "../model/Booking";
 import { Customer } from "../model/Customer";
 import { Room } from "../model/Room";
 import { RoomBooking } from "../model/RoomBooking";
+import { BOOKING_STATUS } from "../config/enum.config";
 
 interface IBookingRepo {
   retrieveAll(): Promise<any[]>;
@@ -21,11 +23,11 @@ export class BookingRepo implements IBookingRepo {
     const customer = await Customer.findByPk(customer_id);
     return customer
       ? {
-        id: customer.id,
-        full_name: customer.full_name,
-        email: customer.email,
-        phone: customer.phone,
-      }
+          id: customer.id,
+          full_name: customer.full_name,
+          email: customer.email,
+          phone: customer.phone,
+        }
       : null;
   }
 
@@ -97,6 +99,82 @@ export class BookingRepo implements IBookingRepo {
       return this.getBookingData(booking);
     } catch (error) {
       throw new Error("Failed to retrieve the booking!");
+    }
+  }
+
+  async countBookingsByMonth(year: number, month: number): Promise<number> {
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 1);
+
+    const count = await Booking.count({
+      where: {
+        status: {
+          [Op.in]: [
+            BOOKING_STATUS.CONFIRMED,
+            BOOKING_STATUS.CHECKED_IN,
+            BOOKING_STATUS.CHECKED_OUT,
+          ],
+        },
+        created_at: {
+          [Op.gte]: startDate,
+          [Op.lt]: endDate,
+        },
+      },
+    });
+
+    return count;
+  }
+
+  /**
+   * Tính tổng doanh thu từ các đặt phòng trong một tháng và năm cụ thể.
+   *
+   * @param {number} year - Năm cần tính doanh thu
+   * @param {number} month - Tháng cần tính doanh thu (0-11)
+   * @returns {Promise<number>} - Tổng doanh thu
+   */
+  async getBookingRevenue(year: number, month: number): Promise<number> {
+    try {
+      const startDate = new Date(year, month, 1);
+      const endDate = new Date(year, month + 1, 1);
+
+      const totalRoomPrice = await Booking.sum("total_room_price", {
+        where: {
+          status: {
+            [Op.in]: [
+              BOOKING_STATUS.CONFIRMED,
+              BOOKING_STATUS.CHECKED_IN,
+              BOOKING_STATUS.CHECKED_OUT,
+            ],
+          },
+          created_at: {
+            [Op.gte]: startDate,
+            [Op.lt]: endDate,
+          },
+        },
+      });
+
+      const totalTaxAndFee = await Booking.sum("tax_and_fee", {
+        where: {
+          status: {
+            [Op.in]: [
+              BOOKING_STATUS.CONFIRMED,
+              BOOKING_STATUS.CHECKED_IN,
+              BOOKING_STATUS.CHECKED_OUT,
+            ],
+          },
+          created_at: {
+            [Op.gte]: startDate,
+            [Op.lt]: endDate,
+          },
+        },
+      });
+
+      const totalRevenue = (totalRoomPrice || 0) + (totalTaxAndFee || 0);
+
+      return totalRevenue;
+    } catch (error) {
+      console.error("Error calculating booking revenue:", error);
+      throw new Error("Error calculating booking revenue");
     }
   }
 }

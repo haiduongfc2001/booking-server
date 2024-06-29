@@ -1,3 +1,4 @@
+import { Op } from "sequelize";
 import { DEFAULT_MINIO } from "../config/constant.config";
 import { minioConfig } from "../config/minio.config";
 import { Hotel } from "../model/Hotel";
@@ -133,5 +134,21 @@ export class HotelRepo implements IHotelRepo {
     } catch (error) {
       throw new Error("Failed to retrieve hotel by ID!");
     }
+  }
+
+  async countHotelsByMonth(year: number, month: number): Promise<number> {
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 1);
+
+    const count = await Hotel.count({
+      where: {
+        created_at: {
+          [Op.gte]: startDate,
+          [Op.lt]: endDate,
+        },
+      },
+    });
+
+    return count;
   }
 }

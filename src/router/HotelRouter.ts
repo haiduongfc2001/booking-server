@@ -70,6 +70,11 @@ class HotelRoutes extends BaseRoutes {
       authFullRole,
       HotelController.deleteHotel
     );
+    this.router.get(
+      "/getTotalHotels",
+      authFullRole,
+      HotelController.getTotalHotels
+    );
   }
 }
 

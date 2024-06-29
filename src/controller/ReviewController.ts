@@ -12,6 +12,8 @@ import { BOOKING_STATUS } from "../config/enum.config";
 import { calculateAverageRatings } from "../utils/CalculateRating";
 import { minioConfig } from "../config/minio.config";
 import { DEFAULT_MINIO } from "../config/constant.config";
+import { ReplyReview } from "../model/ReplyReview";
+import { Staff } from "../model/Staff";
 
 class ReviewController {
   async createReview(req: Request, res: Response) {
@@ -215,6 +217,10 @@ class ReviewController {
         reviewsByHotel.map(async (review) => {
           try {
             const customer = await Customer.findByPk(review.customer_id);
+            const replyReview = await ReplyReview.findOne({
+              where: { review_id: review.id },
+              include: [{ model: Staff }],
+            });
 
             let customerAvatar = "";
             if (customer && customer.avatar) {
@@ -238,6 +244,24 @@ class ReviewController {
             const { booking_id, customer_id, ...reviewWithoutBookingId } =
               review.toJSON();
 
+            let staffAvatar = "";
+            if (replyReview) {
+              const staff = replyReview.staff;
+              if (staff && staff.avatar) {
+                try {
+                  staffAvatar = await minioConfig
+                    .getClient()
+                    .presignedGetObject(
+                      DEFAULT_MINIO.BUCKET,
+                      `${DEFAULT_MINIO.STAFF_PATH}/${staff.id}/${staff.avatar}`,
+                      24 * 60 * 60
+                    );
+                } catch (avatarError) {
+                  console.error("Error fetching staff avatar:", avatarError);
+                }
+              }
+            }
+
             return {
               ...reviewWithoutBookingId,
               averageRating:
@@ -253,6 +277,16 @@ class ReviewController {
                 avatar: customerAvatar,
               },
               roomType,
+              replyReview: replyReview
+                ? {
+                    ...replyReview.toJSON(),
+                    staff: {
+                      full_name: replyReview?.staff?.full_name,
+                      email: replyReview?.staff?.email,
+                      avatar: staffAvatar,
+                    },
+                  }
+                : null,
             };
           } catch (error) {
             console.error("Error processing review:", error);
@@ -300,6 +334,84 @@ class ReviewController {
           totalReviews: reviewRatings.length,
           countByRatingLevel,
         },
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+  async createReplyReview(req: Request, res: Response) {
+    try {
+      const { review_id } = req.params;
+      const { staff_id, reply } = req.body;
+
+      const review = await Review.findByPk(review_id);
+
+      if (!review) {
+        return res.status(400).json({
+          status: 400,
+          message: "Đánh giá không tồn tại!",
+        });
+      }
+
+      const replyReview = await ReplyReview.create({
+        staff_id,
+        review_id,
+        reply,
+      });
+
+      return res.status(201).json({
+        status: 201,
+        message: "Phản hồi đánh giá thành công!",
+        data: replyReview,
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async updateReplyReview(req: Request, res: Response) {
+    try {
+      const { reply_review_id } = req.params;
+      const { review_id, staff_id, reply } = req.body;
+
+      const replyReview = await ReplyReview.findByPk(reply_review_id);
+      if (!replyReview) {
+        return res.status(404).json({
+          status: 404,
+          message: "Phản hồi đánh giá không tìm thấy!",
+        });
+      }
+
+      const updatedReplyReview = await replyReview.update({
+        review_id,
+        staff_id,
+        reply,
+      });
+
+      return res.status(200).json({
+        status: 200,
+        message: "Cập nhật phản hồi đánh giá thành công!",
+        data: updatedReplyReview,
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async deleteReplyReview(req: Request, res: Response) {
+    try {
+      const { reply_review_id } = req.params;
+      const replyReview = await ReplyReview.findByPk(reply_review_id);
+      if (!replyReview) {
+        return res.status(404).json({
+          status: 404,
+          message: "Review not found!",
+        });
+      }
+      await replyReview.destroy();
+      return res.status(200).json({
+        status: 200,
+        message: "Xóa phản hồi đánh giá thành công!",
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

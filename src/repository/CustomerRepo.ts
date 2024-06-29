@@ -1,3 +1,4 @@
+import { Op } from "sequelize";
 import { Customer } from "../model/Customer";
 
 interface ICustomerRepo {
@@ -36,7 +37,7 @@ export class CustomerRepo implements ICustomerRepo {
         full_name: newCustomer.full_name,
         gender: newCustomer.gender,
         phone: newCustomer.phone,
-        is_verified: newCustomer.is_verified
+        is_verified: newCustomer.is_verified,
       });
     } catch (error) {
       throw new Error("Failed to save customer!");
@@ -101,5 +102,21 @@ export class CustomerRepo implements ICustomerRepo {
     } catch (error) {
       throw new Error("Failed to retrieve all customers!");
     }
+  }
+
+  async countCustomersByMonth(year: number, month: number): Promise<number> {
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 1);
+
+    const count = await Customer.count({
+      where: {
+        created_at: {
+          [Op.gte]: startDate,
+          [Op.lt]: endDate,
+        },
+      },
+    });
+
+    return count;
   }
 }

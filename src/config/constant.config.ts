@@ -4,6 +4,7 @@ export const DEFAULT_MINIO = {
   HOTEL_PATH: "hotels",
   ROOM_TYPE_PATH: "room_types",
   CUSTOMER_PATH: "customers",
+  STAFF_PATH: "staffs",
 };
 
 export const ROLE = {

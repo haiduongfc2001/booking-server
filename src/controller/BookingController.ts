@@ -29,6 +29,7 @@ import { Payment } from "../model/Payment";
 import { PaymentMethod } from "../model/PaymentMethod";
 import { Refund } from "../model/Refund";
 import { Review } from "../model/Review";
+import { Op } from "sequelize";
 
 interface Child {
   age: number;
@@ -184,7 +185,7 @@ class BookingController {
       if (!payment) {
         return res.status(200).json({
           status: 200,
-          message: "The booking has not been paid yet!",
+          message: "Đơn hàng chưa được thanh toán!",
           data: {
             ...bookingInfo,
             payment: {
@@ -815,6 +816,465 @@ class BookingController {
         message: "Successfully fetched all booking data!",
         data: presignedUrls,
         totalBookings: count,
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async getBookingStats(req: Request, res: Response) {
+    try {
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth();
+      const currentYear = currentDate.getFullYear();
+      const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+      const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+      const currentMonthCount = await new BookingRepo().countBookingsByMonth(
+        currentYear,
+        currentMonth
+      );
+      const previousMonthCount = await new BookingRepo().countBookingsByMonth(
+        previousYear,
+        previousMonth
+      );
+
+      let percentageChange: number | null = null;
+      if (previousMonthCount !== 0) {
+        percentageChange =
+          ((currentMonthCount - previousMonthCount) / previousMonthCount) * 100;
+      } else if (currentMonthCount > 0) {
+        percentageChange = 100;
+      }
+
+      if (percentageChange !== null) {
+        percentageChange = parseFloat(percentageChange.toFixed(2));
+      }
+
+      const totalBookings = await Booking.count({
+        where: {
+          status: {
+            [Op.in]: [
+              BOOKING_STATUS.CONFIRMED,
+              BOOKING_STATUS.CHECKED_IN,
+              BOOKING_STATUS.CHECKED_OUT,
+            ],
+          },
+        },
+      });
+
+      return res.status(200).json({
+        status: 200,
+        message: "Successfully fetched customer statistics!",
+        data: { totalBookings, currentMonthCount, percentageChange },
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  /**
+   * Tính tổng doanh thu từ tất cả các đặt phòng.
+   *
+   * @returns {Promise<number>} - Tổng doanh thu
+   */
+  async getTotalBookingRevenue(req: Request, res: Response) {
+    try {
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth();
+      const currentYear = currentDate.getFullYear();
+      const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+      const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+      // Tổng doanh thu tất cả các thời gian
+      const totalRoomPrice = await Booking.sum("total_room_price", {
+        where: {
+          status: {
+            [Op.in]: [
+              BOOKING_STATUS.CONFIRMED,
+              BOOKING_STATUS.CHECKED_IN,
+              BOOKING_STATUS.CHECKED_OUT,
+            ],
+          },
+        },
+      });
+
+      const totalTaxAndFee = await Booking.sum("tax_and_fee", {
+        where: {
+          status: {
+            [Op.in]: [
+              BOOKING_STATUS.CONFIRMED,
+              BOOKING_STATUS.CHECKED_IN,
+              BOOKING_STATUS.CHECKED_OUT,
+            ],
+          },
+        },
+      });
+
+      const totalRevenue = (totalRoomPrice || 0) + (totalTaxAndFee || 0);
+
+      // Tổng số đặt phòng trong tháng hiện tại
+      const currentMonthCount = await Booking.count({
+        where: {
+          status: {
+            [Op.in]: [
+              BOOKING_STATUS.CONFIRMED,
+              BOOKING_STATUS.CHECKED_IN,
+              BOOKING_STATUS.CHECKED_OUT,
+            ],
+          },
+          created_at: {
+            [Op.gte]: new Date(currentYear, currentMonth, 1),
+            [Op.lt]: new Date(currentYear, currentMonth + 1, 1),
+          },
+        },
+      });
+
+      // Tổng số đặt phòng trong tháng trước
+      const previousMonthCount = await Booking.count({
+        where: {
+          status: {
+            [Op.in]: [
+              BOOKING_STATUS.CONFIRMED,
+              BOOKING_STATUS.CHECKED_IN,
+              BOOKING_STATUS.CHECKED_OUT,
+            ],
+          },
+          created_at: {
+            [Op.gte]: new Date(previousYear, previousMonth, 1),
+            [Op.lt]: new Date(previousYear, previousMonth + 1, 1),
+          },
+        },
+      });
+
+      let percentageChange: number | null = null;
+      if (previousMonthCount !== 0) {
+        percentageChange =
+          ((currentMonthCount - previousMonthCount) / previousMonthCount) * 100;
+      } else if (currentMonthCount > 0) {
+        percentageChange = 100; // If no bookings in previous month but there are in the current month, it's a 100% increase.
+      }
+
+      if (percentageChange !== null) {
+        percentageChange = parseFloat(percentageChange.toFixed(2));
+      }
+
+      return res.status(200).json({
+        status: 200,
+        message: "Successfully fetched booking revenue statistics!",
+        data: { totalRevenue, currentMonthCount, percentageChange },
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async getTotalBookingRevenueByHotelId(req: Request, res: Response) {
+    try {
+      const { hotel_id } = req.params;
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth();
+      const currentYear = currentDate.getFullYear();
+      const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+      const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+      // Lấy danh sách booking của khách sạn theo hotel_id
+      const bookings = await Booking.findAll({
+        where: {
+          status: {
+            [Op.in]: [
+              BOOKING_STATUS.CONFIRMED,
+              BOOKING_STATUS.CHECKED_IN,
+              BOOKING_STATUS.CHECKED_OUT,
+            ],
+          },
+          created_at: {
+            [Op.gte]: new Date(currentYear, currentMonth, 1),
+            [Op.lt]: new Date(currentYear, currentMonth + 1, 1),
+          },
+        },
+        include: [
+          {
+            model: RoomBooking,
+            include: [
+              {
+                model: Room,
+                include: [
+                  {
+                    model: RoomType,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      const validBookings = bookings.filter(
+        (booking) =>
+          String(booking.roomBookings[0].room.roomType.hotel_id) ===
+          String(hotel_id)
+      );
+
+      // Tính tổng doanh thu cho khách sạn
+      const totalRevenue = validBookings.reduce((acc, booking) => {
+        const roomPrice = booking.total_room_price || 0;
+        const taxAndFee = booking.tax_and_fee || 0;
+        return acc + roomPrice + taxAndFee;
+      }, 0);
+
+      // Tính tổng số đặt phòng trong tháng hiện tại
+      const currentMonthCount = await Booking.count({
+        where: {
+          status: {
+            [Op.in]: [
+              BOOKING_STATUS.CONFIRMED,
+              BOOKING_STATUS.CHECKED_IN,
+              BOOKING_STATUS.CHECKED_OUT,
+            ],
+          },
+          created_at: {
+            [Op.gte]: new Date(currentYear, currentMonth, 1),
+            [Op.lt]: new Date(currentYear, currentMonth + 1, 1),
+          },
+          "$roomBookings.room.roomType.hotel_id$": hotel_id,
+        },
+        include: [
+          {
+            model: RoomBooking,
+            include: [
+              {
+                model: Room,
+                include: [
+                  {
+                    model: RoomType,
+                    where: {
+                      hotel_id: hotel_id,
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      // Tổng số đặt phòng trong tháng trước
+      const previousMonthCount = await Booking.count({
+        where: {
+          status: {
+            [Op.in]: [
+              BOOKING_STATUS.CONFIRMED,
+              BOOKING_STATUS.CHECKED_IN,
+              BOOKING_STATUS.CHECKED_OUT,
+            ],
+          },
+          created_at: {
+            [Op.gte]: new Date(previousYear, previousMonth, 1),
+            [Op.lt]: new Date(previousYear, previousMonth + 1, 1),
+          },
+          "$roomBookings.room.roomType.hotel_id$": hotel_id,
+        },
+        include: [
+          {
+            model: RoomBooking,
+            include: [
+              {
+                model: Room,
+                include: [
+                  {
+                    model: RoomType,
+                    where: {
+                      hotel_id: hotel_id,
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      let percentageChange: number | null = null;
+      if (previousMonthCount !== 0) {
+        percentageChange =
+          ((currentMonthCount - previousMonthCount) / previousMonthCount) * 100;
+      } else if (currentMonthCount > 0) {
+        percentageChange = 100; // If no bookings in previous month but there are in the current month, it's a 100% increase.
+      }
+
+      if (percentageChange !== null) {
+        percentageChange = parseFloat(percentageChange.toFixed(2));
+      }
+
+      return res.status(200).json({
+        status: 200,
+        message: "Successfully fetched booking revenue statistics by hotel!",
+        data: { totalRevenue, currentMonthCount, percentageChange },
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async getMonthlyBookingRevenue(req: Request, res: Response) {
+    try {
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const previousYear = currentYear - 1;
+
+      // Hàm trợ giúp để tính doanh thu cho một tháng cụ thể
+      const calculateMonthlyRevenue = async (
+        year: number,
+        month: number
+      ): Promise<number> => {
+        const startDate = new Date(year, month, 1);
+        const endDate = new Date(year, month + 1, 1);
+
+        const bookings = await Booking.findAll({
+          where: {
+            status: {
+              [Op.in]: [
+                BOOKING_STATUS.CONFIRMED,
+                BOOKING_STATUS.CHECKED_IN,
+                BOOKING_STATUS.CHECKED_OUT,
+              ],
+            },
+            created_at: {
+              [Op.gte]: startDate,
+              [Op.lt]: endDate,
+            },
+          },
+        });
+
+        return bookings.reduce((acc, booking) => {
+          const roomPrice = booking.total_room_price || 0;
+          const taxAndFee = booking.tax_and_fee || 0;
+          return acc + roomPrice + taxAndFee;
+        }, 0);
+      };
+
+      // Tính doanh thu cho từng tháng của năm nay
+      const currentYearRevenue = await Promise.all(
+        Array.from({ length: 12 }, (_, i) =>
+          calculateMonthlyRevenue(currentYear, i)
+        )
+      );
+
+      // Tính doanh thu cho từng tháng của năm ngoái
+      const previousYearRevenue = await Promise.all(
+        Array.from({ length: 12 }, (_, i) =>
+          calculateMonthlyRevenue(previousYear, i)
+        )
+      );
+
+      // Trả về kết quả
+      return res.status(200).json({
+        status: 200,
+        message: "Successfully fetched monthly booking revenue!",
+        data: [
+          {
+            name: "Năm nay",
+            data: currentYearRevenue,
+          },
+          {
+            name: "Năm ngoái",
+            data: previousYearRevenue,
+          },
+        ],
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async getMonthlyBookingRevenueByHotelId(req: Request, res: Response) {
+    try {
+      const { hotel_id } = req.params;
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const previousYear = currentYear - 1;
+
+      // Hàm trợ giúp để tính doanh thu cho một tháng cụ thể
+      const calculateMonthlyRevenue = async (
+        year: number,
+        month: number
+      ): Promise<number> => {
+        const startDate = new Date(year, month, 1);
+        const endDate = new Date(year, month + 1, 1);
+
+        const bookings = await Booking.findAll({
+          where: {
+            status: {
+              [Op.in]: [
+                BOOKING_STATUS.CONFIRMED,
+                BOOKING_STATUS.CHECKED_IN,
+                BOOKING_STATUS.CHECKED_OUT,
+              ],
+            },
+            created_at: {
+              [Op.gte]: startDate,
+              [Op.lt]: endDate,
+            },
+          },
+          include: [
+            {
+              model: RoomBooking,
+              include: [
+                {
+                  model: Room,
+                  include: [
+                    {
+                      model: RoomType,
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        });
+
+        const validBookings = bookings.filter(
+          (booking) =>
+            String(booking.roomBookings[0].room.roomType.hotel_id) ===
+            String(hotel_id)
+        );
+
+        return validBookings.reduce((acc, booking) => {
+          const roomPrice = booking.total_room_price || 0;
+          const taxAndFee = booking.tax_and_fee || 0;
+          return acc + roomPrice + taxAndFee;
+        }, 0);
+      };
+
+      // Tính doanh thu cho từng tháng của năm nay
+      const currentYearRevenue = await Promise.all(
+        Array.from({ length: 12 }, (_, i) =>
+          calculateMonthlyRevenue(currentYear, i)
+        )
+      );
+
+      // Tính doanh thu cho từng tháng của năm ngoái
+      const previousYearRevenue = await Promise.all(
+        Array.from({ length: 12 }, (_, i) =>
+          calculateMonthlyRevenue(previousYear, i)
+        )
+      );
+
+      // Trả về kết quả
+      return res.status(200).json({
+        status: 200,
+        message: "Successfully fetched monthly booking revenue!",
+        data: [
+          {
+            name: "Năm nay",
+            data: currentYearRevenue,
+          },
+          {
+            name: "Năm ngoái",
+            data: previousYearRevenue,
+          },
+        ],
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

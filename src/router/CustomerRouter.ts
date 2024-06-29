@@ -64,6 +64,11 @@ class CustomerRoutes extends BaseRoutes {
       authFullRole,
       CustomerController.deleteFavoriteHotel
     );
+    this.router.get(
+      "/getCustomerStats",
+      authFullRole,
+      CustomerController.getCustomerStats
+    );
   }
 }
 

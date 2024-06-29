@@ -34,6 +34,31 @@ class BookingRoutes extends BaseRoutes {
       authFullRole,
       BookingController.getAllBookingsByHotelId
     );
+    this.router.get(
+      "/getBookingStats",
+      authFullRole,
+      BookingController.getBookingStats
+    );
+    this.router.get(
+      "/getTotalBookingRevenue",
+      authFullRole,
+      BookingController.getTotalBookingRevenue
+    );
+    this.router.get(
+      "/getTotalBookingRevenueByHotelId/:hotel_id",
+      authFullRole,
+      BookingController.getTotalBookingRevenueByHotelId
+    );
+    this.router.get(
+      "/getMonthlyBookingRevenue",
+      authFullRole,
+      BookingController.getMonthlyBookingRevenue
+    );
+    this.router.get(
+      "/getMonthlyBookingRevenueByHotelId/:hotel_id",
+      authFullRole,
+      BookingController.getMonthlyBookingRevenueByHotelId
+    );
   }
 }
 
