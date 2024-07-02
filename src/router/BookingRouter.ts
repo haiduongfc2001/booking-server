@@ -24,7 +24,7 @@ class BookingRoutes extends BaseRoutes {
       authFullRole,
       BookingController.createBooking
     );
-    this.router.get(
+    this.router.post(
       "/getAllBookingsByCustomerId/:customer_id",
       authFullRole,
       BookingController.getAllBookingsByCustomerId
@@ -58,6 +58,11 @@ class BookingRoutes extends BaseRoutes {
       "/getMonthlyBookingRevenueByHotelId/:hotel_id",
       authFullRole,
       BookingController.getMonthlyBookingRevenueByHotelId
+    );
+    this.router.post(
+      "/:booking_id/updateBooking",
+      authFullRole,
+      BookingController.updateBooking
     );
   }
 }

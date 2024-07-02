@@ -4,7 +4,7 @@ import { StaffRepo } from "../repository/StaffRepo";
 import ErrorHandler from "../utils/ErrorHandler";
 import { Hotel } from "../model/Hotel";
 import bcrypt from "bcrypt";
-import { ROLE } from "../config/constant.config";
+import { DEFAULT_MINIO, ROLE } from "../config/constant.config";
 import {
   generateMangerToken,
   generateReceptionistToken,
@@ -12,6 +12,7 @@ import {
 import securePassword from "../utils/SecurePassword";
 import generateRandomString from "../utils/RandomString";
 import { sendMailPassword } from "../utils/SendVerifyMail";
+import { minioConfig } from "../config/minio.config";
 
 const roleToTokenGenerator = {
   [ROLE.MANAGER]: generateMangerToken,
@@ -295,11 +296,38 @@ class StaffController {
         }
       );
 
+      const avatar = staff?.avatar
+        ? await new Promise<string | null>((resolve, reject) => {
+            minioConfig
+              .getClient()
+              .presignedGetObject(
+                DEFAULT_MINIO.BUCKET,
+                `${DEFAULT_MINIO.CUSTOMER_PATH}/${staff.id}/${staff.avatar}`,
+                24 * 60 * 60,
+                (err, presignedUrl) => {
+                  if (err) {
+                    console.error("Error generating avatar URL:", err);
+                    resolve(null);
+                  } else {
+                    resolve(presignedUrl);
+                  }
+                }
+              );
+          })
+        : null;
+
       // Login successful
       return res.status(200).json({
         status: 200,
         message: "Đăng nhập thành công!",
         token,
+        staff: {
+          id: staff.id,
+          hotel_id: staff.hotel_id,
+          email: staff.email,
+          full_name: staff.full_name,
+          avatar,
+        },
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

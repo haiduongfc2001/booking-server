@@ -6,27 +6,27 @@ class AddressRoutes extends BaseRoutes {
   public routes(): void {
     this.router.get(
       "/getAllProvinces",
-      authFullRole,
+      // authFullRole,
       AddressController.getAllProvinces
     );
     this.router.get(
       "/getAllDistricts",
-      authFullRole,
+      // authFullRole,
       AddressController.getAllDistricts
     );
     this.router.get(
       "/getAllWards",
-      authFullRole,
+      // authFullRole,
       AddressController.getAllWards
     );
     this.router.get(
       "/province/:province_id/districts/getAll",
-      authFullRole,
+      // authFullRole,
       AddressController.getAllDistrictsByProvinceId
     );
     this.router.get(
       "/province/district/:district_id/wards/getAll",
-      authFullRole,
+      // authFullRole,
       AddressController.getAllWardsByDistrictId
     );
   }

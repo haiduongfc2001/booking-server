@@ -41,7 +41,7 @@ class CustomerRoutes extends BaseRoutes {
       "/:customer_id/updateCustomer",
       authFullRole,
       validate(updateCustomerSchema),
-      upload.single("image"),
+      upload.single("avatar"),
       CustomerController.updateCustomer
     );
     this.router.delete(
@@ -49,7 +49,7 @@ class CustomerRoutes extends BaseRoutes {
       authFullRole,
       CustomerController.deleteCustomer
     );
-    this.router.get(
+    this.router.post(
       "/:customer_id/getFavoriteHotelsByCustomerId",
       authFullRole,
       CustomerController.getFavoriteHotelsByCustomerId
@@ -59,10 +59,10 @@ class CustomerRoutes extends BaseRoutes {
       authFullRole,
       CustomerController.addFavoriteHotel
     );
-    this.router.delete(
-      "/:favorite_hotel_id/deleteFavoriteHotel",
+    this.router.post(
+      "/removeFavoriteHotel",
       authFullRole,
-      CustomerController.deleteFavoriteHotel
+      CustomerController.removeFavoriteHotel
     );
     this.router.get(
       "/getCustomerStats",

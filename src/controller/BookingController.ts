@@ -29,12 +29,23 @@ import { Payment } from "../model/Payment";
 import { PaymentMethod } from "../model/PaymentMethod";
 import { Refund } from "../model/Refund";
 import { Review } from "../model/Review";
-import { Op } from "sequelize";
+import { Op, OrderItem } from "sequelize";
 
 interface Child {
   age: number;
   fee: number;
 }
+
+const sortOptionMap = {
+  NEWEST: ["created_at", "DESC"],
+  OLDEST: ["created_at", "ASC"],
+  CANCELLED: ["created_at", "DESC"],
+  CONFIRMED: ["created_at", "DESC"],
+  CHECKED_IN: ["created_at", "DESC"],
+  CHECKED_OUT: ["created_at", "DESC"],
+} as const;
+
+type SortOption = keyof typeof sortOptionMap;
 
 class BookingController {
   async getAllBookings(req: Request, res: Response) {
@@ -571,12 +582,39 @@ class BookingController {
   async getAllBookingsByCustomerId(req: Request, res: Response) {
     try {
       const { customer_id } = req.params;
+      const {
+        sortOption = "NEWEST",
+        page = PAGINATION.INITIAL_PAGE,
+        size = PAGINATION.PAGE_SIZE,
+      } = req.body;
+
+      const orderOption = sortOptionMap[sortOption as SortOption] as OrderItem;
+      const offset = (page - 1) * size;
+
+      // Khởi tạo điều kiện where
+      let whereCondition: any = { customer_id };
+
+      // Điều chỉnh điều kiện where cho các sortOption khác nhau
+      if (sortOption === "CANCELLED") {
+        whereCondition.status = { [Op.in]: ["CANCELLED", "FAILED"] };
+      } else if (sortOption === "CONFIRMED") {
+        whereCondition.status = {
+          [Op.in]: ["CONFIRMED", "CHECKED_IN", "CHECKED_OUT"],
+        };
+      } else if (sortOption === "CHECKED_IN") {
+        whereCondition.status = "CHECKED_IN";
+      } else if (sortOption === "CHECKED_OUT") {
+        whereCondition.status = "CHECKED_OUT";
+      }
+
+      const totalBookings = await Booking.count({
+        where: { customer_id },
+        distinct: true,
+      });
 
       const bookings = await Booking.findAll({
-        where: {
-          customer_id,
-        },
-        order: [["created_at", "desc"]],
+        where: whereCondition,
+        order: [orderOption],
         include: [
           {
             model: RoomBooking,
@@ -598,6 +636,8 @@ class BookingController {
             model: Customer,
           },
         ],
+        limit: size,
+        offset: offset,
       });
 
       // Tạo URL được ký trước cho mỗi hình ảnh của khách sạn
@@ -668,6 +708,7 @@ class BookingController {
       return res.status(200).json({
         status: 200,
         message: "Successfully fetched all booking data!",
+        totalBookings,
         data: presignedUrls,
       });
     } catch (error) {
@@ -861,6 +902,7 @@ class BookingController {
             ],
           },
         },
+        distinct: true,
       });
 
       return res.status(200).json({
@@ -928,6 +970,7 @@ class BookingController {
             [Op.lt]: new Date(currentYear, currentMonth + 1, 1),
           },
         },
+        distinct: true,
       });
 
       // Tổng số đặt phòng trong tháng trước
@@ -945,6 +988,7 @@ class BookingController {
             [Op.lt]: new Date(previousYear, previousMonth + 1, 1),
           },
         },
+        distinct: true,
       });
 
       let percentageChange: number | null = null;
@@ -1057,6 +1101,7 @@ class BookingController {
             ],
           },
         ],
+        distinct: true,
       });
 
       // Tổng số đặt phòng trong tháng trước
@@ -1093,6 +1138,7 @@ class BookingController {
             ],
           },
         ],
+        distinct: true,
       });
 
       let percentageChange: number | null = null;
@@ -1275,6 +1321,39 @@ class BookingController {
             data: previousYearRevenue,
           },
         ],
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async updateBooking(req: Request, res: Response) {
+    try {
+      const booking_id = parseInt(req.params["booking_id"]);
+      const bookingToUpdate = await Booking.findByPk(booking_id);
+
+      if (!bookingToUpdate) {
+        return res.status(404).json({
+          status: 404,
+          message: "Không tìm thấy đơn đặt phòng!",
+        });
+      }
+
+      const fieldsToUpdate = ["status", "note"];
+
+      // Create an updated booking object
+      const updatedBookingData: Partial<Booking> = {};
+      fieldsToUpdate.forEach((field) => {
+        if (req.body[field]) {
+          (updatedBookingData as any)[field] = req.body[field];
+        }
+      });
+
+      await Booking.update(updatedBookingData, { where: { id: booking_id } });
+
+      return res.status(200).json({
+        status: 200,
+        message: "Successfully updated booking data!",
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

@@ -11,7 +11,7 @@ import { Customer } from "../model/Customer";
 import { BOOKING_STATUS } from "../config/enum.config";
 import { calculateAverageRatings } from "../utils/CalculateRating";
 import { minioConfig } from "../config/minio.config";
-import { DEFAULT_MINIO } from "../config/constant.config";
+import { DEFAULT_MINIO, PAGINATION } from "../config/constant.config";
 import { ReplyReview } from "../model/ReplyReview";
 import { Staff } from "../model/Staff";
 
@@ -170,6 +170,43 @@ class ReviewController {
   async getHotelReviews(req: Request, res: Response) {
     try {
       const { hotel_id } = req.params;
+      const {
+        sortOption = "RELEVANT",
+        page = PAGINATION.INITIAL_PAGE,
+        size = PAGINATION.PAGE_SIZE,
+      } = req.query;
+
+      const pageNum = Number(page) || PAGINATION.INITIAL_PAGE;
+      const sizeNum = Number(size) || PAGINATION.PAGE_SIZE;
+
+      const offset = (pageNum - 1) * sizeNum;
+
+      // Fetch all reviews for the specified hotel
+      const totalReviews = await Review.count({
+        include: [
+          {
+            model: Booking,
+            include: [
+              {
+                model: RoomBooking,
+                include: [
+                  {
+                    model: Room,
+                    include: [
+                      {
+                        model: RoomType,
+                        where: { hotel_id },
+                        include: [{ model: Hotel }],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        distinct: true,
+      });
 
       // Fetch all reviews for the specified hotel
       const reviews = await Review.findAll({
@@ -195,6 +232,8 @@ class ReviewController {
             ],
           },
         ],
+        limit: sizeNum,
+        offset: offset,
       });
 
       if (!reviews || reviews.length === 0) {
@@ -300,6 +339,28 @@ class ReviewController {
         (review) => review !== null
       );
 
+      // Sort the filteredReviewRatings based on sortOption
+      const sortedReviews = filteredReviewRatings.sort((a, b) => {
+        switch (sortOption) {
+          case "NEWEST":
+            return (
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime()
+            );
+          case "OLDEST":
+            return (
+              new Date(a.created_at).getTime() -
+              new Date(b.created_at).getTime()
+            );
+          case "LOWEST_RATING":
+            return a.averageRating - b.averageRating;
+          case "HIGHEST_RATING":
+            return b.averageRating - a.averageRating;
+          default:
+            return 0;
+        }
+      });
+
       const averageRatings = calculateAverageRatings(reviewsByHotel);
 
       // Tính toán số lượng đánh giá theo mức độ rating
@@ -311,7 +372,7 @@ class ReviewController {
         POOR: 0,
       };
 
-      reviewRatings.forEach((review) => {
+      sortedReviews.forEach((review) => {
         const averageRating = review.averageRating;
         if (averageRating >= 9) {
           countByRatingLevel.FANTASTIC++;
@@ -329,9 +390,9 @@ class ReviewController {
       return res.status(200).json({
         status: 200,
         data: {
-          reviews: reviewRatings,
+          reviews: sortedReviews,
           averageRatings,
-          totalReviews: reviewRatings.length,
+          totalReviews,
           countByRatingLevel,
         },
       });
@@ -339,6 +400,7 @@ class ReviewController {
       return ErrorHandler.handleServerError(res, error);
     }
   }
+
   async createReplyReview(req: Request, res: Response) {
     try {
       const { review_id } = req.params;

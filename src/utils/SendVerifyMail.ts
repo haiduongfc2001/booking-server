@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 import mailConfig from "../config/mail.config";
+import formatCurrency from "./FormatCurrency";
 
 const { EMAIL_HOST, EMAIL_PORT, EMAIL_USERNAME, EMAIL_PASSWORD, BASE_URL } =
   mailConfig;
@@ -255,4 +256,120 @@ const sendMailPassword = async (
   }
 };
 
-export { sendVerifyMail, sendMailPassword };
+const sendMailBookingSuccessfully = async (
+  full_name: string,
+  email: string,
+  bookingInfo: { [key: string]: any },
+  checkInTime: string,
+  checkOutTime: string,
+  roomTypeName: string,
+  hotelName: string,
+  totalPrice: string | number
+) => {
+  try {
+    const transporter = createTransporter();
+
+    const mailOptions: MailOptions = {
+      from: EMAIL_USERNAME!,
+      to: email,
+      subject: "Đặt phòng thành công",
+      text: "Plaintext version of the message",
+      html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thông tin đơn đặt phòng</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5ff;
+    }
+    .container {
+      max-width: 600px;
+      margin: 30px auto;
+      padding: 20px;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      font-size: 24px;
+      text-align: center;
+      color: #333;
+    }
+    p {
+      color: #555;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+    strong {
+      font-weight: bold;
+    }
+    .button {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #ffffff !important;
+      font-weight: bold;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 16px;
+      border: none;
+      margin-top: 20px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .button:hover {
+      background-color: #0056b3;
+    }
+    footer {
+      margin-top: 30px;
+      text-align: center;
+    }
+    footer p {
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Thông tin đặt phòng</h1>
+    <p>Xin chào <strong>${full_name}</strong>,</p>
+    <p>Cảm ơn bạn đã đặt phòng với chúng tôi. Dưới đây là thông tin chi tiết:</p>
+    <ul>
+      <li><strong>Khách sạn:</strong> ${hotelName}</li>
+      <li><strong>Loại phòng:</strong> ${roomTypeName}</li>
+      <li><strong>Số phòng:</strong> ${bookingInfo.roomBookings.length}</li>
+      <li><strong>Ngày nhận phòng:</strong> ${checkInTime}</li>
+      <li><strong>Ngày trả phòng:</strong> ${checkOutTime}</li>
+      <li><strong>Tổng số tiền:</strong> ${formatCurrency(
+        Number(totalPrice)
+      )}</li>
+    </ul>
+    <p>Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi. Chúng tôi rất mong sớm được đón tiếp bạn!</p>
+    <a class="button" href="https://booking-customer.vercel.app/account/my-booking/${
+      bookingInfo.id
+    }" target="_blank">Xem chi tiết đơn đặt phòng</a>
+    <footer>
+      <p>Nếu bạn không đặt phòng, vui lòng bỏ qua email này.</p>
+      <p>Trân trọng,</p>
+      <p><strong>DHD</strong></p>
+    </footer>
+  </div>
+</body>
+</html>
+`,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email đã được gửi: " + info.response);
+  } catch (error: any) {
+    console.log(error.message);
+  }
+};
+
+export { sendVerifyMail, sendMailPassword, sendMailBookingSuccessfully };

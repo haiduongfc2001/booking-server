@@ -38,6 +38,8 @@ import { translate } from "../utils/Translation";
 import { Room } from "../model/Room";
 import { Bed } from "../model/Bed";
 import { Refund } from "../model/Refund";
+import { sendMailBookingSuccessfully } from "../utils/SendVerifyMail";
+import { Policy } from "../model/Policy";
 
 const numberRegex = /^[0-9]+$/;
 
@@ -562,6 +564,39 @@ class PaymentController {
           }),
           booking.update({ status: bookingStatus }),
         ]);
+
+        if (response?.data?.return_code === 1) {
+          console.log("bookingInfo: ", bookingInfo);
+
+          const hotelPolicy = await Policy.findAll({
+            where: {
+              hotel_id: bookingInfo.roomBookings[0].room.roomType.hotel.id,
+            },
+          });
+
+          const checkInTime = hotelPolicy?.find(
+            (policy: { type: string }) => policy.type === "CHECK_IN_TIME"
+          )?.value;
+
+          const checkOutTime = hotelPolicy?.find(
+            (policy: { type: string }) => policy.type === "CHECK_OUT_TIME"
+          )?.value;
+
+          await sendMailBookingSuccessfully(
+            bookingInfo.customer.full_name,
+            bookingInfo.customer.email,
+            bookingInfo,
+            `${checkInTime} ${dayjs(bookingInfo?.check_in).format(
+              "DD-MM-YYYY"
+            )}`,
+            `${checkOutTime} ${dayjs(bookingInfo?.check_out).format(
+              "DD-MM-YYYY"
+            )}`,
+            bookingInfo.roomBookings[0].room.roomType.name,
+            bookingInfo.roomBookings[0].room.roomType.hotel.name,
+            bookingInfo.totalPrice
+          );
+        }
 
         return res.status(response?.data?.return_code === 1 ? 200 : 400).json({
           status: response?.data?.return_code === 1 ? 200 : 400,

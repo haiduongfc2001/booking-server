@@ -6,11 +6,13 @@ import securePassword from "../utils/SecurePassword";
 import { sendVerifyMail } from "../utils/SendVerifyMail";
 import bcrypt from "bcrypt";
 import { generateCustomerToken } from "../utils/GenerateToken";
-import { DEFAULT_MINIO } from "../config/constant.config";
+import { DEFAULT_MINIO, PAGINATION } from "../config/constant.config";
 import getFileType from "../utils/GetFileType";
 import generateRandomString from "../utils/RandomString";
 import { minioConfig } from "../config/minio.config";
 import { FavoriteHotel } from "../model/FavoriteHotel";
+import { Hotel } from "../model/Hotel";
+import { HotelImage } from "../model/HotelImage";
 
 class CustomerController {
   async createCustomer(req: Request, res: Response) {
@@ -103,7 +105,7 @@ class CustomerController {
 
   async updateCustomer(req: Request, res: Response) {
     try {
-      const customer_id = parseInt(req.params["customer_id"], 10);
+      const customer_id = parseInt(req.params.customer_id, 10);
 
       if (isNaN(customer_id)) {
         return res.status(400).json({
@@ -134,15 +136,18 @@ class CustomerController {
         location: req.body.location,
       };
 
+      // Cập nhật các trường nếu có giá trị mới
       for (const [field, value] of Object.entries(fieldsToUpdate)) {
         if (value !== undefined) {
           (customerToUpdate as any)[field] = value;
         }
       }
 
+      // Xử lý tải lên avatar mới nếu có
       if (req.file) {
         const folder = `${DEFAULT_MINIO.CUSTOMER_PATH}/${customer_id}`;
 
+        // Xóa avatar cũ nếu có
         if (customerToUpdate.avatar) {
           await minioConfig
             .getClient()
@@ -151,14 +156,14 @@ class CustomerController {
               `${folder}/${customerToUpdate.avatar}`
             );
         }
-        const file = req.file as Express.Multer.File;
 
-        // Upload the file to MinIO server with specified object name
+        const file = req.file as Express.Multer.File;
         const metaData = { "Content-Type": file.mimetype };
         const typeFile = getFileType(file.originalname);
         const newName = `${Date.now()}_${generateRandomString(16)}.${typeFile}`;
         const objectName = `${folder}/${newName}`;
 
+        // Tải lên MinIO server
         await minioConfig
           .getClient()
           .putObject(
@@ -172,11 +177,12 @@ class CustomerController {
         (customerToUpdate as any).avatar = newName;
       }
 
+      // Lưu thông tin cập nhật vào database
       await new CustomerRepo().update(customerToUpdate);
 
       return res.status(200).json({
         status: 200,
-        message: "Successfully updated customer data!",
+        message: "Cập nhật thông tin thành công!",
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
@@ -303,11 +309,36 @@ class CustomerController {
         }
       );
 
+      const avatar = customer?.avatar
+        ? await new Promise<string | null>((resolve, reject) => {
+            minioConfig
+              .getClient()
+              .presignedGetObject(
+                DEFAULT_MINIO.BUCKET,
+                `${DEFAULT_MINIO.CUSTOMER_PATH}/${customer.id}/${customer.avatar}`,
+                24 * 60 * 60,
+                (err, presignedUrl) => {
+                  if (err) {
+                    console.error("Error generating avatar URL:", err);
+                    resolve(null);
+                  } else {
+                    resolve(presignedUrl);
+                  }
+                }
+              );
+          })
+        : null;
+
       // Login successful
       return res.status(200).json({
         status: 200,
         message: "Đăng nhập thành công!",
         token,
+        customer: {
+          id: customer.id,
+          email: customer.email,
+          avatar,
+        },
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
@@ -317,6 +348,10 @@ class CustomerController {
   async getFavoriteHotelsByCustomerId(req: Request, res: Response) {
     try {
       const customer_id = parseInt(req.params["customer_id"]);
+      const { page = PAGINATION.INITIAL_PAGE, size = PAGINATION.PAGE_SIZE } =
+        req.body;
+
+      const offset = (page - 1) * size;
 
       const existingCustomer = await Customer.findByPk(customer_id);
 
@@ -327,16 +362,75 @@ class CustomerController {
         });
       }
 
-      const hotels = await FavoriteHotel.findAll({
+      const numFavoriteHotels = await FavoriteHotel.count({
         where: {
           customer_id,
         },
+        distinct: true,
       });
+
+      const favoriteHotels = await FavoriteHotel.findAll({
+        where: {
+          customer_id,
+        },
+        limit: size,
+        offset: offset,
+      });
+
+      const hotels = await Promise.all(
+        favoriteHotels.length > 0
+          ? favoriteHotels.map(async (favoriteHotel: any) => {
+              const hotel = await Hotel.findByPk(favoriteHotel.hotel_id, {
+                include: [
+                  {
+                    model: HotelImage,
+                  },
+                ],
+              });
+
+              if (!hotel) return null;
+
+              // Generate presigned URL for hotel avatar
+              const hotelImages = await Promise.all(
+                hotel.hotelImages.map(async (image) => {
+                  const presignedUrl = await new Promise<string>(
+                    (resolve, reject) => {
+                      minioConfig
+                        .getClient()
+                        .presignedGetObject(
+                          DEFAULT_MINIO.BUCKET,
+                          `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.id}/${image.url}`,
+                          24 * 60 * 60,
+                          (err, presignedUrl) => {
+                            if (err) reject(err);
+                            else resolve(presignedUrl);
+                          }
+                        );
+                    }
+                  );
+
+                  return {
+                    ...image.toJSON(),
+                    url: presignedUrl,
+                  };
+                })
+              );
+
+              // Return updated hotel object with presigned URL
+              return {
+                ...hotel.toJSON(),
+                address: `${hotel.street}, ${hotel.ward}, ${hotel.district}, ${hotel.province}`,
+                images: hotelImages,
+              };
+            })
+          : []
+      );
 
       return res.status(200).json({
         status: 200,
         message: `Successfully fetched favorite hotels by customer id ${customer_id}!`,
-        data: hotels,
+        numFavoriteHotels,
+        data: hotels.filter((hotel) => hotel !== null), // Filter out null values
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
@@ -370,13 +464,14 @@ class CustomerController {
     }
   }
 
-  async deleteFavoriteHotel(req: Request, res: Response) {
+  async removeFavoriteHotel(req: Request, res: Response) {
     try {
-      const favorite_hotel_id = parseInt(req.params["favorite_hotel_id"]);
+      const { customer_id, hotel_id } = req.body;
 
       await FavoriteHotel.destroy({
         where: {
-          id: favorite_hotel_id,
+          customer_id,
+          hotel_id,
         },
       });
 

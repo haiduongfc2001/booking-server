@@ -24,6 +24,9 @@ import { RoomTypeAmenity } from "../model/RoomTypeAmenity";
 import { HotelAmenity } from "../model/HotelAmenity";
 import { Review } from "../model/Review";
 import { calculateAverageRatings } from "../utils/CalculateRating";
+import { FavoriteHotel } from "../model/FavoriteHotel";
+import { Sequelize } from "sequelize-typescript";
+import { calculateMaxRoomDiscount } from "../utils/CalculateMaxRoomDiscount";
 
 export const extractPolicies = (policies: Policy[]) => {
   let tax = 0;
@@ -196,6 +199,7 @@ class HotelController {
                   },
                 ],
               },
+              { model: RoomImage },
               { model: Bed },
               { model: RoomTypeAmenity },
             ],
@@ -245,9 +249,9 @@ class HotelController {
           } = roomType;
 
           if (filters?.price_range?.length === 2) {
-            const [minPrice, maxPrice] = filters.price_range;
+            const [minPrice, maxPrice] = filters?.price_range;
             if (effective_price < minPrice || effective_price > maxPrice) {
-              return null;
+              return null; // Return null for filtered room types
             }
           }
 
@@ -271,10 +275,39 @@ class HotelController {
 
             let roomTypeImages = [];
             if (roomType.roomImages && roomType.roomImages.length > 0) {
-              roomTypeImages = await generatePresignedUrls(
-                hotel.id,
-                roomType.roomImages
+              roomTypeImages = await Promise.all(
+                roomType.roomImages.map(async (image) => {
+                  try {
+                    const presignedUrl = await new Promise<string>(
+                      (resolve, reject) => {
+                        minioConfig
+                          .getClient()
+                          .presignedGetObject(
+                            DEFAULT_MINIO.BUCKET,
+                            `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${roomType.id}/${image.url}`,
+                            24 * 60 * 60,
+                            (err, presignedUrl) => {
+                              if (err) reject(err);
+                              else resolve(presignedUrl);
+                            }
+                          );
+                      }
+                    );
+
+                    return {
+                      ...image.toJSON(),
+                      url: presignedUrl,
+                    };
+                  } catch (error: any) {
+                    console.error(
+                      `Error generating presigned URL for image ${image.id}: ${error.message}`
+                    );
+                    return null; // Return null for failed presigned URL generation
+                  }
+                })
               );
+
+              roomTypeImages = roomTypeImages.filter((image) => image !== null); // Filter out null presigned URLs
             }
 
             const hotelPolicy = {
@@ -298,15 +331,18 @@ class HotelController {
               num_rooms: availableRooms.length,
               effective_price,
               cost,
-              rooms: availableRooms
-                .map((room) => room.toJSON())
-                .sort((a, b) => a.id - b.id),
-              images: roomTypeImages,
+              rooms:
+                availableRooms.length > 0
+                  ? availableRooms
+                      .map((room) => room.toJSON())
+                      .sort((a, b) => a.id - b.id)
+                  : [],
+              roomTypeImages,
               beds,
             };
           }
 
-          return null;
+          return null; // Return null for room types with insufficient available rooms
         })
       );
 
@@ -345,7 +381,7 @@ class HotelController {
       const reviewsByHotel = reviews.filter((review) =>
         review.booking.roomBookings.some(
           (roomBooking) =>
-            roomBooking.room && // Kiểm tra roomBooking.room có tồn tại không
+            roomBooking.room &&
             roomBooking.room.roomType &&
             roomBooking.room.roomType.hotel.id === Number(hotel_id)
         )
@@ -364,11 +400,25 @@ class HotelController {
           status: 200,
           data: {
             ...hotel.toJSON(),
+            policies: hotel.policies
+              .map((policy: any) => {
+                if (typeof policy.toJSON === "function") {
+                  return policy.toJSON();
+                } else {
+                  // Handle cases where policy is not a Sequelize model instance
+                  return {
+                    type: policy.type,
+                    value: policy.value,
+                    description: policy.description,
+                  };
+                }
+              })
+              .sort((a: any, b: any) => a.type.localeCompare(b.type)),
             address: `${street}, ${ward}, ${district}, ${province}`,
             min_room_price,
             original_room_price,
-            images: hotelImages.filter((image) => image !== null),
-            room_types: filteredRoomTypes,
+            hotelImages: hotelImages.filter((image) => image !== null),
+            roomTypes: filteredRoomTypes,
             averageRatings,
             totalReviews: reviewsByHotel.length,
           },
@@ -532,12 +582,34 @@ class HotelController {
 
   async getHotelList(req: Request, res: Response) {
     try {
-      const hotels = await new HotelRepo().retrieveAll();
+      const hotels = await Hotel.findAll({
+        include: [{ model: HotelImage }],
+      });
 
-      const hotelList = hotels.map((hotel) => ({
-        id: hotel.id,
-        name: hotel.name,
-      }));
+      const hotelList = await Promise.all(
+        hotels.map(async (hotel) => {
+          let avatar = "";
+          if (hotel.hotelImages && hotel.hotelImages.length > 0) {
+            try {
+              avatar = await getPresignedUrl(
+                hotel.id,
+                hotel.hotelImages[0].url
+              );
+            } catch (error) {
+              console.error(
+                `Error getting presigned URL for hotel ${hotel.id}:`,
+                error
+              );
+            }
+          }
+
+          return {
+            id: hotel.id,
+            name: hotel.name,
+            avatar,
+          };
+        })
+      );
 
       return res.status(200).json({
         status: 200,
@@ -594,91 +666,294 @@ class HotelController {
 
   async getOutstandingHotels(req: Request, res: Response) {
     try {
-      const sequelize = dbConfig.sequelize;
+      const { customer_id } = req.query;
 
-      if (sequelize) {
-        const query = `
-          SELECT
-            h.id AS hotel_id,
-            h.name AS hotel_name,
-            h.province AS hotel_province,
-            (
-              SELECT hi.url
-              FROM hotel_image hi
-              WHERE hi.hotel_id = h.id
-                AND hi.is_primary = true
-              LIMIT 1 
-            ) AS hotel_avatar,
-            MIN(CASE
-              WHEN p.discount_type = 'PERCENTAGE' THEN rt.base_price * (1 - p.discount_value / 100)
-              WHEN p.discount_type = 'FIXED_AMOUNT' THEN rt.base_price - p.discount_value
-              ELSE rt.base_price
-            END) AS min_room_price,
-            (
-              SELECT rt.base_price
-              FROM (
-                SELECT
-                  rt.base_price,
-                  ROW_NUMBER() OVER (ORDER BY CASE
-                    WHEN MIN(p.discount_type) = 'PERCENTAGE' THEN rt.base_price * (1 - p.discount_value / 100)
-                    WHEN MIN(p.discount_type) = 'FIXED_AMOUNT' THEN rt.base_price - p.discount_value
-                    ELSE rt.base_price
-                  END) AS rn
-                FROM room_type rt
-                LEFT JOIN promotion p ON rt.id = p.room_type_id  
-                WHERE rt.hotel_id = h.id  
-                GROUP BY rt.base_price, rt.id, p.discount_value 
-              ) r
-              WHERE rt.rn = 1  
-            ) AS original_room_price
-          FROM
-            hotel h
-          JOIN
-            room_type rt ON h.id = rt.hotel_id
-          LEFT JOIN promotion p ON rt.id = p.room_type_id
-          GROUP BY
-            h.id, h.name, h.province, p.discount_value;
-        `;
+      // Fetch hotels with necessary associations
+      const hotels = await Hotel.findAll({
+        include: [
+          {
+            model: RoomType,
+            required: true,
+            include: [
+              {
+                model: Promotion,
+                required: false,
+                where: {
+                  is_active: true,
+                },
+              },
+            ],
+          },
+          { model: HotelImage, required: false },
+        ],
+        limit: 8,
+        offset: 0,
+      });
 
-        const hotels = await sequelize.query(query, {
-          type: QueryTypes.SELECT,
+      // Fetch reviews for each hotel and calculate necessary details
+      const hotelsWithDetails = await Promise.all(
+        hotels.map(async (hotel) => {
+          // Calculate average ratings
+          const reviews = await Review.findAll({
+            include: [
+              {
+                model: Booking,
+                required: true,
+                include: [
+                  {
+                    model: RoomBooking,
+                    required: true,
+                    include: [
+                      {
+                        model: Room,
+                        required: true,
+                        include: [
+                          {
+                            model: RoomType,
+                            where: { hotel_id: hotel.id },
+                            include: [{ model: Hotel, required: true }],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          });
+
+          const reviewsByHotel = reviews.filter((review) =>
+            review.booking.roomBookings.some(
+              (roomBooking) =>
+                roomBooking.room &&
+                roomBooking.room.roomType &&
+                roomBooking.room.roomType.hotel.id === hotel.id
+            )
+          );
+
+          const averageRatings = calculateAverageRatings(reviewsByHotel);
+
+          // Calculate total bookings count
+          const totalBookings = await Booking.count({
+            include: [
+              {
+                model: RoomBooking,
+                required: true,
+                include: [
+                  {
+                    model: Room,
+                    required: true,
+                    include: [
+                      {
+                        model: RoomType,
+                        where: { hotel_id: hotel.id },
+                        include: [{ model: Hotel, required: true }],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+            distinct: true,
+          });
+
+          // Calculate maximum room discount
+          const maxRoomDiscount = await calculateMaxRoomDiscount(
+            hotel.roomTypes
+          );
+
+          // Find lowest discounted price and original price for each room type
+          const roomTypesWithPrices = await Promise.all(
+            hotel.roomTypes.map(async (roomType) => {
+              // Find active promotions
+              const activePromotions = await Promotion.findAll({
+                where: {
+                  room_type_id: roomType.id,
+                  is_active: true,
+                  [Op.and]: [
+                    { start_date: { [Op.lte]: new Date() } },
+                    { end_date: { [Op.gte]: new Date() } },
+                  ],
+                },
+              });
+
+              // Calculate lowest discounted price
+              const basePrice = roomType.base_price;
+              let lowestDiscountedPrice = basePrice;
+
+              activePromotions.forEach((promotion) => {
+                if (promotion.discount_type === "PERCENTAGE") {
+                  const discountedPrice =
+                    basePrice * (1 - promotion.discount_value / 100);
+                  lowestDiscountedPrice = Math.min(
+                    lowestDiscountedPrice,
+                    discountedPrice
+                  );
+                } else if (promotion.discount_type === "FIXED_AMOUNT") {
+                  const discountedPrice = basePrice - promotion.discount_value;
+                  lowestDiscountedPrice = Math.min(
+                    lowestDiscountedPrice,
+                    discountedPrice
+                  );
+                }
+              });
+
+              return {
+                ...roomType.toJSON(),
+                lowestDiscountedPrice,
+                originalPrice: basePrice,
+              };
+            })
+          );
+
+          // Find the room type with the lowest discounted price
+          const minRoomType = roomTypesWithPrices.reduce((min, roomType) =>
+            roomType.lowestDiscountedPrice < min.lowestDiscountedPrice
+              ? roomType
+              : min
+          );
+
+          return {
+            hotel,
+            averageRatings,
+            totalBookings,
+            maxRoomDiscount,
+            totalReviews: reviewsByHotel.length,
+            original_room_price: minRoomType.originalPrice,
+            min_room_price: minRoomType.lowestDiscountedPrice,
+          };
+        })
+      );
+
+      // Fetch favorite hotels of the customer
+      const favoriteHotelIds = new Set();
+      if (customer_id) {
+        const favoriteHotels = await FavoriteHotel.findAll({
+          where: {
+            customer_id,
+            hotel_id: {
+              [Op.in]: hotels.map((hotel) => hotel.id),
+            },
+          },
+          attributes: ["hotel_id"],
         });
 
-        const updatedHotels = await Promise.all(
-          hotels.map(async (hotel: any) => {
-            // Generate presigned URL for hotel avatar
-            const presignedUrl = await new Promise<string>(
-              (resolve, reject) => {
-                minioConfig
-                  .getClient()
-                  .presignedGetObject(
-                    DEFAULT_MINIO.BUCKET,
-                    `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.hotel_id}/${hotel.hotel_avatar}`,
-                    24 * 60 * 60,
-                    function (err, presignedUrl) {
-                      if (err) reject(err);
-                      else resolve(presignedUrl);
-                    }
-                  );
-              }
-            );
-
-            // Return updated hotel object with presigned URL
-            return {
-              ...hotel,
-              hotel_avatar: presignedUrl,
-            };
-          })
-        );
-
-        return res.status(200).json({
-          status: 200,
-          message: "Successfully fetched outstanding hotel data!",
-          data: updatedHotels,
+        favoriteHotels.forEach((favHotel) => {
+          favoriteHotelIds.add(favHotel.hotel_id);
         });
       }
+
+      // Fetch presigned URLs for hotel images
+      const hotelImagesMap = await Promise.all(
+        hotels.map(async (hotel) => {
+          const images = await generatePresignedUrls(
+            hotel.id,
+            hotel.hotelImages
+          );
+          return { hotelId: hotel.id, images };
+        })
+      );
+
+      const hotelImages = Object.fromEntries(
+        hotelImagesMap.map((entry) => [entry.hotelId, entry.images])
+      );
+
+      // Bổ sung averageRatings và giá phòng vào hotelsWithImagesAndFavorites
+      const hotelsWithImagesAndFavorites = hotelsWithDetails.map(
+        (hotelDetail) => {
+          const {
+            hotel,
+            averageRatings,
+            totalBookings,
+            maxRoomDiscount,
+            totalReviews, // Thêm totalReviews vào đây
+            original_room_price,
+            min_room_price,
+          } = hotelDetail;
+          const is_favorite_hotel = favoriteHotelIds.has(hotel.id);
+
+          return {
+            id: hotel.id,
+            name: hotel.name,
+            street: hotel.street,
+            ward: hotel.ward,
+            district: hotel.district,
+            province: hotel.province,
+            description: hotel.description,
+            contact: hotel.contact,
+            hotelImages: hotelImages[hotel.id] || [],
+            is_favorite_hotel,
+            averageRatings,
+            totalBookings,
+            maxRoomDiscount,
+            totalReviews, // Thêm totalReviews vào đây
+            original_room_price,
+            min_room_price,
+          };
+        }
+      );
+
+      // Sắp xếp lại hotelsWithImagesAndFavorites nếu cần thiết
+      hotelsWithImagesAndFavorites.sort((a, b) => {
+        // Sort by average ratings (descending)
+        if (Number(b.averageRatings) - Number(a.averageRatings) !== 0) {
+          return Number(b.averageRatings) - Number(a.averageRatings);
+        }
+
+        // Sort by total bookings (descending) if ratings are the same
+        if (Number(b.totalBookings) - Number(a.totalBookings) !== 0) {
+          return Number(b.totalBookings) - Number(a.totalBookings);
+        }
+
+        // Sort by max room discount (descending) if both are the same
+        return b.maxRoomDiscount - a.maxRoomDiscount;
+      });
+
+      // Lọc và trả về các khách sạn đã được bổ sung averageRatings và giá phòng
+      const filteredHotels = hotelsWithImagesAndFavorites.map(
+        ({
+          id,
+          name,
+          street,
+          ward,
+          district,
+          province,
+          description,
+          contact,
+          hotelImages,
+          is_favorite_hotel,
+          averageRatings,
+          original_room_price,
+          min_room_price,
+          totalReviews,
+        }) => ({
+          id,
+          name,
+          street,
+          ward,
+          district,
+          province,
+          description,
+          contact,
+          hotelImages,
+          is_favorite_hotel,
+          averageRatings: averageRatings.overall,
+          original_room_price,
+          min_room_price,
+          totalReviews,
+        })
+      );
+
+      return res.status(200).json({
+        status: 200,
+        message: "Successfully fetched hotel search results data!",
+        data: filteredHotels,
+      });
     } catch (error) {
-      return ErrorHandler.handleServerError(res, error);
+      return ErrorHandler.handleServerError(
+        res,
+        error instanceof Error ? error.message : "An unknown error occurred."
+      );
     }
   }
 
@@ -724,11 +999,19 @@ class HotelController {
         //     paymentOptions: ["Hủy miễn phí", "Thanh toán liền"],
         //     minRating: "8.0",
         //   },
-        page = PAGINATION.INITIAL_PAGE,
-        size = PAGINATION.PAGE_SIZE,
+        customer_id,
       } = req.body;
 
-      const offset = (page - 1) * size;
+      const {
+        sortOption = "RELEVANT",
+        page = PAGINATION.INITIAL_PAGE,
+        size = PAGINATION.PAGE_SIZE,
+      } = req.query;
+
+      const pageNum = Number(page) || PAGINATION.INITIAL_PAGE;
+      const sizeNum = Number(size) || PAGINATION.PAGE_SIZE;
+
+      const offset = (pageNum - 1) * sizeNum;
 
       const formattedCheckInDate = getDateOnly(check_in);
       const formattedCheckOutDate = getDateOnly(check_out);
@@ -740,27 +1023,26 @@ class HotelController {
         today.getDate()
       );
 
-      // Ensure check-in date is not in the past
       if (formattedCheckInDate < todayDateOnly) {
-        return res.status(400).json({
-          message: "Check-in date not valid!",
-        });
+        return res.status(400).json({ message: "Check-in date not valid!" });
       }
 
-      // Ensure check-out date is at least one day after check-in date
       const nextDayAfterCheckIn = new Date(formattedCheckInDate);
       nextDayAfterCheckIn.setDate(nextDayAfterCheckIn.getDate() + 1);
 
       if (formattedCheckOutDate < nextDayAfterCheckIn) {
-        return res.status(400).json({
-          message: "Check-out date not valid!",
-        });
+        return res.status(400).json({ message: "Check-out date not valid!" });
       }
 
       console.log("Searching hotels...");
 
-      const hotels = await Hotel.findAll({
-        where: { province: { [Op.iLike]: `%${location}%` } },
+      const hotelsCriteria: any = {
+        where: {
+          province: { [Op.iLike]: `%${location}%` },
+          district: {
+            [Op.iLike]: `%${filters?.district_name || ""}%`,
+          },
+        },
         include: [
           {
             model: RoomType,
@@ -832,32 +1114,52 @@ class HotelController {
           },
           { model: HotelImage, required: true },
         ],
-        limit: size,
+        limit: sizeNum,
         offset: offset,
+      };
+
+      if (filters?.hotel_amenities?.length > 0) {
+        hotelsCriteria.include.push({
+          model: HotelAmenity,
+          required: true,
+          where: {
+            amenity: {
+              [Op.in]: filters.hotel_amenities,
+            },
+          },
+        });
+      }
+
+      // Tính toán tổng số khách sạn thỏa mãn điều kiện
+      const total = await Hotel.count({
+        where: hotelsCriteria.where,
+        distinct: true,
+        include: hotelsCriteria.include,
       });
 
-      console.log("Hotels found:", hotels.length);
+      // Lấy danh sách khách sạn theo các tiêu chí
+      const hotels = await Hotel.findAll(hotelsCriteria);
 
       const availableHotels = await Promise.all(
-        hotels.map(async (hotel) => {
+        hotels.map(async (hotel: any) => {
           let min_room_price = Infinity;
           let original_room_price = 0;
 
           const availableRoomTypes = await Promise.all(
-            hotel.roomTypes.map(async (roomType) => {
+            hotel.roomTypes.map(async (roomType: any) => {
               const room_discount = await calculateRoomDiscount(roomType);
               const effective_price = roomType.base_price - room_discount;
 
               if (filters?.price_range?.length === 2) {
-                const [minPrice, maxPrice] = filters.price_range;
+                const [minPrice, maxPrice] = filters?.price_range;
                 if (effective_price < minPrice || effective_price > maxPrice) {
                   return null;
                 }
               }
 
               const availableRooms = roomType.rooms.filter(
-                (room) =>
-                  !room.roomBookings.some((roomBooking) => {
+                (room: any) =>
+                  !room.roomBookings.some((roomBooking: any) => {
                     const checkIn = new Date(roomBooking.booking.check_in);
                     const checkOut = new Date(roomBooking.booking.check_out);
                     return (
@@ -877,8 +1179,8 @@ class HotelController {
                   room_discount,
                   num_rooms: availableRooms.length,
                   rooms: availableRooms
-                    .map((room) => room.toJSON())
-                    .sort((a, b) => a.id - b.id),
+                    .map((room: any) => room.toJSON())
+                    .sort((a: any, b: any) => a.id - b.id),
                   effective_price,
                 };
               }
@@ -890,15 +1192,13 @@ class HotelController {
           const filteredRoomTypes = availableRoomTypes.filter(
             (roomType) => roomType !== null
           );
-
-          // Sort the filtered room types by effective_price from low to high
           filteredRoomTypes.sort(
             (a, b) => a.effective_price - b.effective_price
           );
 
           if (filteredRoomTypes.length > 0) {
             const hotelImages = await Promise.all(
-              hotel.hotelImages.map(async (image) => {
+              hotel.hotelImages.map(async (image: any) => {
                 const presignedUrl = await new Promise<string>(
                   (resolve, reject) => {
                     minioConfig
@@ -915,12 +1215,60 @@ class HotelController {
                   }
                 );
 
-                return {
-                  ...image.toJSON(),
-                  url: presignedUrl,
-                };
+                return { ...image.toJSON(), url: presignedUrl };
               })
             );
+
+            const reviews = await Review.findAll({
+              include: [
+                {
+                  model: Booking,
+                  required: true,
+                  include: [
+                    {
+                      model: RoomBooking,
+                      required: true,
+                      include: [
+                        {
+                          model: Room,
+                          required: true,
+                          include: [
+                            {
+                              model: RoomType,
+                              where: { hotel_id: hotel.id },
+                              include: [{ model: Hotel, required: true }],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            });
+
+            const reviewsByHotel = reviews.filter((review) =>
+              review.booking.roomBookings.some(
+                (roomBooking) =>
+                  roomBooking.room &&
+                  roomBooking.room.roomType &&
+                  roomBooking.room.roomType.hotel.id === hotel.id
+              )
+            );
+
+            const averageRatings =
+              calculateAverageRatings(reviewsByHotel).overall;
+
+            let is_favorite_hotel = false;
+
+            if (customer_id) {
+              const isFavoriteHotel = await FavoriteHotel.findOne({
+                where: { customer_id, hotel_id: hotel.id },
+              });
+              if (isFavoriteHotel) {
+                is_favorite_hotel = true;
+              }
+            }
 
             const { street, ward, district, province } = hotel;
             return {
@@ -936,6 +1284,9 @@ class HotelController {
               original_room_price,
               images: hotelImages,
               room_types: filteredRoomTypes,
+              is_favorite_hotel,
+              totalReviews: reviewsByHotel.length,
+              averageRatings,
             };
           }
 
@@ -943,13 +1294,47 @@ class HotelController {
         })
       );
 
-      const filteredHotels = availableHotels.filter((hotel) => hotel !== null);
+      let filteredHotels = availableHotels.filter((hotel) => hotel !== null);
+
+      if (filters.min_rating) {
+        filteredHotels = filteredHotels.filter(
+          (hotel) =>
+            hotel !== null && hotel.averageRatings >= filters.min_rating
+        );
+      }
+
+      switch (sortOption) {
+        case "CHEAPEST":
+          filteredHotels.sort(
+            (a: any, b: any) => a.min_room_price - b.min_room_price
+          );
+          break;
+        case "MOST_EXPENSIVE":
+          filteredHotels.sort(
+            (a: any, b: any) => b.min_room_price - a.min_room_price
+          );
+          break;
+        case "STAR_RATING":
+          filteredHotels.sort(
+            (a: any, b: any) => b.averageRatings - a.averageRatings
+          );
+          break;
+        case "HIGHEST_RATED":
+          filteredHotels.sort(
+            (a: any, b: any) =>
+              b.averageRatings * b.totalReviews -
+              a.averageRatings * a.totalReviews
+          );
+          break;
+        default:
+          break;
+      }
 
       return res.status(200).json({
         status: 200,
         message: "Successfully fetched hotel search results data!",
         data: {
-          total: filteredHotels.length,
+          total,
           items: filteredHotels,
         },
       });
@@ -983,7 +1368,7 @@ class HotelController {
         percentageChange =
           ((currentMonthCount - previousMonthCount) / previousMonthCount) * 100;
       } else if (currentMonthCount > 0) {
-        percentageChange = 100; // If no hotels in previous month but there are in the current month, it's a 100% increase.
+        percentageChange = 100;
       }
 
       if (percentageChange !== null) {
@@ -1010,6 +1395,197 @@ class HotelController {
         status: 200,
         message: "Successfully fetched total hotels!",
         data: totalHotels,
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async getAllAvailableRoomTypesByHotelId(req: Request, res: Response) {
+    try {
+      const hotel_id = parseInt(req.params?.hotel_id);
+      const {
+        check_in,
+        check_out,
+        num_adults,
+        num_children,
+        num_rooms,
+        children_ages = [],
+        filters,
+      } = req.body;
+
+      const hotel = await Hotel.findByPk(hotel_id, {
+        include: [
+          {
+            model: RoomType,
+            include: [
+              {
+                model: Room,
+                include: [
+                  {
+                    model: RoomBooking,
+                    include: [{ model: Booking }],
+                  },
+                ],
+              },
+              { model: RoomImage },
+              { model: Bed },
+              { model: RoomTypeAmenity },
+            ],
+          },
+          { model: Policy },
+        ],
+      });
+
+      if (!hotel) {
+        return res.status(404).json({
+          status: 404,
+          message: "Không tìm thấy khách sạn!",
+        });
+      }
+
+      const { tax, service_fee, surcharge_rates } = extractPolicies(
+        hotel.policies
+      );
+
+      const num_nights = calculateNumberOfNights(check_in, check_out);
+      const customerRequest = {
+        num_rooms,
+        num_nights,
+        num_adults,
+        num_children,
+        children_ages,
+      };
+      const formattedCheckInDate = getDateOnly(check_in);
+      const formattedCheckOutDate = getDateOnly(check_out);
+
+      const availableRoomTypes = await Promise.all(
+        hotel.roomTypes.map(async (roomType) => {
+          const room_discount = await calculateRoomDiscount(roomType);
+          const effective_price = roomType.base_price - room_discount;
+
+          const {
+            base_price,
+            standard_occupant,
+            max_children,
+            max_occupant,
+            max_extra_bed,
+          } = roomType;
+
+          if (filters?.price_range?.length === 2) {
+            const [minPrice, maxPrice] = filters?.price_range;
+            if (effective_price < minPrice || effective_price > maxPrice) {
+              return null; // Return null for filtered room types
+            }
+          }
+
+          const availableRooms = roomType.rooms.filter(
+            (room) =>
+              !room.roomBookings.some((roomBooking) => {
+                const checkIn = new Date(roomBooking.booking.check_in);
+                const checkOut = new Date(roomBooking.booking.check_out);
+                return (
+                  checkIn <= formattedCheckOutDate &&
+                  checkOut >= formattedCheckInDate
+                );
+              })
+          );
+
+          if (availableRooms.length >= num_rooms) {
+            let roomTypeImages = [];
+            if (roomType.roomImages && roomType.roomImages.length > 0) {
+              roomTypeImages = await Promise.all(
+                roomType.roomImages.map(async (image) => {
+                  try {
+                    const presignedUrl = await new Promise<string>(
+                      (resolve, reject) => {
+                        minioConfig
+                          .getClient()
+                          .presignedGetObject(
+                            DEFAULT_MINIO.BUCKET,
+                            `${DEFAULT_MINIO.HOTEL_PATH}/${hotel.id}/${DEFAULT_MINIO.ROOM_TYPE_PATH}/${roomType.id}/${image.url}`,
+                            24 * 60 * 60,
+                            (err, presignedUrl) => {
+                              if (err) reject(err);
+                              else resolve(presignedUrl);
+                            }
+                          );
+                      }
+                    );
+
+                    return {
+                      ...image.toJSON(),
+                      url: presignedUrl,
+                    };
+                  } catch (error: any) {
+                    console.error(
+                      `Error generating presigned URL for image ${image.id}: ${error.message}`
+                    );
+                    return null; // Return null for failed presigned URL generation
+                  }
+                })
+              );
+
+              roomTypeImages = roomTypeImages.filter((image) => image !== null); // Filter out null presigned URLs
+            }
+
+            const hotelPolicy = {
+              base_price,
+              room_discount,
+              standard_occupant,
+              max_children,
+              max_occupant,
+              max_extra_bed,
+              surcharge_rates,
+              tax,
+              service_fee,
+            };
+            const cost = calculateCost(customerRequest, hotelPolicy);
+
+            const beds: any[] = roomType.beds;
+
+            return {
+              ...roomType.toJSON(),
+              room_discount,
+              num_rooms: availableRooms.length,
+              effective_price,
+              cost,
+              rooms:
+                availableRooms.length > 0
+                  ? availableRooms
+                      .map((room) => room.toJSON())
+                      .sort((a, b) => a.id - b.id)
+                  : [],
+              roomTypeImages,
+              beds,
+            };
+          }
+
+          return null; // Return null for room types with insufficient available rooms
+        })
+      );
+
+      const filteredRoomTypes = availableRoomTypes.filter(
+        (roomType) => roomType !== null
+      );
+
+      // Sort the filtered room types by effective_price from low to high
+      filteredRoomTypes.sort((a, b) => a.effective_price - b.effective_price);
+
+      if (filteredRoomTypes.length > 0) {
+        return res.status(200).json({
+          status: 200,
+          data: {
+            ...hotel.toJSON(),
+            roomTypes: filteredRoomTypes,
+          },
+        });
+      }
+
+      return res.status(200).json({
+        status: 200,
+        message: `No available room types for hotel id ${hotel_id}!`,
+        data: [],
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

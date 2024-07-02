@@ -147,6 +147,7 @@ export class HotelRepo implements IHotelRepo {
           [Op.lt]: endDate,
         },
       },
+      distinct: true,
     });
 
     return count;

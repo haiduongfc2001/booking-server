@@ -120,6 +120,7 @@ export class BookingRepo implements IBookingRepo {
           [Op.lt]: endDate,
         },
       },
+      distinct: true,
     });
 
     return count;

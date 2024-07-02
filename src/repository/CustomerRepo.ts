@@ -1,5 +1,7 @@
 import { Op } from "sequelize";
 import { Customer } from "../model/Customer";
+import { minioConfig } from "../config/minio.config";
+import { DEFAULT_MINIO } from "../config/constant.config";
 
 interface ICustomerRepo {
   save(newCustomer: Customer): Promise<void>;
@@ -81,15 +83,39 @@ export class CustomerRepo implements ICustomerRepo {
     }
   }
 
-  async retrieveById(customer_id: number): Promise<Customer> {
+  async retrieveById(customer_id: number): Promise<any> {
     try {
       const existingCustomer = await Customer.findByPk(customer_id);
       if (!existingCustomer) {
         throw new Error("Customer not found!");
       }
 
-      return existingCustomer;
+      let presignedUrl: string | null = null;
+
+      if (existingCustomer.avatar) {
+        try {
+          presignedUrl = await new Promise<string>((resolve, reject) => {
+            minioConfig
+              .getClient()
+              .presignedGetObject(
+                DEFAULT_MINIO.BUCKET,
+                `${DEFAULT_MINIO.CUSTOMER_PATH}/${customer_id}/${existingCustomer.avatar}`,
+                24 * 60 * 60,
+                (err, url) => {
+                  if (err) reject(err);
+                  else resolve(url);
+                }
+              );
+          });
+        } catch (err) {
+          console.error("Failed to generate presigned URL:", err);
+          // Continue without throwing an error to allow returning the customer data
+        }
+      }
+
+      return { ...existingCustomer.toJSON(), avatar: presignedUrl };
     } catch (error) {
+      console.error("Failed to retrieve customer:", error);
       throw new Error("Failed to retrieve customer!");
     }
   }
@@ -115,6 +141,7 @@ export class CustomerRepo implements ICustomerRepo {
           [Op.lt]: endDate,
         },
       },
+      distinct: true,
     });
 
     return count;

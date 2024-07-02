@@ -3,6 +3,8 @@ import { AddressRepo } from "../repository/AddressRepo";
 import ErrorHandler from "../utils/ErrorHandler";
 import { District } from "../model/District";
 import { Ward } from "../model/Ward";
+import { Op } from "sequelize";
+import { Province } from "../model/Province";
 
 class AddressController {
   async getAllProvinces(req: Request, res: Response) {
@@ -21,11 +23,32 @@ class AddressController {
 
   async getAllDistricts(req: Request, res: Response) {
     try {
-      const districtData = await new AddressRepo().retrieveAllDistricts();
+      const { location } = req.query;
+      let whereClause = {};
+
+      const province = await Province.findOne({
+        where: { name: { [Op.iLike]: `%${location}%` } },
+      });
+
+      if (!province) {
+        return res.status(404).json({
+          status: 404,
+          message: "Tỉnh này không tồn tại!",
+        });
+      }
+
+      if (location) {
+        whereClause = { province_id: province.id };
+      }
+
+      const districtData = await District.findAll({
+        where: whereClause,
+      });
 
       return res.status(200).json({
         status: 200,
         message: "Successfully fetched all districts data!",
+        province_id: province.id,
         data: districtData,
       });
     } catch (error) {

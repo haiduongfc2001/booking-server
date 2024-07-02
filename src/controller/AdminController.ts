@@ -3,8 +3,9 @@ import ErrorHandler from "../utils/ErrorHandler";
 import { Admin } from "../model/Admin";
 import securePassword from "../utils/SecurePassword";
 import bcrypt from "bcrypt";
-import { ROLE } from "../config/constant.config";
+import { DEFAULT_MINIO, ROLE } from "../config/constant.config";
 import { generateAdminToken } from "../utils/GenerateToken";
+import { minioConfig } from "../config/minio.config";
 
 const roleToTokenGenerator = {
   [ROLE.ADMIN]: generateAdminToken,
@@ -170,6 +171,12 @@ class AdminController {
         status: 200,
         message: "Đăng nhập thành công!",
         token,
+        admin: {
+          id: admin.id,
+          email: admin.email,
+          avatar:
+            "https://static.vecteezy.com/system/resources/previews/009/784/096/original/avatar-with-gear-flat-design-icon-of-manager-vector.jpg",
+        },
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

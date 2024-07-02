@@ -2,24 +2,29 @@ import BaseRoutes from "./base/BaseRouter";
 import HotelController from "../controller/HotelController";
 import validate from "../helper/validate";
 import { createHotelSchema, updateHotelSchema } from "../schema/HotelSchema";
-import { authFullRole } from "../middleware/Auth.middleware";
+import {
+  authAdmin,
+  authFullRole,
+  authManagerOrAdmin,
+  authReceptionistOrManagerOrAdmin,
+} from "../middleware/Auth.middleware";
 import { updateRoomStatus } from "../middleware/UpdateStatus.middleware";
 
 class HotelRoutes extends BaseRoutes {
   public routes(): void {
     this.router.get(
       "/getAllHotels",
-      authFullRole,
+      // authFullRole,
       HotelController.getAllHotels
     );
     this.router.get(
       "/getHotelList",
-      authFullRole,
+      // authFullRole,
       HotelController.getHotelList
     );
     this.router.get(
       "/:hotel_id/getHotelById",
-      authFullRole,
+      // authFullRole,
       HotelController.getHotelById
     );
     this.router.post(
@@ -29,17 +34,17 @@ class HotelRoutes extends BaseRoutes {
     );
     this.router.get(
       "/:hotel_id/getStaffsByHotelId",
-      authFullRole,
+      authManagerOrAdmin,
       HotelController.getStaffsByHotelId
     );
     this.router.get(
       "/:hotel_id/getAllRoomTypesByHotelId",
-      authFullRole,
+      authReceptionistOrManagerOrAdmin,
       HotelController.getAllRoomTypesByHotelId
     );
     this.router.get(
       "/:hotel_id/getAllStaffsByHotelId",
-      authFullRole,
+      authManagerOrAdmin,
       HotelController.getAllStaffsByHotelId
     );
     this.router.get(
@@ -55,25 +60,30 @@ class HotelRoutes extends BaseRoutes {
     );
     this.router.post(
       "/createHotel",
-      authFullRole,
+      authAdmin,
       validate(createHotelSchema),
       HotelController.createHotel
     );
     this.router.patch(
       "/:hotel_id/updateHotel",
-      authFullRole,
+      authManagerOrAdmin,
       validate(updateHotelSchema),
       HotelController.updateHotel
     );
     this.router.delete(
       "/:hotel_id/deleteHotel",
-      authFullRole,
+      authAdmin,
       HotelController.deleteHotel
     );
     this.router.get(
       "/getTotalHotels",
-      authFullRole,
+      // authFullRole,
       HotelController.getTotalHotels
+    );
+    this.router.post(
+      "/:hotel_id/getAllAvailableRoomTypesByHotelId",
+      authReceptionistOrManagerOrAdmin,
+      HotelController.getAllAvailableRoomTypesByHotelId
     );
   }
 }
