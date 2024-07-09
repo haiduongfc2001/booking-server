@@ -94,7 +94,7 @@ class RoomController {
 
       return res.status(200).json({
         status: 200,
-        message: "Successfully deleted room!",
+        message: "Xóa phòng thành công!",
       });
     } catch (error) {
       if (error instanceof Error) {

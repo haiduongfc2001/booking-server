@@ -56,7 +56,7 @@ class CustomerController {
 
       return res.status(200).json({
         status: 200,
-        message: "Successfully deleted customer!",
+        message: "Xóa tài khoản thành công!",
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

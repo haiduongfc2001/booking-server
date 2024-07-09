@@ -140,7 +140,7 @@ class HotelController {
 
       return res.status(200).json({
         status: 200,
-        message: "Successfully deleted hotel!",
+        message: "Xóa khách sạn thành công!",
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

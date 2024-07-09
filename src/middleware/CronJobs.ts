@@ -31,13 +31,32 @@ cron.schedule("*/1 * * * *", async () => {
       { status: BOOKING_STATUS.CANCELLED },
       {
         where: {
-          id: {
-            [Op.in]: expiredPaymentIds,
-          },
-          status: BOOKING_STATUS.PENDING,
-          expires_at: {
-            [Op.lt]: now,
-          },
+          [Op.and]: [
+            {
+              [Op.or]: [
+                {
+                  id: {
+                    [Op.notIn]: await Payment.findAll({
+                      attributes: ["booking_id"],
+                    }).then((payments) =>
+                      payments.map((payment) => payment.booking_id)
+                    ),
+                  },
+                },
+                {
+                  id: {
+                    [Op.in]: expiredPaymentIds,
+                  },
+                },
+              ],
+            },
+            {
+              status: BOOKING_STATUS.PENDING,
+              expires_at: {
+                [Op.lt]: now,
+              },
+            },
+          ],
         },
       }
     );

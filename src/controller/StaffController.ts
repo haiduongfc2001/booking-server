@@ -107,7 +107,7 @@ class StaffController {
 
       return res.status(200).json({
         status: 200,
-        message: "Successfully deleted staff!",
+        message: "Xóa nhân viên thành công!",
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

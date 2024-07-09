@@ -254,7 +254,7 @@ class HotelImageController {
             // Respond with success message
             return res.status(200).json({
               status: 200,
-              message: "Successfully deleted images by hotel_id",
+              message: "Xóa ảnh khách sạn thành công!",
             });
           });
       });
