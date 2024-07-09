@@ -388,14 +388,13 @@ class HotelController {
       );
 
       if (filteredRoomTypes.length > 0) {
+        const { street, ward, district, province } = hotel;
         const hotelImages = await generatePresignedUrls(
           hotel.id,
           hotel.hotelImages
         );
 
         const averageRatings = calculateAverageRatings(reviewsByHotel);
-
-        const { street, ward, district, province } = hotel;
         return res.status(200).json({
           status: 200,
           data: {
@@ -428,7 +427,10 @@ class HotelController {
       return res.status(200).json({
         status: 200,
         message: `No available room types for hotel id ${hotel_id}!`,
-        data: [],
+        data: {
+          ...hotel.toJSON(),
+          roomTypes: [],
+        },
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

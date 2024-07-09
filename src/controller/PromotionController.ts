@@ -146,7 +146,7 @@ class PromotionController {
           room_type_id,
         },
       });
-      if (!existingPromotionCode) {
+      if (existingPromotionCode) {
         return res.status(400).json({
           status: 400,
           message: "Mã giảm giá đã tồn tại!",

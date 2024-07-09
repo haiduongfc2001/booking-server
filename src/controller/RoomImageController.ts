@@ -196,7 +196,7 @@ class RoomImageController {
       // Respond with success message
       res.status(201).json({
         status: 201,
-        message: "Successfully created new room images!",
+        message: "Tạo ảnh mới thành công!",
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
