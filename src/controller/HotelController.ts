@@ -251,7 +251,7 @@ class HotelController {
           if (filters?.price_range?.length === 2) {
             const [minPrice, maxPrice] = filters?.price_range;
             if (effective_price < minPrice || effective_price > maxPrice) {
-              return null; // Return null for filtered room types
+              return null;
             }
           }
 
@@ -302,12 +302,12 @@ class HotelController {
                     console.error(
                       `Error generating presigned URL for image ${image.id}: ${error.message}`
                     );
-                    return null; // Return null for failed presigned URL generation
+                    return null;
                   }
                 })
               );
 
-              roomTypeImages = roomTypeImages.filter((image) => image !== null); // Filter out null presigned URLs
+              roomTypeImages = roomTypeImages.filter((image) => image !== null);
             }
 
             const hotelPolicy = {
@@ -404,7 +404,6 @@ class HotelController {
                 if (typeof policy.toJSON === "function") {
                   return policy.toJSON();
                 } else {
-                  // Handle cases where policy is not a Sequelize model instance
                   return {
                     type: policy.type,
                     value: policy.value,
@@ -483,10 +482,8 @@ class HotelController {
         include: [{ model: RoomImage }, { model: Room }],
       });
 
-      // Create presigned URLs for hotel images
       const updatedRoomTypes = await Promise.all(
         roomTypes.map(async (roomType) => {
-          // Check if roomImages array is empty
           if (!roomType.roomImages || roomType.roomImages.length === 0) {
             return {
               ...roomType.toJSON(),
@@ -495,7 +492,6 @@ class HotelController {
             };
           }
 
-          // Check if rooms array is empty or undefined
           const totalRooms = roomType.rooms.length;
 
           const updatedImages = await Promise.all(
@@ -647,7 +643,6 @@ class HotelController {
         "contact",
       ];
 
-      // Create an updated hotel object
       const updatedHotelData: Partial<Hotel> = {};
       fieldsToUpdate.forEach((field) => {
         if (req.body[field]) {
@@ -670,7 +665,6 @@ class HotelController {
     try {
       const { customer_id } = req.query;
 
-      // Fetch hotels with necessary associations
       const hotels = await Hotel.findAll({
         include: [
           {
@@ -692,10 +686,8 @@ class HotelController {
         offset: 0,
       });
 
-      // Fetch reviews for each hotel and calculate necessary details
       const hotelsWithDetails = await Promise.all(
         hotels.map(async (hotel) => {
-          // Calculate average ratings
           const reviews = await Review.findAll({
             include: [
               {
@@ -735,7 +727,6 @@ class HotelController {
 
           const averageRatings = calculateAverageRatings(reviewsByHotel);
 
-          // Calculate total bookings count
           const totalBookings = await Booking.count({
             include: [
               {
@@ -759,15 +750,12 @@ class HotelController {
             distinct: true,
           });
 
-          // Calculate maximum room discount
           const maxRoomDiscount = await calculateMaxRoomDiscount(
             hotel.roomTypes
           );
 
-          // Find lowest discounted price and original price for each room type
           const roomTypesWithPrices = await Promise.all(
             hotel.roomTypes.map(async (roomType) => {
-              // Find active promotions
               const activePromotions = await Promotion.findAll({
                 where: {
                   room_type_id: roomType.id,
@@ -779,7 +767,6 @@ class HotelController {
                 },
               });
 
-              // Calculate lowest discounted price
               const basePrice = roomType.base_price;
               let lowestDiscountedPrice = basePrice;
 
@@ -808,7 +795,6 @@ class HotelController {
             })
           );
 
-          // Find the room type with the lowest discounted price
           const minRoomType = roomTypesWithPrices.reduce((min, roomType) =>
             roomType.lowestDiscountedPrice < min.lowestDiscountedPrice
               ? roomType
@@ -827,7 +813,6 @@ class HotelController {
         })
       );
 
-      // Fetch favorite hotels of the customer
       const favoriteHotelIds = new Set();
       if (customer_id) {
         const favoriteHotels = await FavoriteHotel.findAll({
@@ -845,7 +830,6 @@ class HotelController {
         });
       }
 
-      // Fetch presigned URLs for hotel images
       const hotelImagesMap = await Promise.all(
         hotels.map(async (hotel) => {
           const images = await generatePresignedUrls(
@@ -860,7 +844,6 @@ class HotelController {
         hotelImagesMap.map((entry) => [entry.hotelId, entry.images])
       );
 
-      // Bổ sung averageRatings và giá phòng vào hotelsWithImagesAndFavorites
       const hotelsWithImagesAndFavorites = hotelsWithDetails.map(
         (hotelDetail) => {
           const {
@@ -868,7 +851,7 @@ class HotelController {
             averageRatings,
             totalBookings,
             maxRoomDiscount,
-            totalReviews, // Thêm totalReviews vào đây
+            totalReviews,
             original_room_price,
             min_room_price,
           } = hotelDetail;
@@ -888,30 +871,25 @@ class HotelController {
             averageRatings,
             totalBookings,
             maxRoomDiscount,
-            totalReviews, // Thêm totalReviews vào đây
+            totalReviews,
             original_room_price,
             min_room_price,
           };
         }
       );
 
-      // Sắp xếp lại hotelsWithImagesAndFavorites nếu cần thiết
       hotelsWithImagesAndFavorites.sort((a, b) => {
-        // Sort by average ratings (descending)
         if (Number(b.averageRatings) - Number(a.averageRatings) !== 0) {
           return Number(b.averageRatings) - Number(a.averageRatings);
         }
 
-        // Sort by total bookings (descending) if ratings are the same
         if (Number(b.totalBookings) - Number(a.totalBookings) !== 0) {
           return Number(b.totalBookings) - Number(a.totalBookings);
         }
 
-        // Sort by max room discount (descending) if both are the same
         return b.maxRoomDiscount - a.maxRoomDiscount;
       });
 
-      // Lọc và trả về các khách sạn đã được bổ sung averageRatings và giá phòng
       const filteredHotels = hotelsWithImagesAndFavorites.map(
         ({
           id,
@@ -992,15 +970,8 @@ class HotelController {
         num_rooms,
         num_adults,
         num_children,
-        children_ages = [], // default to empty array if not provided
+        children_ages = [],
         filters,
-        //   filters: {
-        //     priceRange: [0, 4500000],
-        //     selectedHotelAmenities: ["Bể bơi", "Bãi để xe"],
-        //     selectedRoomAmenities: ["Điều hòa", Tivi],
-        //     paymentOptions: ["Hủy miễn phí", "Thanh toán liền"],
-        //     minRating: "8.0",
-        //   },
         customer_id,
       } = req.body;
 
@@ -1132,14 +1103,12 @@ class HotelController {
         });
       }
 
-      // Tính toán tổng số khách sạn thỏa mãn điều kiện
       const total = await Hotel.count({
         where: hotelsCriteria.where,
         distinct: true,
         include: hotelsCriteria.include,
       });
 
-      // Lấy danh sách khách sạn theo các tiêu chí
       const hotels = await Hotel.findAll(hotelsCriteria);
 
       const availableHotels = await Promise.all(
@@ -1477,7 +1446,7 @@ class HotelController {
           if (filters?.price_range?.length === 2) {
             const [minPrice, maxPrice] = filters?.price_range;
             if (effective_price < minPrice || effective_price > maxPrice) {
-              return null; // Return null for filtered room types
+              return null;
             }
           }
 
@@ -1523,12 +1492,12 @@ class HotelController {
                     console.error(
                       `Error generating presigned URL for image ${image.id}: ${error.message}`
                     );
-                    return null; // Return null for failed presigned URL generation
+                    return null;
                   }
                 })
               );
 
-              roomTypeImages = roomTypeImages.filter((image) => image !== null); // Filter out null presigned URLs
+              roomTypeImages = roomTypeImages.filter((image) => image !== null);
             }
 
             const hotelPolicy = {
@@ -1563,7 +1532,7 @@ class HotelController {
             };
           }
 
-          return null; // Return null for room types with insufficient available rooms
+          return null;
         })
       );
 
@@ -1571,7 +1540,6 @@ class HotelController {
         (roomType) => roomType !== null
       );
 
-      // Sort the filtered room types by effective_price from low to high
       filteredRoomTypes.sort((a, b) => a.effective_price - b.effective_price);
 
       if (filteredRoomTypes.length > 0) {

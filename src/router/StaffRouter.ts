@@ -49,6 +49,11 @@ class StaffRoutes extends BaseRoutes {
       authFullRole,
       StaffController.getAllStaffsByHotelId
     );
+    this.router.post(
+      "/changePassword",
+      // authFullRole,
+      StaffController.changePassword
+    );
   }
 }
 

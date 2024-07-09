@@ -111,7 +111,6 @@ class PolicyController {
         });
       }
 
-      // Validate each policy
       for (const policy of policies) {
         const { type, value, description } = policy;
 
@@ -130,7 +129,6 @@ class PolicyController {
         }
       }
 
-      // Create multiple policies
       const newPolicies = await Policy.bulkCreate(
         policies.map((policy: Policy) => ({
           ...policy,

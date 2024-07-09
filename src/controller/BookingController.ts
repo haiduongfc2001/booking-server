@@ -66,7 +66,6 @@ class BookingController {
     try {
       const booking_id = parseInt(req.params.booking_id);
 
-      // Fetch the booking with associated data
       const booking = await Booking.findByPk(booking_id, {
         include: [
           {
@@ -93,7 +92,6 @@ class BookingController {
         ],
       });
 
-      // If booking is not found, return 404
       if (!booking) {
         return res.status(404).json({
           status: 404,
@@ -101,7 +99,6 @@ class BookingController {
         });
       }
 
-      // Create presigned URLs for hotel images
       const updatedRoomBookings = await Promise.all(
         booking.roomBookings.map(async (roomBooking) => {
           const updatedRoom = {
@@ -176,7 +173,6 @@ class BookingController {
         include: [{ model: PaymentMethod }],
       });
 
-      // Add additional calculated fields
       const bookingInfo = {
         ...booking.toJSON(),
         roomBookings: updatedRoomBookings,
@@ -192,7 +188,6 @@ class BookingController {
         totalPrice: booking.total_room_price + booking.tax_and_fee,
       };
 
-      // If payment is not found, return 404 with payment status
       if (!payment) {
         return res.status(200).json({
           status: 200,
@@ -261,7 +256,6 @@ class BookingController {
       tax,
     } = req.body;
 
-    // Validate input
     if (
       typeof num_rooms !== "number" ||
       typeof num_adults !== "number" ||
@@ -353,7 +347,7 @@ class BookingController {
         });
       }
 
-      const roomType = hotel.roomTypes[0]; // Assuming you are getting only one RoomType
+      const roomType = hotel.roomTypes[0];
 
       const room_discount = await calculateRoomDiscount(roomType);
 
@@ -416,16 +410,14 @@ class BookingController {
       const createdAt = new Date();
       const expiresAt = new Date(createdAt.getTime() + 10 * 60 * 1000);
 
-      // Fetch available rooms of the specified room_type_id
       const availableRooms = await Room.findAll({
         where: {
           room_type_id,
           status: ROOM_STATUS.AVAILABLE,
         },
-        order: [["number", "ASC"]], // Order by room number to get rooms with close numbers
+        order: [["number", "ASC"]],
       });
 
-      // Ensure there are enough available rooms
       if (availableRooms.length < num_rooms) {
         return res.status(400).json({
           status: 400,
@@ -445,10 +437,8 @@ class BookingController {
         note,
       });
 
-      // Select the first num_rooms rooms
       const selectedRooms = availableRooms.slice(0, num_rooms);
 
-      // Create room bookings for each selected room
       await Promise.all(
         selectedRooms.map(async (room, index) => {
           const roomData = cost.rooms[index];
@@ -461,10 +451,9 @@ class BookingController {
             base_price: cost.base_price,
             surcharge: roomData.surcharges,
             discount: cost.room_discount,
-            status: ROOM_STATUS.UNAVAILABLE, // Mark room as unavailable
+            status: ROOM_STATUS.UNAVAILABLE,
           });
 
-          // Update the room status to unavailable
           room.status = ROOM_STATUS.UNAVAILABLE;
           await room.save();
 
@@ -591,10 +580,8 @@ class BookingController {
       const orderOption = sortOptionMap[sortOption as SortOption] as OrderItem;
       const offset = (page - 1) * size;
 
-      // Khởi tạo điều kiện where
       let whereCondition: any = { customer_id };
 
-      // Điều chỉnh điều kiện where cho các sortOption khác nhau
       if (sortOption === "CANCELLED") {
         whereCondition.status = { [Op.in]: ["CANCELLED", "FAILED"] };
       } else if (sortOption === "CONFIRMED") {
@@ -640,7 +627,6 @@ class BookingController {
         offset: offset,
       });
 
-      // Tạo URL được ký trước cho mỗi hình ảnh của khách sạn
       const presignedUrls = await Promise.all(
         bookings.map(async (booking) => {
           const updatedRoomBookings = await Promise.all(
@@ -850,8 +836,6 @@ class BookingController {
         })
       );
 
-      // const totalBookings = bookingsHotel.length;
-
       return res.status(200).json({
         status: 200,
         message: "Successfully fetched all booking data!",
@@ -928,7 +912,6 @@ class BookingController {
       const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
       const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
-      // Tổng doanh thu tất cả các thời gian
       const totalRoomPrice = await Booking.sum("total_room_price", {
         where: {
           status: {
@@ -955,7 +938,6 @@ class BookingController {
 
       const totalRevenue = (totalRoomPrice || 0) + (totalTaxAndFee || 0);
 
-      // Tổng số đặt phòng trong tháng hiện tại
       const currentMonthCount = await Booking.count({
         where: {
           status: {
@@ -973,7 +955,6 @@ class BookingController {
         distinct: true,
       });
 
-      // Tổng số đặt phòng trong tháng trước
       const previousMonthCount = await Booking.count({
         where: {
           status: {
@@ -996,7 +977,7 @@ class BookingController {
         percentageChange =
           ((currentMonthCount - previousMonthCount) / previousMonthCount) * 100;
       } else if (currentMonthCount > 0) {
-        percentageChange = 100; // If no bookings in previous month but there are in the current month, it's a 100% increase.
+        percentageChange = 100;
       }
 
       if (percentageChange !== null) {
@@ -1022,7 +1003,6 @@ class BookingController {
       const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
       const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
-      // Lấy danh sách booking của khách sạn theo hotel_id
       const bookings = await Booking.findAll({
         where: {
           status: {
@@ -1060,14 +1040,12 @@ class BookingController {
           String(hotel_id)
       );
 
-      // Tính tổng doanh thu cho khách sạn
       const totalRevenue = validBookings.reduce((acc, booking) => {
         const roomPrice = booking.total_room_price || 0;
         const taxAndFee = booking.tax_and_fee || 0;
         return acc + roomPrice + taxAndFee;
       }, 0);
 
-      // Tính tổng số đặt phòng trong tháng hiện tại
       const currentMonthCount = await Booking.count({
         where: {
           status: {
@@ -1104,7 +1082,6 @@ class BookingController {
         distinct: true,
       });
 
-      // Tổng số đặt phòng trong tháng trước
       const previousMonthCount = await Booking.count({
         where: {
           status: {
@@ -1146,7 +1123,7 @@ class BookingController {
         percentageChange =
           ((currentMonthCount - previousMonthCount) / previousMonthCount) * 100;
       } else if (currentMonthCount > 0) {
-        percentageChange = 100; // If no bookings in previous month but there are in the current month, it's a 100% increase.
+        percentageChange = 100;
       }
 
       if (percentageChange !== null) {
@@ -1169,7 +1146,6 @@ class BookingController {
       const currentYear = currentDate.getFullYear();
       const previousYear = currentYear - 1;
 
-      // Hàm trợ giúp để tính doanh thu cho một tháng cụ thể
       const calculateMonthlyRevenue = async (
         year: number,
         month: number
@@ -1200,21 +1176,18 @@ class BookingController {
         }, 0);
       };
 
-      // Tính doanh thu cho từng tháng của năm nay
       const currentYearRevenue = await Promise.all(
         Array.from({ length: 12 }, (_, i) =>
           calculateMonthlyRevenue(currentYear, i)
         )
       );
 
-      // Tính doanh thu cho từng tháng của năm ngoái
       const previousYearRevenue = await Promise.all(
         Array.from({ length: 12 }, (_, i) =>
           calculateMonthlyRevenue(previousYear, i)
         )
       );
 
-      // Trả về kết quả
       return res.status(200).json({
         status: 200,
         message: "Successfully fetched monthly booking revenue!",
@@ -1241,7 +1214,6 @@ class BookingController {
       const currentYear = currentDate.getFullYear();
       const previousYear = currentYear - 1;
 
-      // Hàm trợ giúp để tính doanh thu cho một tháng cụ thể
       const calculateMonthlyRevenue = async (
         year: number,
         month: number
@@ -1293,21 +1265,18 @@ class BookingController {
         }, 0);
       };
 
-      // Tính doanh thu cho từng tháng của năm nay
       const currentYearRevenue = await Promise.all(
         Array.from({ length: 12 }, (_, i) =>
           calculateMonthlyRevenue(currentYear, i)
         )
       );
 
-      // Tính doanh thu cho từng tháng của năm ngoái
       const previousYearRevenue = await Promise.all(
         Array.from({ length: 12 }, (_, i) =>
           calculateMonthlyRevenue(previousYear, i)
         )
       );
 
-      // Trả về kết quả
       return res.status(200).json({
         status: 200,
         message: "Successfully fetched monthly booking revenue!",
@@ -1341,7 +1310,6 @@ class BookingController {
 
       const fieldsToUpdate = ["status", "note"];
 
-      // Create an updated booking object
       const updatedBookingData: Partial<Booking> = {};
       fieldsToUpdate.forEach((field) => {
         if (req.body[field]) {

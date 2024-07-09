@@ -353,6 +353,41 @@ class StaffController {
       return ErrorHandler.handleServerError(res, error);
     }
   }
+
+  async changePassword(req: Request, res: Response) {
+    try {
+      const { email, password } = req.body;
+
+      const staff = await Staff.findOne({
+        where: {
+          email,
+        },
+      });
+
+      if (!staff) {
+        return res.status(404).json({
+          status: 404,
+          message: "Staff not found!",
+        });
+      }
+
+      const hashedPassword = await securePassword(password);
+
+      await Staff.update(
+        { password: hashedPassword },
+        {
+          where: { email },
+        }
+      );
+
+      return res.status(200).json({
+        status: 200,
+        message: "Cập nhật mật khẩu thành công!",
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
 }
 
 export default new StaffController();

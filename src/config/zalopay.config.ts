@@ -22,7 +22,6 @@ const zaloPayConfig: ZaloPayConfig = {
     "https://79b0-14-177-235-116.ngrok-free.app/api/v1/payment/zalopay/callback",
 };
 
-// Check for required environment variables and throw an error if any are missing
 if (!zaloPayConfig.KEY1 || !zaloPayConfig.KEY2) {
   throw new Error(
     "Missing necessary ZaloPay configuration in environment variables."

@@ -651,13 +651,13 @@ class PaymentController {
   async getBankListZaloPay(req: Request, res: Response) {
     try {
       const { APP_ID, KEY1 } = zaloPayConfig;
-      const reqtime = Date.now().toString(); // Ensure reqtime is a string
+      const reqtime = Date.now().toString();
 
       const mac = hash(
         HashAlgorithm.SHA512,
         KEY1,
         `${APP_ID}|${reqtime}`
-      ).toString(); // Ensure the hash is a string
+      ).toString();
 
       const response = await axios.post(
         "https://sbgateway.zalopay.vn/api/getlistmerchantbanks",
@@ -665,7 +665,7 @@ class PaymentController {
           appid: APP_ID,
           reqtime, // milliseconds
           mac,
-        }).toString(), // Use URLSearchParams to format the body and convert to string
+        }).toString(),
         {
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
         }
@@ -712,7 +712,6 @@ class PaymentController {
         status: BOOKING_STATUS.CANCELLED,
       });
 
-      // Update the status of each room associated with the booking
       for (const roomBooking of booking.roomBookings) {
         await roomBooking.room.update({
           status: ROOM_STATUS.AVAILABLE,
@@ -734,9 +733,8 @@ class PaymentController {
 
       const { APP_ID, KEY1, ENDPOINT } = zaloPayConfig;
       const timestamp = Date.now();
-      const uid = `${timestamp}${Math.floor(111 + Math.random() * 999)}`; // unique id
+      const uid = `${timestamp}${Math.floor(111 + Math.random() * 999)}`;
 
-      // Explicitly type the provider_metadata
       const providerMetadata = payment.provider_metadata as {
         zp_trans_id: number | undefined;
       };
@@ -772,14 +770,12 @@ class PaymentController {
         },
       });
 
-      // Check if response data is empty
       if (!response.data) {
         throw new Error("Empty response from ZaloPay API");
       }
 
       console.log(response.data);
 
-      // If response is not empty, create a new refund entry in the database
       const newRefund = await Refund.create({
         payment_id: payment.id,
         amount,
@@ -790,7 +786,6 @@ class PaymentController {
         status: REFUND_STATUS.PENDING,
       });
 
-      // If response is not empty, return it
       return res.status(200).json({
         ...response.data,
         refund: newRefund,

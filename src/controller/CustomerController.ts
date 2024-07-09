@@ -136,18 +136,15 @@ class CustomerController {
         location: req.body.location,
       };
 
-      // Cập nhật các trường nếu có giá trị mới
       for (const [field, value] of Object.entries(fieldsToUpdate)) {
         if (value !== undefined) {
           (customerToUpdate as any)[field] = value;
         }
       }
 
-      // Xử lý tải lên avatar mới nếu có
       if (req.file) {
         const folder = `${DEFAULT_MINIO.CUSTOMER_PATH}/${customer_id}`;
 
-        // Xóa avatar cũ nếu có
         if (customerToUpdate.avatar) {
           await minioConfig
             .getClient()
@@ -163,7 +160,6 @@ class CustomerController {
         const newName = `${Date.now()}_${generateRandomString(16)}.${typeFile}`;
         const objectName = `${folder}/${newName}`;
 
-        // Tải lên MinIO server
         await minioConfig
           .getClient()
           .putObject(
@@ -177,7 +173,6 @@ class CustomerController {
         (customerToUpdate as any).avatar = newName;
       }
 
-      // Lưu thông tin cập nhật vào database
       await new CustomerRepo().update(customerToUpdate);
 
       return res.status(200).json({
@@ -193,7 +188,6 @@ class CustomerController {
     try {
       const { email, password, full_name, gender } = req.body;
 
-      // Kiểm tra xem người dùng đã tồn tại hay chưa
       const existingCustomer = await Customer.findOne({
         where: {
           email,
@@ -204,7 +198,6 @@ class CustomerController {
           .status(400)
           .json({ message: "Tài khoản đã tồn tại. Xin vui lòng đăng nhập!" });
       } else {
-        // Mã hóa mật khẩu trước khi lưu vào csdl
         const hashedPassword = await securePassword(password);
 
         const newCustomer = new Customer({
@@ -219,7 +212,6 @@ class CustomerController {
           location: "",
         });
 
-        // Lưu customer vào csdl
         await new CustomerRepo().save(newCustomer);
 
         const customerData = await Customer.findOne({
@@ -262,7 +254,6 @@ class CustomerController {
   async customerLogin(req: Request, res: Response) {
     const { email, password } = req.body;
 
-    // Input validation (optional)
     if (!email || !password) {
       return res.status(400).json({
         status: 400,
@@ -271,7 +262,6 @@ class CustomerController {
     }
 
     try {
-      // Find customer by email
       const customer = await Customer.findOne({ where: { email } });
 
       if (!customer) {
@@ -281,7 +271,6 @@ class CustomerController {
         });
       }
 
-      // Compare password hashes securely
       const isPasswordValid = await bcrypt.compare(password, customer.password);
 
       if (!isPasswordValid) {
@@ -298,10 +287,8 @@ class CustomerController {
         });
       }
 
-      // Generate JWT with appropriate expiry (consider using refresh tokens)
       const token = generateCustomerToken(customer.id, customer.email);
 
-      // Cập nhật token của khách hàng
       await Customer.update(
         { token },
         {
@@ -329,7 +316,6 @@ class CustomerController {
           })
         : null;
 
-      // Login successful
       return res.status(200).json({
         status: 200,
         message: "Đăng nhập thành công!",
@@ -390,7 +376,6 @@ class CustomerController {
 
               if (!hotel) return null;
 
-              // Generate presigned URL for hotel avatar
               const hotelImages = await Promise.all(
                 hotel.hotelImages.map(async (image) => {
                   const presignedUrl = await new Promise<string>(
@@ -416,7 +401,6 @@ class CustomerController {
                 })
               );
 
-              // Return updated hotel object with presigned URL
               return {
                 ...hotel.toJSON(),
                 address: `${hotel.street}, ${hotel.ward}, ${hotel.district}, ${hotel.province}`,
@@ -430,7 +414,7 @@ class CustomerController {
         status: 200,
         message: `Successfully fetched favorite hotels by customer id ${customer_id}!`,
         numFavoriteHotels,
-        data: hotels.filter((hotel) => hotel !== null), // Filter out null values
+        data: hotels.filter((hotel) => hotel !== null),
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
@@ -506,7 +490,7 @@ class CustomerController {
         percentageChange =
           ((currentMonthCount - previousMonthCount) / previousMonthCount) * 100;
       } else if (currentMonthCount > 0) {
-        percentageChange = 100; // If no customers in previous month but there are in the current month, it's a 100% increase.
+        percentageChange = 100;
       }
 
       if (percentageChange !== null) {
@@ -519,6 +503,41 @@ class CustomerController {
         status: 200,
         message: "Successfully fetched customer statistics!",
         data: { totalCustomers, currentMonthCount, percentageChange },
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async changePassword(req: Request, res: Response) {
+    try {
+      const { email, password } = req.body;
+
+      const customer = await Customer.findOne({
+        where: {
+          email,
+        },
+      });
+
+      if (!customer) {
+        return res.status(404).json({
+          status: 404,
+          message: "Customer not found!",
+        });
+      }
+
+      const hashedPassword = await securePassword(password);
+
+      await Customer.update(
+        { password: hashedPassword },
+        {
+          where: { email },
+        }
+      );
+
+      return res.status(200).json({
+        status: 200,
+        message: "Cập nhật mật khẩu thành công!",
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

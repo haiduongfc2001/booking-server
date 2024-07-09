@@ -70,7 +70,7 @@ class HotelAmenityController {
         });
       }
 
-      hotelAmenity.amenity = amenity ?? hotelAmenity.amenity; // Update only if the value is provided
+      hotelAmenity.amenity = amenity ?? hotelAmenity.amenity;
       await hotelAmenity.save();
 
       return res.status(200).json({

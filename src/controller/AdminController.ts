@@ -12,21 +12,17 @@ const roleToTokenGenerator = {
 };
 
 class AdminController {
-  // Create a new admin
   async createAdmin(req: Request, res: Response) {
     try {
       const { email, password } = req.body;
 
-      // Check if email already exists
       const existingAdmin = await Admin.findOne({ where: { email } });
       if (existingAdmin) {
         return res.status(400).json({ message: "Email đã tồn tại" });
       }
 
-      // Hash the password
       const hashedPassword = await securePassword(password);
 
-      // Create the new admin
       const newAdmin = await Admin.create({
         email,
         password: hashedPassword,
@@ -40,7 +36,6 @@ class AdminController {
     }
   }
 
-  // Get all admins
   async getAllAdmins(req: Request, res: Response) {
     try {
       const admins = await Admin.findAll();
@@ -50,7 +45,6 @@ class AdminController {
     }
   }
 
-  // Get admin by ID
   async getAdminById(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -66,7 +60,6 @@ class AdminController {
     }
   }
 
-  // Update admin by ID
   async updateAdmin(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -93,7 +86,6 @@ class AdminController {
     }
   }
 
-  // Delete admin by ID
   async deleteAdmin(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -119,7 +111,6 @@ class AdminController {
   async adminLogin(req: Request, res: Response) {
     const { email, password, role } = req.body;
 
-    // Input validation (optional)
     if (!email || !password || !role) {
       return res.status(400).json({
         status: 400,
@@ -128,7 +119,6 @@ class AdminController {
     }
 
     try {
-      // Find admin by email
       const admin = await Admin.findOne({ where: { email } });
 
       if (!admin) {
@@ -138,7 +128,6 @@ class AdminController {
         });
       }
 
-      // Compare password hashes securely
       const isPasswordValid = await bcrypt.compare(password, admin.password);
 
       if (!isPasswordValid) {
@@ -148,7 +137,6 @@ class AdminController {
         });
       }
 
-      // Generate JWT with appropriate expiry (consider using refresh tokens)
       const tokenGenerator = roleToTokenGenerator[role];
       if (!tokenGenerator) {
         return res.status(400).json({
@@ -158,7 +146,6 @@ class AdminController {
       }
       const token = tokenGenerator(admin.id, admin.email);
 
-      // Cập nhật token của khách hàng
       await Admin.update(
         { token },
         {
@@ -166,7 +153,6 @@ class AdminController {
         }
       );
 
-      // Login successful
       return res.status(200).json({
         status: 200,
         message: "Đăng nhập thành công!",
@@ -177,6 +163,41 @@ class AdminController {
           avatar:
             "https://static.vecteezy.com/system/resources/previews/009/784/096/original/avatar-with-gear-flat-design-icon-of-manager-vector.jpg",
         },
+      });
+    } catch (error) {
+      return ErrorHandler.handleServerError(res, error);
+    }
+  }
+
+  async changePassword(req: Request, res: Response) {
+    try {
+      const { email, password } = req.body;
+
+      const admin = await Admin.findOne({
+        where: {
+          email,
+        },
+      });
+
+      if (!admin) {
+        return res.status(404).json({
+          status: 404,
+          message: "Admin not found!",
+        });
+      }
+
+      const hashedPassword = await securePassword(password);
+
+      await Admin.update(
+        { password: hashedPassword },
+        {
+          where: { email },
+        }
+      );
+
+      return res.status(200).json({
+        status: 200,
+        message: "Cập nhật mật khẩu thành công!",
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

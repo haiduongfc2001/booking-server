@@ -3,7 +3,6 @@ import { RoomType } from "../model/RoomType";
 import { Bed } from "../model/Bed";
 
 export class BedController {
-  // Create a new bed
   static async createBed(req: Request, res: Response) {
     try {
       const { room_type_id, type, description, quantity } = req.body;
@@ -30,7 +29,6 @@ export class BedController {
     }
   }
 
-  // Get all beds
   static async getAllBeds(req: Request, res: Response) {
     try {
       const beds = await Bed.findAll({ include: [RoomType] });
@@ -40,7 +38,6 @@ export class BedController {
     }
   }
 
-  // Get a single bed by ID
   static async getBedById(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -56,7 +53,6 @@ export class BedController {
     }
   }
 
-  // Update a bed
   static async updateBed(req: Request, res: Response) {
     try {
       const { bed_id } = req.params;
@@ -85,7 +81,6 @@ export class BedController {
     }
   }
 
-  // Delete a bed
   static async deleteBed(req: Request, res: Response) {
     try {
       const { bed_id } = req.params;

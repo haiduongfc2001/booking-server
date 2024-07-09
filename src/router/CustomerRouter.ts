@@ -69,6 +69,11 @@ class CustomerRoutes extends BaseRoutes {
       authFullRole,
       CustomerController.getCustomerStats
     );
+    this.router.post(
+      "/changePassword",
+      // authFullRole,
+      CustomerController.changePassword
+    );
   }
 }
 

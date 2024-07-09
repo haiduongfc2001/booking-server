@@ -10,6 +10,11 @@ class AdminRoutes extends BaseRoutes {
     this.router.put("/:id", authAdmin, AdminController.updateAdmin);
     this.router.delete("/:id", authAdmin, AdminController.deleteAdmin);
     this.router.post("/login", AdminController.adminLogin);
+    this.router.post(
+      "/changePassword",
+      // authFullRole,
+      AdminController.changePassword
+    );
   }
 }
 

@@ -27,7 +27,6 @@ const vnpayConfig: VNPayConfig = {
     "https://booking-customer.vercel.app//account/my-booking/payment",
 };
 
-// Check for required environment variables and throw an error if any are missing
 if (!vnpayConfig.VNP_TMM_CODE || !vnpayConfig.VNP_HASH_SECRET) {
   throw new Error(
     "Missing necessary VNPay configuration in environment variables."
