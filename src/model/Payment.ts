@@ -52,7 +52,7 @@ export class Payment extends Model {
   amount!: number;
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.TEXT,
     allowNull: false,
   })
   description!: string;

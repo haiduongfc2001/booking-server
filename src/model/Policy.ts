@@ -110,13 +110,13 @@ export class Policy extends Model {
 // Các tùy chọn này giúp khách sạn linh hoạt hơn trong việc thiết lập chính sách hoàn tiền, đồng thời giúp khách hàng hiểu rõ hơn về quyền lợi của họ khi hủy phòng.
 
 // ===========================================================================================
-/** 
- * Đối với trường hợp phụ thu thêm đối với người ở thêm 
- * Khách sạn có chính sách phụ thu đối với trẻ em muốn ở thêm. 
+/**
+ * Đối với trường hợp phụ thu thêm đối với người ở thêm
+ * Khách sạn có chính sách phụ thu đối với trẻ em muốn ở thêm.
  * Từ 0-8 miễn phí, 9-13 phụ thu 10%, 14-17 phụ thu 20%.
  * Phòng có số khách tiêu chuẩn là 2 người. Số người lớn tối đa là 2. Số trẻ em tối đa là 2.
  * Số người tối đa phòng có thể chứa là 4.
- * Có thể phụ thu thêm nếu số vượt quá 2. Phòng có giá 100$/đêm. 
+ * Có thể phụ thu thêm nếu số vượt quá 2. Phòng có giá 100$/đêm.
  * Đoàn khách có 2 người lớn, muốn ở thêm:
  *    TH1: 1 trẻ em
  *       1.1. Trẻ 5 tuổi ==> 0$

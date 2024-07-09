@@ -57,7 +57,7 @@ export class Hotel extends Model {
   // longitude!: string;
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.TEXT,
     allowNull: false,
   })
   description!: string;

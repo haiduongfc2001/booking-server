@@ -26,7 +26,7 @@ export class PaymentMethod extends Model {
   code!: string;
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.TEXT,
     allowNull: false,
   })
   description!: string;

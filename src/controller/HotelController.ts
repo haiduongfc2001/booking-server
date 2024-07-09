@@ -116,7 +116,7 @@ class HotelController {
 
       res.status(201).json({
         status: 201,
-        message: "Successfully created hotel!",
+        message: "Tạo khách sạn thành công!",
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);
@@ -657,7 +657,7 @@ class HotelController {
 
       return res.status(200).json({
         status: 200,
-        message: "Successfully updated hotel data!",
+        message: "Cập nhật dữ liệu khách sạn thành công!",
       });
     } catch (error) {
       return ErrorHandler.handleServerError(res, error);

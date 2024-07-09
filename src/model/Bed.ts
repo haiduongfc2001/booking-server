@@ -50,7 +50,7 @@ export class Bed extends Model {
   type!: BED_TYPE;
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.TEXT,
   })
   description!: string;
 
