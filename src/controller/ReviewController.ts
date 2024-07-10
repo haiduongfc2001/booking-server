@@ -240,6 +240,7 @@ class ReviewController {
         return res.status(200).json({
           status: 200,
           message: "No reviews yet!",
+          data: [],
         });
       }
 
