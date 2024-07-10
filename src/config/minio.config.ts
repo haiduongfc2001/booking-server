@@ -10,14 +10,14 @@ class MinioConfig {
 
   private readonly MINIO_ENDPOINT: string;
   private readonly MINIO_PORT: number;
-  // private readonly MINIO_USE_SSL: boolean;
+  private readonly MINIO_USE_SSL: boolean;
   private readonly MINIO_ACCESS_KEY: string;
   private readonly MINIO_SECRET_KEY: string;
 
   private constructor() {
     this.MINIO_ENDPOINT = process.env.MINIO_ENDPOINT || "localhost";
     this.MINIO_PORT = Number(process.env.MINIO_PORT) || 9000;
-    // this.MINIO_USE_SSL = process.env.MINIO_USE_SSL === "true";
+    this.MINIO_USE_SSL = process.env.MINIO_USE_SSL === "true";
     this.MINIO_ACCESS_KEY = process.env.MINIO_ROOT_USER as string;
     this.MINIO_SECRET_KEY = process.env.MINIO_ROOT_PASSWORD as string;
 
